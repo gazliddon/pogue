@@ -2,14 +2,18 @@
   (:require
 
     [gaz.renderprotocols :refer [IRenderBackend
+                                 load-sprs!  
+                                 spr-scaled!
+                                 spr!
                                  box!
                                  clear!
-                                 load-sprs!]]
+                                 ]]
 
     [gaz.gamerender      :refer [render!
                                  get-scaled-dims]]
 
     [gaz.color           :refer [rgb-str]]
+    [gaz.vec2            :as    v2 ]
 
     [om.core :as om :include-macros true]
     [om.dom  :as dom :include-macros true]))
@@ -18,33 +22,25 @@
 
 (def canvas-id "main-canvas-id")
 
-(def game-gfx
-  {:source-gfx {:tiles "tiles.png"}
-   :sprs {:wall {:src :tiles :x 0 :y 0 :w 8 :h 8} } })
-
-
-(defn the-canvas-renderer [canvas w h]
-  (let [ ctx (.getContext canvas "2d") ]
+(defn canvas-immediate-renderer [canvas dims]
+  (let [ctx (.getContext canvas "2d") ]
     (reify
       IRenderBackend
 
-      (load-sprs! [this data]
-        (assoc this :sprs data)
-        this)
+      (load-sprs! [_ _]
+        (println "not implemented"))
 
-      (spr-scaled! [{:keys [sprs]} spr-id {:keys [x y]} {:keys [ w h ]}]
-        (let [spr (spr-id sprs)]
-          (println spr)
-          ) )
+      (spr-scaled! [_ _]
+        (println "not implemented"))
 
-      (spr! [this spr-id {:keys [x y]}]
-        )
+      (spr! [_ _]
+        (println "not implemented"))
 
       (clear! [this col]
-        (box! this [0 0 w h] col))
+        (box! this [(v2/v2 0 0) dims col]))
 
-      (box! [_ [x y w h] col]
-        (let [col-str (rgb-str col )]
+      (box! [_  [{x :x y :y} {w :x h :y} col]]
+        (let [col-str (rgb-str col)]
           (set! (.-fillStyle ctx) col-str)
           (.fillRect ctx x y w h))))))
 
@@ -52,30 +48,26 @@
   (reify
     om/IDidMount
     (did-mount [this]
-      (let [[w h] (get-scaled-dims render-data)
+      (let [dims (get-scaled-dims render-data)
             canvas (om/get-node owner canvas-id)
-            renderer (the-canvas-renderer canvas w h)]
+            renderer (canvas-immediate-renderer canvas dims)]
         (om/set-state! owner [:renderer] renderer)))
 
     om/IDidUpdate
     (did-update [this _ {:keys [renderer] }]
       (when renderer
-        (render! render-data renderer)))
+        (render! render-data renderer)
+        ))
 
     om/IRender
     (render [_]
-      (let [[w h] (get-scaled-dims render-data) ]
+      (let [dims (get-scaled-dims render-data) ]
         (dom/div
           nil
           (dom/canvas
             #js {:id "main-canvas"
-                 :width w :height h
+                 :width (:x dims) :height (:y dims)
                  :className "canvas"
                  :ref canvas-id})     
           )))))
 
-(defn make-canvas-component []
-  (fn [app owner]
-    (canvas-component app owner)
-    )
-  )

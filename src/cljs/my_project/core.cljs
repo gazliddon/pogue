@@ -2,12 +2,12 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!]])
   (:require
     [cljs.pprint :as pp]
-    [gaz.tiles :refer [ITileMap
-                       mk-tile-map
-                       reducer]]
+    [gaz.tiles :refer [mk-tile-map]]
+    [gaz.tilemaputils :as tmu ]
+    [gaz.tilemapprotocol :as tmp ]
     [gaz.math :refer [cos-01]]
     [gaz.vec2 :as v2 ]
-    [gaz.color :refer [rgb-str]]
+    [gaz.color :as col]
     [gaz.appstate :refer [app-state]]
     [gaz.animcomp :refer [animation-view]]
     [gaz.canvascomp :refer [canvas-component]]
@@ -21,55 +21,61 @@
 (defonce first-time? (atom true))
 (defonce update-chan (chan))
 
-(def level' (mk-tile-map 10 10 :blank))
-
 (defn traverse-map [f level]
-  (reducer
+  (tmu/reducer
     level
     (fn [memo x y v]
-      (cons (f x y v) memo))
+      (cons (f level (v2/v2 x y) v) memo))
     ()))
 
+(def scaler (v2/v2 11 11))
 
-(def scaler (v2/v2 20 10))
+(def duff-tile
+  {:col col/purple})
 
-(defn render-tile [x y v]
-  (let [pos (v2/v2 x y) ]
-    (assoc (v2/mul pos scaler)
-           :w (:x scaler)
-           :h (:y scaler)
-           :col (mapv cos-01 [x y (+ x y)]))
-    ))
+(def tiles
+  {:blank  {:col [0.15 0.15 0.15]}
+   :ground {:col [0 1 0]}
+   :wall   {:col [0.25 0.25 0]} })
 
-; (defn render-tile [x y v]
-;   {}
-;   )
+(defn render-tile [level pos v]
+  (let [tile  (get tiles v duff-tile)
+        scaled (v2/mul pos scaler)]
+    {:pos scaled :dims scaler :col (:col tile)}))
 
-(defn render-map [level]
+(defn render-level [level]
   (traverse-map render-tile level))
 
-(defn test-it []
-  (let [level (mk-tile-map 30 30 :blank)]
-    (render-map level)))
+(defn mix-it-up [level]
+  (let [[max-x max-y] (tmu/get-max-coords level) ]
+    (->> (fn [l _]
+           (let [x (int  (* (rand) max-x))
+                 y (int  (* (rand) max-y))
+                 tile (rand-nth (keys tiles))]
+             (tmp/set-tile l x y tile)))
+         (reduce level (range 100)))))
 
-(def rendered-map (test-it))
+(def level
+  (->
+    (mk-tile-map 30 30 :blank)
+    (tmp/set-tile 0 0 :rubbish)
+    (tmp/set-tile 0 1 :rubbish)
+    ; (mix-it-up)
+    ))
+
+(def rendered-level (render-level level))
 
 (defn update-game [game dt]
   (let [t (+ dt  (-> game :count :count))]
     (-> game
-        (assoc-in [:render-data :boxes]
-                  (flatten
-                    [
-                  rendered-map
-                  [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}]
-                     ]
-                    )
-                  )
+        (assoc-in [:render-data :boxes] rendered-level)
+                  ; [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}]
         (assoc-in [:render-data :sprs]
                   [ { :id :floor :pos (v2/v2 100 100) } ]
                   )
         (assoc-in [:render-data :bg-col ] [(cos-01 (* t 1)) 0 t])
         (assoc-in [:count :count] t))))
+
 
 (defn main []
   (om/root
@@ -78,9 +84,11 @@
         om/IDidMount
         (did-mount [_ ]
           (go-loop []
-                   (let [v (<! update-chan)]
-                     (om/transact! app #(update-game % v)))
-                   (recur)))
+                   (let [dt (<! update-chan)
+                         new-app (update-game app dt)
+                         ]
+                     (om/transact! app #(update-game % dt))
+                   (recur))))
 
         om/IRender
         (render [_]
@@ -94,10 +102,7 @@
   (when @first-time?
     (do
       (swap! first-time? not)
-      (js/setInterval (fn [] (put! update-chan (/ 1 60))) 16)
-      )
-    )
-  )
+      (js/setInterval (fn [] (put! update-chan (/ 1 60))) 16))))
 
 
 
