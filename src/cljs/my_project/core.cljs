@@ -6,7 +6,7 @@
                        mk-tile-map
                        reducer]]
     [gaz.math :refer [cos-01]]
-    [gaz.vec2 :refer [v2]]
+    [gaz.vec2 :as v2 ]
     [gaz.color :refer [rgb-str]]
     [gaz.appstate :refer [app-state]]
     [gaz.animcomp :refer [animation-view]]
@@ -30,24 +30,43 @@
       (cons (f x y v) memo))
     ()))
 
+
+(def scaler (v2/v2 20 10))
+
 (defn render-tile [x y v]
-  {:x x :y y :tile v})
+  (let [pos (v2/v2 x y) ]
+    (assoc (v2/mul pos scaler)
+           :w (:x scaler)
+           :h (:y scaler)
+           :col (mapv cos-01 [x y (+ x y)]))
+    ))
+
+; (defn render-tile [x y v]
+;   {}
+;   )
 
 (defn render-map [level]
   (traverse-map render-tile level))
 
 (defn test-it []
-  (let [level (mk-tile-map 10 10 :blank)]
+  (let [level (mk-tile-map 30 30 :blank)]
     (render-map level)))
 
+(def rendered-map (test-it))
 
 (defn update-game [game dt]
   (let [t (+ dt  (-> game :count :count))]
     (-> game
         (assoc-in [:render-data :boxes]
-                  [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}])
+                  (flatten
+                    [
+                  rendered-map
+                  [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}]
+                     ]
+                    )
+                  )
         (assoc-in [:render-data :sprs]
-                  [ { :id :floor :pos (v2 100 100) } ]
+                  [ { :id :floor :pos (v2/v2 100 100) } ]
                   )
         (assoc-in [:render-data :bg-col ] [(cos-01 (* t 1)) 0 t])
         (assoc-in [:count :count] t))))
