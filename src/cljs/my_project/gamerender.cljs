@@ -4,10 +4,10 @@
     [gaz.vec2 :as v2]
     [gaz.renderprotocols :as rp]))
 
-(defrecord RenderData [dims scale bg-col boxes])
+(defrecord RenderData [dims scale bg-col boxes xforms])
 
 (def game-render-data 
-  (RenderData.  (v2/v2 1600 900) 0.5 [0 0 0] []))
+  (RenderData.  (v2/v2 1600 900) 0.5 [0 0 0] [] []))
 
 (defn get-scaled-dims [^RenderData {:keys [dims scale]}]
   (v2/mul dims (v2/v2 scale scale)))

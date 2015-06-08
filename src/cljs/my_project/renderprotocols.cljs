@@ -1,6 +1,13 @@
 (ns gaz.renderprotocols
   )
 
+(defprotocol ITransform
+  (matrix! [this v])
+  (identity! [this])
+  (translate! [this v])
+  (scale! [this v])
+  (rotate! [this v]))
+
 (defprotocol IRenderBackend
   (clear! [this info])
   (box! [this info])
