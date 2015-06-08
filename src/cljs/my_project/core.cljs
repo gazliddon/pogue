@@ -36,6 +36,7 @@
 (def tiles
   {:blank  {:col [0.15 0.15 0.15]}
    :ground {:col [0 1 0]}
+   :water {:col [0 0 0.75]}
    :wall   {:col [0.25 0.25 0]} })
 
 (defn render-tile [level pos v]
@@ -46,27 +47,36 @@
 (defn render-level [level]
   (traverse-map render-tile level))
 
+
+(defn rand-coord [level]
+  (let [[w h] (tmu/get-size level)
+        [x y] [(rand-int w) (rand-int h)] ]
+    [x y]))
+
+(defn rand-tile [] (rand-nth (keys tiles )))
+
+(defn set-rand-tile [l]
+  (let [[x y] (rand-coord l)
+        tile (rand-tile) ]
+    (tmp/set-tile l x y tile)))
+
 (defn mix-it-up [level]
-  (let [[max-x max-y] (tmu/get-max-coords level) ]
-    (->> (fn [l _]
-           (let [x (int  (* (rand) max-x))
-                 y (int  (* (rand) max-y))
-                 tile (rand-nth (keys tiles))]
-             (tmp/set-tile l x y tile)))
-         (reduce level (range 100)))))
+  (reduce
+    (fn [memo i] (set-rand-tile memo))
+    level
+    (range 1000)))
 
 (def level
   (->
     (mk-tile-map 30 30 :blank)
-    (tmp/set-tile 0 0 :rubbish)
-    (tmp/set-tile 0 1 :rubbish)
-    ; (mix-it-up)
+    (mix-it-up)
     ))
 
 (def rendered-level (render-level level))
 
 (defn update-game [game dt]
-  (let [t (+ dt  (-> game :count :count))]
+  (let [t (+ dt  (-> game :count :count))
+        ]
     (-> game
         (assoc-in [:render-data :boxes] rendered-level)
                   ; [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}]
