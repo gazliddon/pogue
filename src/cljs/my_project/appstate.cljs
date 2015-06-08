@@ -6,11 +6,7 @@
 (def app-state
   (atom
     {:update 0
-     :text "Little Shit Game"
-
-     :main-app { :name "Little Shit Game" }
-
+     :main-app { :name "Pogue" }
      :count {:count 0}
      :render-data gr/game-render-data 
-
      }))
