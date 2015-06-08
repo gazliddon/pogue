@@ -1,7 +1,7 @@
 (ns gaz.renderprotocols
   )
 
-(defprotocol ITransform
+(defprotocol ITransformable
   (matrix! [this v])
   (identity! [this])
   (translate! [this v])

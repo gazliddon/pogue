@@ -7,7 +7,7 @@
 (defn canvas-immediate-renderer [canvas dims]
   (let [ctx (.getContext canvas "2d") ]
     (reify
-      rp/ITransform
+      rp/ITransformable
 
       (matrix! [this [a c e b d f]]
         (.setTransform ctx a b c d e f)

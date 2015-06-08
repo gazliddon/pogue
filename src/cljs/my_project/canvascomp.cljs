@@ -1,46 +1,69 @@
 (ns gaz.canvascomp
   (:require
-
-    [gaz.canvascomprenderbackend :refer [canvas-immediate-renderer]]
-
-    [gaz.renderprotocols :as rp ]
-
-    [gaz.gamerender      :refer [render!
-                                 get-scaled-dims]]
-
-    [gaz.color           :refer [rgb-str]]
-    [gaz.vec2            :as    v2 ]
-
+    [gaz.canvascomprenderbackend :as renderer ]
+    [gaz.gamerender      :as gr ]
     [om.core :as om :include-macros true]
     [om.dom  :as dom :include-macros true]))
 
-(enable-console-print!)
-
 (def canvas-id "main-canvas-id")
 
-(defn canvas-component [ {:keys [render-data] :as app} owner]
+(def mk-renderer renderer/canvas-immediate-renderer )
+(def get-dims gr/get-scaled-dims )
+(def render-it! gr/render! )
+
+
+(defn build-canvas-component [ canvas-id  ]
+  (fn [render-data owner]
+    (reify
+      om/IDidMount
+      (did-mount [_]
+        (let [dims (get-dims render-data)
+              canvas (om/get-node owner canvas-id) ]
+          (om/set-state!
+            owner
+            [:renderer-backend ]
+            (mk-renderer canvas dims))))
+
+      om/IDidUpdate
+      (did-update [_ _ {:keys [renderer-backend] }]
+        (when renderer-backend
+          (render-it! render-data renderer-backend)))
+
+      om/IRender
+      (render [_]
+        (let [dims (get-dims render-data) ]
+          (dom/div
+            nil
+            (dom/canvas
+              #js {
+                   :width (:x dims) :height (:y dims)
+                   :className "canvas"
+                   :ref canvas-id})))))))
+
+(defn canvas-component [render-data owner]
   (reify
     om/IDidMount
-    (did-mount [this]
-      (let [dims (get-scaled-dims render-data)
-            canvas (om/get-node owner canvas-id)
-            renderer (canvas-immediate-renderer canvas dims)]
-        (om/set-state! owner [:renderer] renderer)))
+    (did-mount [_]
+      (let [dims (get-dims render-data)
+            canvas (om/get-node owner canvas-id) ]
+        (om/set-state!
+          owner
+          [:renderer-backend]
+          (mk-renderer canvas dims))))
 
     om/IDidUpdate
-    (did-update [this _ {:keys [renderer] }]
-      (when renderer
-        (render! render-data renderer)))
+    (did-update [_ _ {:keys [renderer-backend] }]
+      (when renderer-backend
+        (render-it! render-data renderer-backend)))
 
     om/IRender
     (render [_]
-      (let [dims (get-scaled-dims render-data) ]
+      (let [dims (get-dims render-data) ]
         (dom/div
           nil
           (dom/canvas
-            #js {:id "main-canvas"
+            #js {
                  :width (:x dims) :height (:y dims)
                  :className "canvas"
-                 :ref canvas-id})     
-          )))))
+                 :ref canvas-id}))))))
 

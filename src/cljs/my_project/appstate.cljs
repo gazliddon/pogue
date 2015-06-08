@@ -1,12 +1,10 @@
 (ns gaz.appstate
-  (:require [gaz.gamerender :as gr]
-            )
-  )
+  (:require [gaz.gamerender :as gr]))
 
 (def app-state
   (atom
-    {:update 0
-     :main-app { :name "Pogue" }
-     :count {:count 0}
-     :render-data gr/game-render-data 
+    {:main-app { :name "Pogue" }
+     :tick 0
+     :level-render-data gr/level-render-data 
+     :main-render-data  gr/main-render-data 
      }))

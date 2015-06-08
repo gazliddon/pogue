@@ -10,7 +10,7 @@
     [gaz.color :as col]
     [gaz.appstate :refer [app-state]]
     [gaz.animcomp :refer [animation-view]]
-    [gaz.canvascomp :refer [canvas-component]]
+    [gaz.canvascomp :refer [build-canvas-component]]
     [om.core :as om :include-macros true]
     [cljs.core.async :refer [put! >! chan <! alts! close!]]
     [om.dom :as dom :include-macros true]))
@@ -18,7 +18,6 @@
 (enable-console-print!)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defonce first-time? (atom true))
 (defonce update-chan (chan))
 
 (defn traverse-map [f level]
@@ -28,7 +27,8 @@
       (cons (f level (v2/v2 x y) v) memo))
     ()))
 
-(def scaler (v2/v2 11 11))
+
+(def level-dims (v2/v2 10 10))
 
 (def duff-tile
   {:col col/purple})
@@ -40,9 +40,8 @@
    :wall   {:col [0.25 0.25 0]} })
 
 (defn render-tile [level pos v]
-  (let [tile  (get tiles v duff-tile)
-        scaled (v2/mul pos scaler)]
-    {:pos scaled :dims scaler :col (:col tile)}))
+  (let [tile  (get tiles v duff-tile) ]
+    {:pos pos :dims {:x 1 :y 1} :col (:col tile)}))
 
 (defn render-level [level]
   (traverse-map render-tile level))
@@ -68,43 +67,49 @@
 
 (def level
   (->
-    (mk-tile-map 30 30 :blank)
-    (mix-it-up)
-    ))
+    (mk-tile-map (:x level-dims) (:y level-dims) :blank)
+    (mix-it-up)))
 
 (def rendered-level (render-level level))
 
-(defn update-game [game dt]
-  (let [t (+ dt  (-> game :count :count))
-        ]
-    (-> game
-        (assoc-in [:render-data :boxes] rendered-level)
-                  ; [{:x (* 100  (cos-01 (* 5 t))) :y 10 :w 100 :h 100 :col [0 (cos-01 (* 0.5 t)) 0]}]
-        (assoc-in [:render-data :sprs]
-                  [ { :id :floor :pos (v2/v2 100 100) } ]
-                  )
-        (assoc-in [:render-data :bg-col ] [(cos-01 (* t 1)) 0 t])
-        (assoc-in [:count :count] t))))
+(defn make-game-render-data [rd t]
+  (assoc rd 
+         :xforms [[:identity]
+                  [:scale ( v2/v2 16 16 )]
+                  [:translate (v2/mul (v2/v2 (cos-01 t) (cos-01 t)) (v2/v2 10 10))] ]
+         :bg-col [(cos-01 (* t 1)) 0 t]
+         :boxes rendered-level)
+   )
 
+(defn update-game [{:keys [tick main-render-data] :as game} dt]
+  (let [new-tick (+ dt  tick) ]
+    (assoc game
+           :main-render-data (make-game-render-data main-render-data new-tick)
+           :tick new-tick)))
+
+(defonce first-time? (atom true))
+
+
+(def main-render-canvas (build-canvas-component "main-render-canvas"))
 
 (defn main []
   (om/root
-    (fn [app owner]
+    (fn [game-state owner]
       (reify
         om/IDidMount
         (did-mount [_ ]
           (go-loop []
-                   (let [dt (<! update-chan)
-                         new-app (update-game app dt)
-                         ]
-                     (om/transact! app #(update-game % dt))
-                   (recur))))
+                   (let [dt (<! update-chan) ]
+                     (om/transact! game-state #(update-game % dt))
+                     (recur))))
 
         om/IRender
         (render [_]
           (dom/div #js {:id "wrapper"}
-                   (dom/div nil (dom/h1 nil (-> app :main-app :name)))
-                   (om/build canvas-component app )
+                   (dom/div nil (dom/h1 nil (-> game-state :main-app :name)))
+                   (dom/p nil (-> game-state :tick))
+                   ; (om/build canvas-component (:level-render-data game-state) )
+                   (om/build main-render-canvas (:main-render-data game-state) )
                    ))))
     app-state
     {:target (. js/document (getElementById "app"))})
