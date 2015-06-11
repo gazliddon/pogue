@@ -4,6 +4,10 @@
             [gaz.vec2            :as    v2 ])
   )
 
+
+(defn canvas-texture-manager []
+  )
+
 (defn canvas-immediate-renderer [canvas dims]
   (let [ctx (.getContext canvas "2d") ]
     (reify
@@ -17,12 +21,12 @@
         (.resetTransform ctx)
         this)
 
-      (translate! [this {x :x y :y}]
+      (translate! [this [ {:keys [x y]}]]
         (.translate ctx x y)
         this)
 
-      (scale! [this {w :x h :y}]
-        (.scale ctx w h)
+      (scale! [this [ {:keys [x y] } ]]
+        (.scale ctx x y)
         this)
 
       (rotate! [this v]
@@ -30,9 +34,6 @@
         this)
 
       rp/IRenderBackend
-
-      (load-sprs! [_ _]
-        (println "not implemented"))
 
       (spr-scaled! [_ _]
         (println "not implemented"))

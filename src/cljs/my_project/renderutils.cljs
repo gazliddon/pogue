@@ -3,9 +3,13 @@
                                          identity!
                                          translate!
                                          scale!
-                                         rotate!]]))
+                                         rotate!
 
-  
+                                         clear! 
+                                         box! 
+                                         spr! 
+                                         spr-scaled!  ]]))
+
 (defmulti xform! (fn [^ITransformable r op data] op))
 
 (defmethod xform! :matrix [^ITransformable r op data]
@@ -23,9 +27,23 @@
 (defmethod xform! :rotate [^ITransformable r op data] 
   (rotate! r data))
 
-(defmethod xform! :default [^ITransformable r op _]
-  (println (str "not implemented xform! op " op)))
+(defmethod xform! :clear [^IRenderBackend r op data]
+  (clear! r data))
+
+(defmethod xform! :box [^IRenderBackend r op data]
+  (box! r data))
+
+(defmethod xform! :spr [^IRenderBackend r op data]
+  (spr! r data))
+
+(defmethod xform! :spr-scaled [^IRenderBackend r op data]
+  (spr-scaled! r data))
+
+(defmethod xform! :default [^ITransformable r op data]
+  (println (str "not implemented xform! op " op data)))
 
 (defn do-xforms! [r xforms]
-  (doseq [xfd xforms]
-    (apply xform! r xfd)))
+  (doseq [xform xforms]
+    (xform! r (first xform) (rest xform))))
+
+
