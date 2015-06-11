@@ -16,6 +16,8 @@
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]
                  [bostonou/cljs-pprint "0.0.1"]
+                 [prismatic/dommy "1.1.0"]
+                 [hipo "0.4.0"]
                  [om "0.8.0-rc1"]
                  [environ "1.0.0"]]
 

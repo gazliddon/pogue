@@ -4,10 +4,6 @@
             [gaz.vec2            :as    v2 ])
   )
 
-
-(defn canvas-texture-manager []
-  )
-
 (defn canvas-immediate-renderer [canvas dims]
   (let [ctx (.getContext canvas "2d") ]
     (reify
@@ -38,8 +34,8 @@
       (spr-scaled! [_ _]
         (println "not implemented"))
 
-      (spr! [_ _]
-        (println "not implemented"))
+      (spr! [this [{:keys [x y] } spr]]
+        (.drawImage ctx spr x y ))
 
       (clear! [this col]
         (rp/box! this [(v2/v2 0 0) dims col]))
