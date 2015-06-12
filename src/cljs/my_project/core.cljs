@@ -3,140 +3,43 @@
                    [gaz.rendermac :as rm])
   (:require
 
-    [cloj.render.protocols  :as rp]
-    [cloj.resources.manager :as rman :refer [create-render-target!
-                                             load-img!]]
-    [cloj.resources.html    :as htmlrman]
-    [cloj.resources.omhtml  :as omrman]
-    [cloj.math.vec2         :as v2 ]
-    [cloj.math.vec3         :as v3 ]
+    [cloj.resources.manager :refer [create-render-target!
+                                    load-img!]]
+
     [cloj.math.misc         :refer [cos-01]]
 
-    [dommy.core :as dommy :refer-macros [sel sel1]]
+    ; [cloj.system            :refer [ISystem
+    ;                                 get-resource-manager
+    ;                                 get-render-engine ]]
 
-    [cljs.pprint :as pp]
+    [game.html              :refer [mk-system]]
+    [game.gane :as game]
 
-    [gaz.gameprotocols :as game]
 
-    [gaz.tiles :refer [mk-tile-map]]
-    [gaz.tilemaputils :as tmu ]
-    [gaz.tilemapprotocol :as tmp ]
-    [gaz.color :as col]
-    [gaz.appstate :refer [app-state]]
-    [gaz.canvascomp :refer [build-canvas-component ]]
+    [gaz.tiles              :refer [mk-tile-map mix-it-up]]
+    [gaz.appstate           :refer [app-state]]
+    [gaz.canvascomp         :refer [build-canvas-component ]]
 
     [om.core :as om :include-macros true]
+
     [cljs.core.async :refer [put! >! chan <! alts! close!]]
     [om.dom :as dom :include-macros true]))
 
 (enable-console-print!)
 
-(defprotocol ISystem
-  (get-resource-manager [_])
-  (get-render-engine [_]))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(println "before")
-
-(defn debug-> [v & args]
-  (println v)
-  (println (apply str args))
-  v
-  )
-
-(do
-  (->
-    (htmlrman/mk-resource-manager )
-    (debug-> "before")
-    (create-render-target! "shit-canvas" 100 100)   
-    )
-  )
-
-(println "after")
-
-
-(defn mk-system-html []
-  (let [rm (htmlrman/mk-resource-manager )
-        rend (rman/create-render-target! rm "shit-canvas" 100 100)]
-  (reify
-    ISystem
-    (get-resource-manager [_]
-      rm)
-
-    (get-render-engine [_]
-      ))))
-
-(def system ( mk-system-html ))
-(println "gello")
+(def system ( mk-system "shit-div" "shit-canvas" ))
 
 (def rt-gaz 
   (-> (get-resource-manager system)
-     (rman/create-render-target! "shit-canvas" 100 100)))
+      (rman/create-render-target! "shit-canvas" 100 100)))
 
 (def im-gaz
  (-> (get-resource-manager system)
      (rman/load-img! "shit-tiles")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(def resources
-  (atom
-    {:imgs    []
-     :targets []
-     }))
-
-; (def om-res
-;   (omrman/OmResManager. (omrman/mk-om-res "resources" resources ) resources))
-
-; (do
-;   (def tiles (rman/load-img! om-res "tiles"))
-;   (def rt (rman/create-render-target! om-res "rt0" 100 100))) 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defonce update-chan (chan))
-
-(defn traverse-map [f level]
-  (tmu/reducer
-    level
-    (fn [memo x y v]
-      (cons (f level (v2/v2 x y) v) memo))
-    ()))
-
-(def duff-tile {:col col/purple})
-
-(def tiles
-  {:blank  {:col [0.15 0.15 0.15]}
-   :ground {:col [0 1 0]}
-   :water  {:col [0 0 0.75]}
-   :wall   {:col [0.25 0.25 0]} })
-
-(defn render-tile [level pos v]
-  (let [tile  (get tiles v duff-tile) ]
-    [:box pos {:x 1 :y 1} (:col tile) ]))
-
-(defn render-level [level]
-  (traverse-map render-tile level))
-
-(defn rand-coord [level]
-  (let [[w h] (tmu/get-size level)
-        [x y] [(rand-int w) (rand-int h)] ]
-    [x y]))
-
-(defn rand-tile [] (rand-nth (keys tiles )))
-
-(defn set-rand-tile [l]
-  (let [[x y] (rand-coord l)
-        tile (rand-tile) ]
-    (tmp/set-tile l x y tile)))
-
-(defn mix-it-up [level]
-  (reduce
-    (fn [memo i] (set-rand-tile memo))
-    level
-    (range 1000)))
-
 
 (def level-dims (v2/v2 10 10))
 
@@ -169,19 +72,17 @@
                    [:clear 0 0 1]
                    [:box {:x 0 :y 0} {:x 20 :y 20} [0 0 0]] )))
 
+
 (def rendered-level (vec  (render-level level)))
 
 (defn update-game [{:keys [tick main-render-data level-render-data] :as game} dt]
   (let [new-tick (+ dt  tick) ]
     (do
-      ; (rp/clear! rt-gaz [1 0 1])
-      ; (rp/spr! rt-gaz [{:x (* 100  ( cos-01 new-tick )) :y 20} (img im-gaz)])
 
       (assoc game
              :level-render-data (make-level-render-data level-render-data new-tick )
              :main-render-data (make-game-render-data level-render-data new-tick rendered-level)
              :tick new-tick))
-
     ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -197,9 +98,7 @@
         (println "updated game!")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defonce first-time? (atom true))
-
 
 (defn main []
   (om/root
@@ -209,7 +108,6 @@
         (will-mount [_ ]
           (go-loop []
                    (let [dt (<! update-chan) ]
-                     (println "TICK")
                      (om/transact! game-state #(update-game % dt))
                      (recur))))
 

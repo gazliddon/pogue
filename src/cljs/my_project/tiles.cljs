@@ -48,6 +48,46 @@
       nil
       [ nx ny nw nh ]  )))
 
+(defn traverse-map [f level]
+  (tmu/reducer
+    level
+    (fn [memo x y v]
+      (cons (f level (v2/v2 x y) v) memo))
+    ()))
+
+(def duff-tile {:col col/purple})
+
+(def tiles
+  {:blank  {:col [0.15 0.15 0.15]}
+   :ground {:col [0 1 0]}
+   :water  {:col [0 0 0.75]}
+   :wall   {:col [0.25 0.25 0]} })
+
+(defn render-tile [level pos v]
+  (let [tile  (get tiles v duff-tile) ]
+    [:box pos {:x 1 :y 1} (:col tile) ]))
+
+(defn render-level [level]
+  (traverse-map render-tile level))
+
+(defn rand-coord [level]
+  (let [[w h] (tmu/get-size level)
+        [x y] [(rand-int w) (rand-int h)] ]
+    [x y]))
+
+(defn rand-tile [] (rand-nth (keys tiles )))
+
+(defn set-rand-tile [l]
+  (let [[x y] (rand-coord l)
+        tile (rand-tile) ]
+    (tmp/set-tile l x y tile)))
+
+(defn mix-it-up [level]
+  (reduce
+    (fn [memo i] (set-rand-tile memo))
+    level
+    (range 1000)))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
