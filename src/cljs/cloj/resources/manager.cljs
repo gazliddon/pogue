@@ -1,6 +1,10 @@
 (ns cloj.resources.manager
   )
 
+(defprotocol IImage
+  (width [_])
+  (height [_]))
+
 (defprotocol IResourceManagerInfo
   (find-img [_ id])
   (find-render-target [_ id])

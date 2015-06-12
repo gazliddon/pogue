@@ -1,5 +1,4 @@
-(ns cloj.math.misc
-  )
+(ns cloj.math.misc)
 
 (defn clamp [l h v] (min h (max v l)))
 (defn cos [^float v] (Math/cos v))

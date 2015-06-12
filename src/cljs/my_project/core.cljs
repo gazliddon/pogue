@@ -2,11 +2,14 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ] 
                    [gaz.rendermac :as rm])
   (:require
+
     [cloj.render.protocols  :as rp]
-    [cloj.resources.manager :as rman]
+    [cloj.resources.manager :as rman :refer [create-render-target!
+                                             load-img!]]
     [cloj.resources.html    :as htmlrman]
     [cloj.resources.omhtml  :as omrman]
-    [cloj.math.v2           :as v2 ]
+    [cloj.math.vec2         :as v2 ]
+    [cloj.math.vec3         :as v3 ]
     [cloj.math.misc         :refer [cos-01]]
 
     [dommy.core :as dommy :refer-macros [sel sel1]]
@@ -33,6 +36,26 @@
   (get-render-engine [_]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(println "before")
+
+(defn debug-> [v & args]
+  (println v)
+  (println (apply str args))
+  v
+  )
+
+(do
+  (->
+    (htmlrman/mk-resource-manager )
+    (debug-> "before")
+    (create-render-target! "shit-canvas" 100 100)   
+    )
+  )
+
+(println "after")
+
+
 (defn mk-system-html []
   (let [rm (htmlrman/mk-resource-manager )
         rend (rman/create-render-target! rm "shit-canvas" 100 100)]
@@ -42,11 +65,10 @@
       rm)
 
     (get-render-engine [_]
-      rend
-      ))
-  ))
+      ))))
 
 (def system ( mk-system-html ))
+(println "gello")
 
 (def rt-gaz 
   (-> (get-resource-manager system)
@@ -57,12 +79,6 @@
      (rman/load-img! "shit-tiles")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defprotocol IImage
-  (width [_])
-  (height [_]))
-
-(defprotocol ICanvasImage
-  (img [_]))
 
 
 (def resources
@@ -71,12 +87,12 @@
      :targets []
      }))
 
-(def om-res
-  (omrman/OmResManager. (omrman/mk-om-res "resources" resources ) resources))
+; (def om-res
+;   (omrman/OmResManager. (omrman/mk-om-res "resources" resources ) resources))
 
-(do
-  (def tiles (rman/load-img! om-res "tiles"))
-  (def rt (rman/create-render-target! om-res "rt0" 100 100))) 
+; (do
+;   (def tiles (rman/load-img! om-res "tiles"))
+;   (def rt (rman/create-render-target! om-res "rt0" 100 100))) 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defonce update-chan (chan))
@@ -158,8 +174,8 @@
 (defn update-game [{:keys [tick main-render-data level-render-data] :as game} dt]
   (let [new-tick (+ dt  tick) ]
     (do
-      (rp/clear! rt-gaz [1 0 1])
-      (rp/spr! rt-gaz [{:x (* 100  ( cos-01 new-tick )) :y 20} (img im-gaz)])
+      ; (rp/clear! rt-gaz [1 0 1])
+      ; (rp/spr! rt-gaz [{:x (* 100  ( cos-01 new-tick )) :y 20} (img im-gaz)])
 
       (assoc game
              :level-render-data (make-level-render-data level-render-data new-tick )
@@ -167,9 +183,6 @@
              :tick new-tick))
 
     ))
-
-(def main-render-canvas  (build-canvas-component "main-render-canvas"))
-(def level-render-canvas (build-canvas-component "level-render-canvas"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn make-pogue-game [renderer resource-manager]
@@ -187,6 +200,7 @@
 
 (defonce first-time? (atom true))
 
+
 (defn main []
   (om/root
     (fn [game-state owner]
@@ -195,6 +209,7 @@
         (will-mount [_ ]
           (go-loop []
                    (let [dt (<! update-chan) ]
+                     (println "TICK")
                      (om/transact! game-state #(update-game % dt))
                      (recur))))
 
@@ -203,8 +218,6 @@
           (dom/div #js {:id "wrapper"}
                    (dom/div nil (dom/h1 nil (-> game-state :main-app :name)))
                    (dom/p nil (-> game-state :tick))
-                   (om/build level-render-canvas (:level-render-data game-state) )
-                   (om/build main-render-canvas (:main-render-data game-state) )
                    ))))
     app-state
     {:target (. js/document (getElementById "app"))})
