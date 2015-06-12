@@ -9,15 +9,69 @@
             [ring.middleware.reload :as reload]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
             [environ.core :refer [env]]
+            [base64-clj.core :as base64]
+            [clojure.java.io :refer [file output-stream input-stream]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
 (deftemplate page (io/resource "index.html") []
   [:body] (if is-dev? inject-devmode-html identity))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def type-to-mtype
+  {:png "image/png"})
+
+
+(def default-mime-type "application/octet-stream")
+
+(defn mime-type-from-ext [kword]
+  (get type-to-mtype kword default-mime-type))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn read-file [file-name]
+
+  (let [f (file file-name)
+        length (.length f)
+        buffer (byte-array length)]
+    (with-open[in (input-stream (file file-name))]
+      (.read in buffer 0 length))
+    buffer
+    ))
+
+
+(defn get-enc-64-as-str [file]
+  (->>
+    file
+    (read-file)
+    (base64/encode-bytes)
+    (map char)
+    (apply str)))
+
+(defn get-file-as-mime-type [rez-name mime-type]
+  (->>
+    (io/resource rez-name)
+    (get-enc-64-as-str)
+    (str "data:" mime-type ";base64,")))
+
+(defn get-png-enc [name]
+  (get-file-as-mime-type (str  "public/data/" name ".png"), "image/png"))
+
+
+(defn get-rez [rez-name rez-type]
+  (let [file-name (str "public/data/" rez-name "." rez-type)
+        mime-type (mime-type-from-ext (keyword rez-type)) ]
+    (get-file-as-mime-type file-name mime-type)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defroutes routes
   (resources "/")
   (resources "/react" {:root "react"})
-  (GET "/*" req (page)))
+
+  (GET ["/rez/:rez-type/:rez-name" :rez-name #".*" :rez-type #".*"]
+       [rez-name rez-type]
+       (get-rez rez-name rez-type))
+
+  (GET "/" req (page)))
 
 (def http-handler
   (if is-dev?
@@ -41,10 +95,8 @@
 (defn -main [& [port]]
   (run port))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 
 
 

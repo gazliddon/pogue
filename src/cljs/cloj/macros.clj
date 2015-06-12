@@ -1,4 +1,4 @@
-(ns gaz.vecmac
+(ns cloj.macros
   (:require
     [clojure.walk :as walk]))
 
@@ -34,3 +34,4 @@
   (->
     (apply mk-replacements nm op (gensym) (gensym) elems)
     (walk/prewalk-replace fn-template)))
+

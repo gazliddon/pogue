@@ -1,9 +1,9 @@
 (ns gaz.gamerender
   (:require
-    [gaz.vec3 :as v3]
-    [gaz.vec2 :as v2]
-    [gaz.renderprotocols :as rp]  
-    [gaz.renderutils :as ru]))
+    [cloj.math.vec3        :as v3]
+    [cloj.math.vec2        :as v2]
+    [cloj.render.protocols :as rp]  
+    [gaz.renderutils       :as ru]))
 
 (defrecord RenderData [dims scale bg-col boxes xforms])
 

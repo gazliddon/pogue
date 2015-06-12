@@ -16,3 +16,5 @@
 (defprotocol ITextureManager
   (add-texture! [this info])
   (create-new-texture! [this info]))
+
+

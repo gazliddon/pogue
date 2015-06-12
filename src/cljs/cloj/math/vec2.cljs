@@ -1,5 +1,5 @@
-(ns gaz.vec2
-  (:require-macros [gaz.vecmac :refer [mk-vec-op]]))
+(ns cloj.math.vec2
+  (:require-macros [cloj.macros :refer [mk-vec-op]]))
 
 (mk-vec-op add + :x :y)
 (mk-vec-op sub - :x :y)
