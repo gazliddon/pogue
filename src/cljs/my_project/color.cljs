@@ -1,6 +1,6 @@
 (ns gaz.color
   (:require
-    [gaz.math :as gm]))
+    [cloj.math.misc :as gm]))
 
 (defn rgb-255 [ ^floats [r g b] ]
   [ (gm/to-255 r)

@@ -1,7 +1,8 @@
 (ns gaz.canvascomprenderbackend
-  (:require [gaz.renderprotocols :as rp]
-            [gaz.color           :refer [rgb-str]]
-            [gaz.vec2            :as    v2 ])
+  (:require
+    [gaz.renderprotocols       :as rp]
+    [gaz.color                 :refer [rgb-str]]
+    [cloj.math.vec2            :as    v2 ])
   )
 
 (defn canvas-immediate-renderer [canvas dims]

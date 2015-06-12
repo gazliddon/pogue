@@ -1,7 +1,7 @@
 (ns cloj.render.canvas
   (:require 
-    [cloj.render.protocols :as rp]
-    ))
+    [cloj.math.vec2        :as v2]
+    [cloj.render.protocols :as rp]))
 
 (defn canvas [ctx dims]
   (reify

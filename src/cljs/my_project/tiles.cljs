@@ -1,7 +1,7 @@
 (ns gaz.tiles
   (:require [gaz.tilemapprotocol :as tmp]
-            [gaz.math :refer [in-range?
-                              clamp]]))
+            [cloj.math.misc :refer [in-range?
+                                    clamp]]))
 
 (defn in-rect? [[x y w h] x' y']
   (and 

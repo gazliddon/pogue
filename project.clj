@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :source-paths ["src/clj" "src/macros"]
+  :source-paths ["src/clj" "src/cljs"   "src/macros"]
   :repl-options {:timeout 200000} ;; Defaults to 30000 (30 seconds)
 
   :test-paths ["spec/clj"]

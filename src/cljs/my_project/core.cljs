@@ -1,12 +1,16 @@
 (ns my-project.core
-  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ] 
                    [gaz.rendermac :as rm])
   (:require
+    [cloj.render.protocols  :as rp]
     [cloj.resources.manager :as rman]
     [cloj.resources.html    :as htmlrman]
-    [cloj.resources.omhtml  :as omhtmlrman]
+    [cloj.resources.omhtml  :as omrman]
+    [cloj.math.v2           :as v2 ]
+    [cloj.math.misc         :refer [cos-01]]
 
     [dommy.core :as dommy :refer-macros [sel sel1]]
+
     [cljs.pprint :as pp]
 
     [gaz.gameprotocols :as game]
@@ -14,13 +18,10 @@
     [gaz.tiles :refer [mk-tile-map]]
     [gaz.tilemaputils :as tmu ]
     [gaz.tilemapprotocol :as tmp ]
-    [gaz.math :refer [cos-01]]
-    [gaz.vec2 :as v2 ]
     [gaz.color :as col]
     [gaz.appstate :refer [app-state]]
-    [gaz.animcomp :refer [animation-view]]
     [gaz.canvascomp :refer [build-canvas-component ]]
-    [gaz.canvascomprenderbackend :refer [canvas-immediate-renderer]]
+
     [om.core :as om :include-macros true]
     [cljs.core.async :refer [put! >! chan <! alts! close!]]
     [om.dom :as dom :include-macros true]))
@@ -71,7 +72,7 @@
      }))
 
 (def om-res
-  (OmResManager. (mk-om-res "resources" resources ) resources))
+  (omrman/OmResManager. (omrman/mk-om-res "resources" resources ) resources))
 
 (do
   (def tiles (rman/load-img! om-res "tiles"))
