@@ -7,16 +7,16 @@
                                     load-img!]]
 
     [cloj.math.misc         :refer [cos-01]]
+    [cloj.math.vec2         :as v2 :refer [v2]]
 
-    ; [cloj.system            :refer [ISystem
-    ;                                 get-resource-manager
-    ;                                 get-render-engine ]]
+    [cloj.system            :refer [get-resource-manager
+                                    get-render-engine]]
 
     [game.html              :refer [mk-system]]
-    [game.gane :as game]
+    [game.game              :as game]
 
-
-    [gaz.tiles              :refer [mk-tile-map mix-it-up]]
+    [gaz.tiles              :refer [mk-tile-map mix-it-up
+                                    render-level]]
     [gaz.appstate           :refer [app-state]]
     [gaz.canvascomp         :refer [build-canvas-component ]]
 
@@ -32,16 +32,16 @@
 
 (def rt-gaz 
   (-> (get-resource-manager system)
-      (rman/create-render-target! "shit-canvas" 100 100)))
+      (create-render-target! "shit-canvas" 100 100)))
 
 (def im-gaz
  (-> (get-resource-manager system)
-     (rman/load-img! "shit-tiles")))
+     (load-img! "shit-tiles")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defonce update-chan (chan))
 
-(def level-dims (v2/v2 10 10))
+(def level-dims (v2 10 10))
 
 (def level
   (->
