@@ -1,12 +1,16 @@
 (ns my-project.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
-                   [gaz.rendermac :as rm]
-                   )
+                   [gaz.rendermac :as rm])
   (:require
+    [cloj.resources.manager :as rman]
+    [cloj.resources.html    :as htmlrman]
+    [cloj.resources.omhtml  :as omhtmlrman]
+
     [dommy.core :as dommy :refer-macros [sel sel1]]
     [cljs.pprint :as pp]
+
     [gaz.gameprotocols :as game]
-    [gaz.renderprotocols :as rp]
+
     [gaz.tiles :refer [mk-tile-map]]
     [gaz.tilemaputils :as tmu ]
     [gaz.tilemapprotocol :as tmp ]
@@ -23,109 +27,42 @@
 
 (enable-console-print!)
 
+(defprotocol ISystem
+  (get-resource-manager [_])
+  (get-render-engine [_]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn resource-img [{:keys [id]} owner]
-  (let [src (str "/data/" id ".png")]
-    (reify
-      om/IRenderState
-      (render-state [_ state]
-        (dom/img #js {:id id :src src})))))
+(defn mk-system-html []
+  (let [rm (htmlrman/mk-resource-manager )
+        rend (rman/create-render-target! rm "shit-canvas" 100 100)]
+  (reify
+    ISystem
+    (get-resource-manager [_]
+      rm)
 
-(defn make-canvas-component[{:keys [id dims]} owner]
-  (let [{w :x h :y} dims]
-    (reify
-      om/IDidMount
-      (did-mount [ this ]
-        )
-      om/IRenderState
-      (render-state [this state]
-        (dom/canvas #js {:id id :width w :height h})))))
+    (get-render-engine [_]
+      rend
+      ))
+  ))
 
-(defprotocol IResourceManager
-  (create-render-target! [_ id w h])
-  (load-img! [_ source]))
+(def system ( mk-system-html ))
 
+(def rt-gaz 
+  (-> (get-resource-manager system)
+     (rman/create-render-target! "shit-canvas" 100 100)))
 
-(defrecord OmResManager [om-res res-atom]
-  IResourceManager
-  (create-render-target! [this id w h]
-    (swap! res-atom
-           update :targets #(cons {:id id :dims {:x w :y h}} % )))
+(def im-gaz
+ (-> (get-resource-manager system)
+     (rman/load-img! "shit-tiles")))
 
-  (load-img! [this id]
-    (swap! res-atom update :imgs #(cons {:id id} % ))))
-
-(defprotocol IResourceManagerInfo
-  (find-img [_ id])
-  (find-render-target [_ id])
-  (list-render-targets [_])
-  (list-imgs [_]))
-
-
-(defn id-ize [v] (str "#" v))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defprotocol IImage
   (width [_])
   (height [_]))
 
-(defprotocol IHTMLImage
+(defprotocol ICanvasImage
   (img [_]))
 
-(defn mk-html-resource-manager []
-  (let [store (atom {:imgs [] :targets []})]
-    (reify
-
-      IResourceManagerInfo
-      (find-img [_ id]
-        (println "not implemented"))
-
-      (find-render-target [_ id]
-        (println "not implemented"))
-
-      (list-render-targets [_]
-        (println "not implemented"))
-
-      (list-imgs [_]
-        (println "not implemented"))
-
-      IResourceManager
-
-      (create-render-target! [this id w h]
-        (let [canvas (sel1 (id-ize id))]
-          (canvas-immediate-renderer canvas  {:x w :y h})))
-
-      (load-img! [this id]
-        (let [img (sel1 (id-ize id))
-              w (aget img "width")
-              h (aget img "height") ]
-          (reify
-            IImage
-            (width [_] 255)
-            (height [_] 255)
-
-            IHTMLImage
-            (img [_] img))))
-      )))
-
-(def resman (mk-html-resource-manager))
-(def rt-gaz (create-render-target! resman "shit-canvas" 100 100))
-(def im-gaz (load-img! resman "shit-tiles"))
-
-
-
-(defn mk-om-res [div-name res-atom]
-  (let [elem (. js/document (getElementById div-name))]
-    (om/root
-      (fn [{:keys [imgs targets]} owner]
-        (reify
-
-          om/IRender
-          (render [_]
-            (dom/div
-              nil 
-              (apply dom/div nil (om/build-all resource-img imgs))
-              (apply dom/div nil (om/build-all make-canvas-component targets))))))
-      res-atom {:target elem})))
 
 (def resources
   (atom
@@ -137,9 +74,8 @@
   (OmResManager. (mk-om-res "resources" resources ) resources))
 
 (do
-  (def tiles (load-img! om-res "tiles"))
-  (print "got here 4-3")
-  (def rt (create-render-target! om-res "rt0" 100 100))) 
+  (def tiles (rman/load-img! om-res "tiles"))
+  (def rt (rman/create-render-target! om-res "rt0" 100 100))) 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defonce update-chan (chan))
