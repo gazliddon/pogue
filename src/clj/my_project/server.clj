@@ -67,7 +67,8 @@
   (resources "/")
   (resources "/react" {:root "react"})
 
-  (GET ["/rez/:rez-type/:rez-name" :rez-name #".*" :rez-type #".*"] [rez-name rez-type]
+  (GET ["/rez/:rez-type/:rez-name" :rez-name #".*" :rez-type #".*"]
+       [rez-name rez-type]
        (get-rez rez-name rez-type))
 
   (GET "/" req (page)))
@@ -96,9 +97,6 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 
 
 
