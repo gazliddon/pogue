@@ -16,8 +16,11 @@
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]
                  [bostonou/cljs-pprint "0.0.1"]
+                 [org.clojure/data.codec "0.1.0"]
                  [prismatic/dommy "1.1.0"]
-                 [hipo "0.4.0"]
+                 [base64-clj "0.1.1"]
+                 [cljs-http "0.1.35"]
+                 [hipo "0.3.0"]
                  [om "0.8.0-rc1"]
                  [environ "1.0.0"]]
 

@@ -1,5 +1,8 @@
 (ns gaz.tiles
   (:require [gaz.tilemapprotocol :as tmp]
+            [gaz.tilemaputils :as tmu]
+            [gaz.color :as col]
+            [cloj.math.vec2 :as v2]
             [cloj.math.misc :refer [in-range?
                                     clamp]]))
 
