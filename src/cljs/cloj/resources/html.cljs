@@ -64,7 +64,6 @@
               get-chan (http/get (str "rez/png/" id))]
           (go
             (let [img-req  (<! get-chan)
-
                   new-img (->>
                             img-req
                             (:body)
@@ -72,8 +71,7 @@
                             (dommy/append! dom-div))
                   ret-obj   (rman/find-img this id)]
               (put! ret-chan ret-obj)))
-          ret-chan)
-        ))))
+          ret-chan)))))
 
 
 

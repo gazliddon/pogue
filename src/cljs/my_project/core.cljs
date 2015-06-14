@@ -190,13 +190,51 @@
    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn line-view [data owner]
+  (reify
+    om/IRender
+    (render [_] (dom/p nil data))))
+
+(defn mk-log-window [in-chan]
+  (fn [data owner]
+    (reify
+      om/IInitState
+      (init-state [_]
+        {:text []})
+
+      om/IWillMount
+      (will-mount [ this ]
+        (go-loop []
+                 (let [txt (<! in-chan)
+                       txt-req {:text txt}]
+                   (om/update-state! owner [:text] #(conj % txt ))
+                   (recur))))
+
+      om/IRenderState
+      (render-state [_ {:keys [text]} ]
+        (dom/div
+          nil
+          (dom/h1 nil "Logs")
+          (apply dom/div nil (om/build-all line-view text)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def log-state (atom {}) )
+(def log-chan (chan))
+
 (defn main []
   (do
+    (om/root
+      (mk-log-window log-chan)
+      log-state
+      {:target app-div})
+
+    (put! log-chan "hello")
+    (put! log-chan "there")
+
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
           img-chan (load-img! rm "tiles")
-          rend (create-render-target! rm "shit" 300 300)
-          ]
+          rend (create-render-target! rm "shit" 300 300) ]
       (go
         (let [img (<! img-chan)]
           (logjs (rman/height img))     
