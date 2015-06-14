@@ -35,24 +35,17 @@
 
   (defn get-png-enc [name]
     (->>
-      (str "resources/public/data/" name ".png" )
-      (get-enc-64-as-str )
-      )
+      (io/resource (str  "public/data/" name ".png"))
+      (get-enc-64-as-str ))
     )
 
-  (println (get-png-enc "tiles"))
-  )
-
-(format
-  "%02x"
-  (+ 256 -119)
-  ) 
+  (println (get-png-enc "tiles")))
 
 
 (defroutes routes
   (resources "/")
   (resources "/react" {:root "react"})
-  (GET ["/rez/:name.img" :name #".*"] [name]
+  (GET ["/rez/:name.txt" :name #".*"] [name]
        (str "File:" name ))
   (GET "/*" req (page)))
 
