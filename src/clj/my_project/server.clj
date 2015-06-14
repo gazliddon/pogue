@@ -16,37 +16,31 @@
 (deftemplate page (io/resource "index.html") []
   [:body] (if is-dev? inject-devmode-html identity))
 
-(defn read-file [file-path]
-  (with-open [reader (input-stream file-path)]
-    (let [length (.length (clojure.java.io/file file-path))
-          buffer (byte-array length)]
-      (.read reader buffer 0 length)
-      buffer)))
+(defn get-enc-64-as-str [file]
+  (->>
+    file
+    (read-file)
+    (base64/encode-bytes)
+    (map char)
+    (apply str)))
 
-(do
-  (defn get-enc-64-as-str [file]
-    (->>
-      file
-      (read-file)
-      (base64/encode-bytes)
-      (map char)
-      (apply str) 
-      ))
 
-  (defn get-png-enc [name]
-    (->>
-      (io/resource (str  "public/data/" name ".png"))
-      (get-enc-64-as-str ))
-    )
 
-  (println (get-png-enc "tiles")))
+(defn get-file-as-mime-type [rez-name mime-type]
+  (->>
+    (io/resource rez-name)
+    (get-enc-64-as-str)
+    (str "data:" mime-type ";base64,")))
 
+(defn get-png-enc [name]
+  (get-file-as-mime-type (str  "public/data/" name ".png"), "image/png")
+  )
 
 (defroutes routes
   (resources "/")
   (resources "/react" {:root "react"})
-  (GET ["/rez/:name.txt" :name #".*"] [name]
-       (str "File:" name ))
+  (GET ["/rez/:name.txt" :name #".*"] [name] (get-png-enc name))
+
   (GET "/*" req (page)))
 
 (def http-handler
@@ -70,6 +64,7 @@
 
 (defn -main [& [port]]
   (run port))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
