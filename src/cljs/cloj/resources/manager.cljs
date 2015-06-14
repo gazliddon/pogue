@@ -12,5 +12,6 @@
   (list-imgs [_]))
 
 (defprotocol IResourceManager
+  (clear-resources! [_])
   (create-render-target! [_ id w h])
   (load-img! [_ source]))

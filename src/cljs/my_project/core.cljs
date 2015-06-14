@@ -8,12 +8,15 @@
     [cljs-http.client :as http]
 
 
-    [cloj.resources.manager :refer [create-render-target!
-                                    load-img!]]
+    [cloj.resources.manager
+     :as rman
+     :refer [create-render-target!
+             load-img!
+             clear-resources!]]
 
     [cloj.resources.html :as rmhtml]
 
-    [cloj.math.misc         :refer [cos-01 log-base-n ceil floor]]
+    [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
     [cloj.math.vec2         :as v2 :refer [v2]]
 
     [cloj.system            :refer [get-resource-manager
@@ -172,54 +175,32 @@
           (put! ret)))
     ret))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn hexify
+  ([v min-width]
+   (let [width (max min-width (num-digits v 16))
+         htab [\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f]]
+     (-> (fn [r i]
+           (let [cc (nth htab (bit-and 15  (bit-shift-right v (* i 4))))]
+             (str cc r )))
+         (reduce "" (range width)))))
 
-(do
-  (defn num-digits [v base ]
-    (floor (inc  (log-base-n v base))))
+  ([v]
+   (hexify v (num-digits v 16))
+   ))
 
-  (defn hexify
-    ([v min-width]
-     (let [width (max min-width (num-digits v 16))
-           htab [\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f]]
-       (-> (fn [r i]
-             (let [cc (nth htab (bit-and 15  (bit-shift-right v (* i 4))))]
-               (str cc r )))
-           (reduce "" (range width)))))
-
-    ([v]
-     (hexify v (num-digits v 16))
-     ))
-
-  (def vv 17)
-
-  
-  (println (hexify vv 2))
-  )
-
-(defn zz [c] (.charCodeAt c 0))
-(go
-  (->>
-    (<! (http/get "data/tiles.png"))
-    (:body)
-    (str->bytes)
-    (mapv #(hexify % 2))
-    (clj->js)
-    (println)
-    )
-  )
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main []
   (do
-
-    ; (om/root om-loader loader-atom {:target app-div})
-    ; (put! rt-chan  "poo" )
-
-    (let [rm (rmhtml/mk-resource-manager "resources" )]
-      (doto rm
-        (load-img! "tiles")
-        (create-render-target! "shit" 300 300)
-        ))))
-
+    (let [rm (rmhtml/mk-resource-manager "resources")
+          _ (clear-resources! rm)
+          img-chan (load-img! rm "tiles")
+          rend (create-render-target! rm "shit" 300 300)
+          ]
+      (go
+        (let [img (<! img-chan)]
+          (logjs (rman/height img))     
+          (logjs (rman/width img)))))))
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; (defonce first-time? (atom true))

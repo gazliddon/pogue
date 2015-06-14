@@ -14,3 +14,5 @@
 
 (defn log-base-n [v n] (/ (log v) (log n)))
 (defn log-2 [v] (log-base-n v 2))
+
+(defn num-digits [v base ] (floor (inc  (log-base-n v base))))

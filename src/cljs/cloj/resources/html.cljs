@@ -1,7 +1,11 @@
 (ns cloj.resources.html
+  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ] )
+
   (:require [cloj.resources.manager :as rman]
             [cloj.render.canvas     :as canvas-render]
+            [cljs.core.async        :refer [put! >! chan <! alts! close!]]
             [cloj.render.protocols  :as rp]
+            [cljs-http.client       :as http]
             [hipo.core              :as hipo  :include-macros true]
             [dommy.core             :as dommy :include-macros true]))
 
@@ -17,13 +21,23 @@
 (defn mk-canvas-el [id w h]
   (hipo/create [:canvas ^:attrs {:id id :width w :heigh h}]))
 
+(defn create-data-img [id img-data]
+  (hipo/create [:img ^:attrs {:id id :src img-data}] ))
+
+
+
 (defn mk-resource-manager [dom-div-id]
   (let [store (atom {:imgs [] :targets []})
         dom-div (by-id dom-div-id) ]
     (reify
       rman/IResourceManagerInfo
       (find-img [_ id]
-        (println "not implemented"))
+        (let [img (by-id id)
+              w         (dommy/px img :width)
+              h         (dommy/px img :height) ]
+          (reify
+            rman/IImage (width [_]  w) (height [_] h)
+            ICanvasImage (img [_] img))))
 
       (find-render-target [_ id]
         (println "not implemented"))
@@ -35,6 +49,8 @@
         (println "not implemented"))
 
       rman/IResourceManager
+      (clear-resources! [_]
+        (dommy/clear! dom-div))
 
       (create-render-target! [this id w h]
         (do
@@ -44,19 +60,20 @@
             (canvas-render/canvas ctx  {:x w :y h}))))
 
       (load-img! [this id]
-        (do
-          (dommy/append! dom-div (mk-img-el id))
-          (let [img   (by-id id)
-                w     (dommy/px img :width)
-                h     (dommy/px img :height) ])
+        (let [ret-chan (chan)
+              get-chan (http/get (str "rez/png/" id))]
+          (go
+            (let [img-req  (<! get-chan)
 
-          (reify
-            rman/IImage
-            (width [_] 255)
-            (height [_] 255)
-
-            ICanvasImage
-            (img [_] img))  )
+                  new-img (->>
+                            img-req
+                            (:body)
+                            (create-data-img id)
+                            (dommy/append! dom-div))
+                  ret-obj   (rman/find-img this id)]
+              (put! ret-chan ret-obj)))
+          ret-chan)
         ))))
+
 
 
