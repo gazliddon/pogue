@@ -16,6 +16,21 @@
 (deftemplate page (io/resource "index.html") []
   [:body] (if is-dev? inject-devmode-html identity))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn read-file [file-name]
+
+  (let [f (file file-name)
+        length (.length f)
+        buffer (byte-array length)]
+    (println file-name)
+    (with-open[in (input-stream (file file-name))]
+      (.read in buffer 0 length))
+    buffer
+    ))
+
+
 (defn get-enc-64-as-str [file]
   (->>
     file
@@ -24,8 +39,6 @@
     (map char)
     (apply str)))
 
-
-
 (defn get-file-as-mime-type [rez-name mime-type]
   (->>
     (io/resource rez-name)
@@ -33,13 +46,28 @@
     (str "data:" mime-type ";base64,")))
 
 (defn get-png-enc [name]
-  (get-file-as-mime-type (str  "public/data/" name ".png"), "image/png")
+  (get-file-as-mime-type (str  "public/data/" name ".png"), "image/png"))
+
+(def type-to-mtype
+  {:png "image/png"})
+
+(defn get-rez [rez-name rez-type]
+  (let [file-name (str "public/data/" rez-name "." rez-type)
+        mime-type ((keyword rez-type) type-to-mtype) ]
+    (get-file-as-mime-type file-name mime-type)
+    )
   )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defroutes routes
   (resources "/")
   (resources "/react" {:root "react"})
-  (GET ["/rez/:name.txt" :name #".*"] [name] (get-png-enc name))
+
+  (GET ["/rez/:rez-type/:rez-name" :rez-name #".*" :rez-type #".*"] [rez-name rez-type]
+       ; (str rez-name " " rez-type)
+       (get-rez rez-name rez-type)
+       )
 
   (GET "/*" req (page)))
 
