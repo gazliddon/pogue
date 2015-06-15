@@ -5,6 +5,8 @@
 
     ; [octet.core :as buf]
 
+    [clojure.string :refer [split join]]
+
     [cljs-http.client :as http]
 
 
@@ -190,32 +192,31 @@
    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn line-view [data owner]
-  (reify
-    om/IRender
-    (render [_] (dom/p nil data))))
+(defn mk-log-window
+  ([in-chan class-name]
+   (fn [data owner]
+     (reify
+       om/IWillMount
+       (will-mount [ this ]
+         (go
+           (om/set-state! owner :text "")
+           (loop []
+             (let [txt (<! in-chan)
+                   txt-req {:text txt}]
+               (om/update-state! owner [:text] #(str % "\n" txt ))
+               (recur)))))
 
-(defn mk-log-window [in-chan]
-  (fn [data owner]
-    (reify
-      om/IInitState
-      (init-state [_]
-        {:text []})
+       om/IRenderState
+       (render-state [_ {:keys [text]}]
+         (dom/div
+           #js { :className class-name }
+           (dom/h1 nil "Logs")
+           (dom/textarea #js {:width "100%" :value text}))))))
 
-      om/IWillMount
-      (will-mount [ this ]
-        (go-loop []
-                 (let [txt (<! in-chan)
-                       txt-req {:text txt}]
-                   (om/update-state! owner [:text] #(conj % txt ))
-                   (recur))))
+  ([in-chan]
+   (mk-log-window in-chan "pane"))
+  )
 
-      om/IRenderState
-      (render-state [_ {:keys [text]} ]
-        (dom/div
-          nil
-          (dom/h1 nil "Logs")
-          (apply dom/div nil (om/build-all line-view text)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def log-state (atom {}) )
