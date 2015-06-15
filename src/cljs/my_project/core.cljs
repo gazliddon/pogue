@@ -32,14 +32,14 @@
     [gaz.appstate           :refer [app-state]]
     [gaz.canvascomp         :refer [build-canvas-component ]]
 
-    [om.core :as om :include-macros true]
 
-    [cljs.core.async :refer [put! >! chan <! alts! close!]]
-
+    [cljs.core.async       :refer [put! >! chan <! alts! close!]]
+    [ ff-om-draggable.core :refer [draggable-item]]
 
     [goog.crypt.base64 :as b64]
 
-    [om.dom :as dom :include-macros true]))
+    [om.core :as om :include-macros true]
+    [om.dom  :as dom :include-macros true]))
 
 (enable-console-print!)
 
@@ -211,8 +211,10 @@
       (render-state [_ {:keys [text]}]
         (dom/div
           #js { :className class-name }
-          (dom/h1 nil "Logs")
+          (dom/span nil "Logs")
           (dom/textarea #js {:width "100%" :value text}))))))
+
+(def draggable-log-window (draggable-item log-window [:position]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def log-state (atom {}) )
@@ -221,8 +223,8 @@
 (defn main []
   (do
     (om/root
-      log-window
-      {:in-chan log-chan :class-name "pane"}
+      draggable-log-window
+      {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
       {:target app-div})
 
     (put! log-chan "hello")
