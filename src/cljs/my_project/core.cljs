@@ -192,31 +192,27 @@
    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn mk-log-window
-  ([in-chan class-name]
-   (fn [data owner]
-     (reify
-       om/IWillMount
-       (will-mount [ this ]
-         (go
-           (om/set-state! owner :text "")
-           (loop []
-             (let [txt (<! in-chan)
-                   txt-req {:text txt}]
-               (om/update-state! owner [:text] #(str % "\n" txt ))
-               (recur)))))
+(defn log-window 
+  [{:keys [in-chan class-name] :as data} owner ]
+  (let [in-chan    (or in-chan (chan)) 
+        class-name (or class-name "pane")]
+    (reify
+      om/IWillMount
+      (will-mount [ this ]
+        (go
+          (om/set-state! owner :text "")
+          (loop []
+            (let [txt (<! in-chan)
+                  txt-req {:text txt}]
+              (om/update-state! owner [:text] #(str % "\n" txt ))
+              (recur)))))
 
-       om/IRenderState
-       (render-state [_ {:keys [text]}]
-         (dom/div
-           #js { :className class-name }
-           (dom/h1 nil "Logs")
-           (dom/textarea #js {:width "100%" :value text}))))))
-
-  ([in-chan]
-   (mk-log-window in-chan "pane"))
-  )
-
+      om/IRenderState
+      (render-state [_ {:keys [text]}]
+        (dom/div
+          #js { :className class-name }
+          (dom/h1 nil "Logs")
+          (dom/textarea #js {:width "100%" :value text}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def log-state (atom {}) )
@@ -225,8 +221,8 @@
 (defn main []
   (do
     (om/root
-      (mk-log-window log-chan)
-      log-state
+      log-window
+      {:in-chan log-chan :class-name "pane"}
       {:target app-div})
 
     (put! log-chan "hello")
