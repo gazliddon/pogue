@@ -1,5 +1,5 @@
 (ns my-project.core
-  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ] 
+  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
   (:require
 
@@ -36,7 +36,6 @@
 
     [cljs.core.async :refer [put! >! chan <! alts! close!]]
 
-
     [goog.crypt.base64 :as b64]
 
     [om.dom :as dom :include-macros true]))
@@ -49,7 +48,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; (def system ( mk-system "shit-div" "shit-canvas" ))
 
-; (def rt-gaz 
+; (def rt-gaz
 ;   (-> (get-resource-manager system)
 ;       (create-render-target! "shit-canvas" 100 100)))
 
@@ -68,7 +67,7 @@
 ;     (mix-it-up)))
 
 ; (defn make-game-render-data [rd t rendered-level]
-;   (assoc rd 
+;   (assoc rd
 ;          :xforms
 ;          (concat
 ;            (list
@@ -78,14 +77,14 @@
 ;              [:translate (v2/mul (v2/v2 (cos-01 (* t 3)) (cos-01 t)) (v2/v2 20 20))]
 ;              )
 ;            (list
-;                    [:box {:x 0 :y 0} {:x 20 :y 20} [0 0 0]]  
+;                    [:box {:x 0 :y 0} {:x 20 :y 20} [0 0 0]]
 ;              )
 ;            rendered-level)
 ;          )
 ;   )
 
 ; (defn make-level-render-data [rd t]
-;   (assoc rd 
+;   (assoc rd
 ;          :xforms (list
 ;                    [:identity]
 ;                    [:clear 0 0 1]
@@ -238,7 +237,7 @@
           rend (create-render-target! rm "shit" 300 300) ]
       (go
         (let [img (<! img-chan)]
-          (logjs (rman/height img))     
+          (logjs (rman/height img))
           (logjs (rman/width img)))))))
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
