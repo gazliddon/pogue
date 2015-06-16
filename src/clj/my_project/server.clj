@@ -29,14 +29,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn read-file [file-name]
-
   (let [f (file file-name)
         length (.length f)
         buffer (byte-array length)]
     (with-open[in (input-stream (file file-name))]
       (.read in buffer 0 length))
-    buffer
-    ))
+    buffer))
 
 
 (defn get-enc-64-as-str [file]
@@ -94,7 +92,6 @@
 
 (defn -main [& [port]]
   (run port))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

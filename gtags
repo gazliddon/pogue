@@ -1,0 +1,1 @@
+ctags -R --sort=1 --fields=+iaS --extra=+q src

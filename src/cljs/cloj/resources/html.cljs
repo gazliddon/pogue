@@ -3,14 +3,13 @@
 
   (:require [cloj.resources.manager :as rman]
             [cloj.render.canvas     :as canvas-render]
+            [cloj.web.utils         :refer [by-id get-dims]]
             [cljs.core.async        :refer [put! >! chan <! alts! close!]]
             [cloj.render.protocols  :as rp]
             [cljs-http.client       :as http]
-            [hipo.core              :as hipo  :include-macros true]
-            [dommy.core             :as dommy :include-macros true]))
+            [dommy.core             :as dommy :include-macros true]    
+            [hipo.core              :as hipo  :include-macros true]))
 
-(defn id-ize [v] (str "#" v))
-(defn by-id [v] (-> (id-ize v) (dommy/sel1)))
 
 (defprotocol ICanvasImage
   (img [_]))
@@ -24,8 +23,6 @@
 (defn create-data-img [id img-data]
   (hipo/create [:img ^:attrs {:id id :src img-data}] ))
 
-
-
 (defn mk-resource-manager [dom-div-id]
   (let [store (atom {:imgs [] :targets []})
         dom-div (by-id dom-div-id) ]
@@ -33,8 +30,7 @@
       rman/IResourceManagerInfo
       (find-img [_ id]
         (let [img (by-id id)
-              w         (dommy/px img :width)
-              h         (dommy/px img :height) ]
+              [w h] get-dims ]
           (reify
             rman/IImage (width [_]  w) (height [_] h)
             ICanvasImage (img [_] img))))

@@ -5,18 +5,17 @@
 
     ; [octet.core :as buf]
 
-    [clojure.string :refer [split join]]
+    [clojure.string         :refer [split join]]
 
-    [cljs-http.client :as http]
+    [cljs-http.client       :as http]
 
 
-    [cloj.resources.manager
-     :as rman
-     :refer [create-render-target!
-             load-img!
-             clear-resources!]]
+    [cloj.resources.manager :as rman
+                            :refer [create-render-target!
+                                    load-img!
+                                    clear-resources!]]
 
-    [cloj.resources.html :as rmhtml]
+    [cloj.resources.html    :as rmhtml]
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
     [cloj.math.vec2         :as v2 :refer [v2]]
@@ -24,27 +23,28 @@
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
+    [cloj.web.utils         :refer [by-id log-js]]
+
     [game.html              :refer [mk-system]]
     [game.game              :as game]
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
                                     render-level]]
+
     [gaz.appstate           :refer [app-state]]
     [gaz.canvascomp         :refer [build-canvas-component ]]
 
+
+    [cljs.core.async        :refer [put! >! chan <! alts! close!]]
+    [ff-om-draggable.core   :refer [draggable-item]]
+
+    [goog.crypt.base64      :as b64]
+
     [om.core :as om :include-macros true]
+    [om.dom  :as dom :include-macros true]))
 
-    [cljs.core.async :refer [put! >! chan <! alts! close!]]
-
-    [goog.crypt.base64 :as b64]
-
-    [om.dom :as dom :include-macros true]))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
-
-(defn logjs [v]
-  (.log js/console v))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; (def system ( mk-system "shit-div" "shit-canvas" ))
 
@@ -115,121 +115,140 @@
 ;       (game-update [this dt]
 ;         (println "updated game!")))))
 
-(def img-chan (chan))
-(def rt-chan (chan))
+; (def img-chan (chan))
+; (def rt-chan (chan))
 
-(defn om-loader [_ owner]
-  (reify
-    om/IWillMount
-    (will-mount [_]
-      (go-loop []
-               (let [[msg port] (alts! [img-chan rt-chan])]
-                 (cond
-                   (= port img-chan) (println (str "img: " msg))
-                   (= port rt-chan) (println (str "rt: " msg))
-                   ))
-               (recur)))
+; (defn om-loader [_ owner]
+;   (reify
+;     om/IWillMount
+;     (will-mount [_]
+;       (go-loop []
+;                (let [[msg port] (alts! [img-chan rt-chan])]
+;                  (cond
+;                    (= port img-chan) (println (str "img: " msg))
+;                    (= port rt-chan) (println (str "rt: " msg))
+;                    ))
+;                (recur)))
 
-    om/IDidUpdate
-    (did-update [this next-props next-state]
-      )
+;     om/IDidUpdate
+;     (did-update [this next-props next-state]
+;       )
 
-    om/IRender
-    (render [_]
-      (dom/p nil "Loaded")
-      )
-    )
-  )
+;     om/IRender
+;     (render [_]
+;       (dom/p nil "Loaded")
+;       )
+;     )
+;   )
 
-(def app-div (. js/document (getElementById "app")))
+; (defonce loader-atom (atom {:rt-chan (chan) :img-chan (chan)}))
 
-(defonce loader-atom (atom {:rt-chan (chan) :img-chan (chan)}))
+; (defn str->bytes [s]
+;   (->
+;     (fn [ch]
+;       (let [cc (.charCodeAt ch 0)]
+;         (if (> cc 255)
+;           [(bit-and cc 255) (bit-shift-right cc 8)]
+;           [cc])))
+;     (mapcat s)))
 
-(defn str->bytes [s]
-  (->
-    (fn [ch]
-      (let [cc (.charCodeAt ch 0)]
-        (if (> cc 255)
-          [(bit-and cc 255) (bit-shift-right cc 8)]
-          [cc])))
-    (mapcat s)
-    ))
+; (defn col->array [col]
+;   (let [arr #js []]
+;     (doseq [i (range (count col))]
+;       (.push arr (nth col i)))
+;     arr))
 
-(defn col->array [col]
-  (let [arr #js []]
-    (doseq [i (range (count col))]
-      (.push arr (nth col i)))
-    arr))
+; (defn str->enc64 [s]
+;   (b64/encodeByteArray (-> s str->bytes col->array)))
 
-(defn str->enc64 [s]
-  (b64/encodeByteArray (-> s str->bytes col->array)))
+; (defn str->inline-png [s]
+;   (str "data:image/png;base64," (str->enc64 s)))
 
-(defn str->inline-png [s]
-  (str "data:image/png;base64," (str->enc64 s)))
-
-(defn <!-inline-img-enc [url]
-  (let [ret (chan)]
-    (go (->>
-          (http/get url)
-          (<!)
-          (:body)
-          (put! ret)))
-    ret))
+; (defn <!-inline-img-enc [url]
+;   (let [ret (chan)]
+;     (go (->>
+;           (http/get url)
+;           (<!)
+;           (:body)
+;           (put! ret)))
+;     ret))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn hexify
-  ([v min-width]
-   (let [width (max min-width (num-digits v 16))
-         htab [\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f]]
-     (-> (fn [r i]
-           (let [cc (nth htab (bit-and 15  (bit-shift-right v (* i 4))))]
-             (str cc r )))
-         (reduce "" (range width)))))
+(defn log-window 
+  [{:keys [in-chan class-name] :as data} owner ]
+  (let [in-chan    (or in-chan (chan)) 
+        class-name (or class-name "pane")]
+    (reify
+      om/IWillMount
+      (will-mount [ this ]
+        (go
+          (om/set-state! owner :text "")
+          (loop []
+            (let [txt (<! in-chan)
+                  txt-req {:text txt}]
+              (om/update-state! owner [:text] #(str % "\n" txt ))
+              (recur)))))
 
-  ([v]
-   (hexify v (num-digits v 16))
-   ))
+      om/IRenderState
+      (render-state [_ {:keys [text]}]
+        (dom/div
+          #js { :className class-name }
+          (dom/span nil "Logs")
+          (dom/textarea #js {:width "100%" :value text}))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn mk-log-window
-  ([in-chan class-name]
-   (fn [data owner]
-     (reify
-       om/IWillMount
-       (will-mount [ this ]
-         (go
-           (om/set-state! owner :text "")
-           (loop []
-             (let [txt (<! in-chan)
-                   txt-req {:text txt}]
-               (om/update-state! owner [:text] #(str % "\n" txt ))
-               (recur)))))
+(def draggable-log-window (draggable-item log-window [:position]))
 
-       om/IRenderState
-       (render-state [_ {:keys [text]}]
-         (dom/div
-           #js { :className class-name }
-           (dom/h1 nil "Logs")
-           (dom/textarea #js {:width "100%" :value text}))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn fps-calc-chan
+  ([in-chan window-size]
+   (let [ret-chan (chan)]
+     (go-loop [last-x ()]
+              (let [dt (<! in-chan)
+                    new-last-x (take window-size (cons dt last-x))
+                    data  {:avg-fps (/ (reduce + 0 new-last-x) (count new-last-x))
+                           :low-fps (apply min new-last-x)
+                           :max-fps (apply max new-last-x) } ]
+                (put! ret-chan data)
+                (recur (new-last-x))))
+     ret-chan))
 
   ([in-chan]
-   (mk-log-window in-chan "pane"))
-  )
-
+   (fps-calc-chan in-chan 10)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def log-state (atom {}) )
 (def log-chan (chan))
 
+(defn frame-rate-component
+  [{:keys [in-chan class-name] :as data} owner ]
+  (reify
+    om/IWillMount
+    (will-mount [ this ]
+      (let [fps-chan (fps-calc-chan in-chan) ]
+        (go-loop []
+                 (om/set-state! owner :fps (<! fps-chan))
+                 (recur))))
+
+    om/IRenderState 
+    (render-state [_ {:keys [fps]}]
+      (when fps 
+        (dom/div nil
+                 (dom/p nil ( str "avg: " (:avg-fps fps) ))
+                 (dom/p nil ( str "min: " (:min-fps fps) ))
+                 (dom/p nil ( str "max: " (:max-fps fps) ))
+                 )))))
+
 (defn main []
   (do
     (om/root
-      (mk-log-window log-chan)
-      log-state
-      {:target app-div})
-
-    (put! log-chan "hello")
-    (put! log-chan "there")
+      frame-rate-component
+      {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
+      {:target (by-id "test") }
+      )
+    (om/root
+      draggable-log-window
+      {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
+      {:target (by-id "app")})
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
@@ -237,8 +256,25 @@
           rend (create-render-target! rm "shit" 300 300) ]
       (go
         (let [img (<! img-chan)]
-          (logjs (rman/height img))
-          (logjs (rman/width img)))))))
+          (log-js (rman/height img))
+          (log-js (rman/width img)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def pogue-game
+  (game/make-game
+    (reify 
+      game/IGameInit
+      (game-init [this]
+        this)
+
+      game/IGameUpdate
+      (game-update [this dt]
+        this)
+
+      game/IGameClose
+      (game-close [this]
+        this))))
+
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; (defonce first-time? (atom true))

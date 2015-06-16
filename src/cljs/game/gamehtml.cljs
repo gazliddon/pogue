@@ -2,8 +2,7 @@
   (:require
     [cloj.resources.html    :refer [mk-resource-manager]]
     [cloj.system            :refer [ISystem]]
-    [cloj.resources.manager :refer [create-render-target!]]
-    ))
+    [cloj.resources.manager :refer [create-render-target!]]))
 
 (defn mk-system [resource-div-id canvas-id]
   (let [rm   ( mk-resource-manager )
