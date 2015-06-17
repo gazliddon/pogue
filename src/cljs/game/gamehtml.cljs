@@ -5,6 +5,7 @@
     [cloj.resources.manager :refer [create-render-target!]]
     ))
 
+
 (defn mk-system [resource-div-id canvas-id]
   (let [rm   ( mk-resource-manager )
         rend (create-render-target! rm canvas-id 100 100)]
