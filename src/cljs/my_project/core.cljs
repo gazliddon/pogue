@@ -1,3 +1,5 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Requires
 (ns my-project.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
@@ -41,157 +43,16 @@
     [om.core :as om :include-macros true]
     [om.dom  :as dom :include-macros true]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
-(defn logjs [v]
-  (.log js/console v))
+;;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (def system ( mk-system "shit-div" "shit-canvas" ))
+;; {{{ Log Window
+(def log-chan (chan))
+(def log-state (atom {}) )
 
-; (def rt-gaz
-;   (-> (get-resource-manager system)
-;       (create-render-target! "shit-canvas" 100 100)))
-
-; (def im-gaz
-;  (-> (get-resource-manager system)
-;      (load-img! "shit-tiles")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (defonce update-chan (chan))
-
-; (def level-dims (v2 10 10))
-
-; (def level
-;   (->
-;     (mk-tile-map (:x level-dims) (:y level-dims) :blank)
-;     (mix-it-up)))
-
-; (defn make-game-render-data [rd t rendered-level]
-;   (assoc rd
-;          :xforms
-;          (concat
-;            (list
-;              [:identity]
-;              [:clear (cos-01 (* t 1)) 0 (cos-01 (* t 20))]
-;              [:scale {:x 10 :y 10}]
-;              [:translate (v2/mul (v2/v2 (cos-01 (* t 3)) (cos-01 t)) (v2/v2 20 20))]
-;              )
-;            (list
-;                    [:box {:x 0 :y 0} {:x 20 :y 20} [0 0 0]]
-;              )
-;            rendered-level)
-;          )
-;   )
-
-; (defn make-level-render-data [rd t]
-;   (assoc rd
-;          :xforms (list
-;                    [:identity]
-;                    [:clear 0 0 1]
-;                    [:box {:x 0 :y 0} {:x 20 :y 20} [0 0 0]] )))
-
-
-; (def rendered-level (vec  (render-level level)))
-
-; (defn update-game [{:keys [tick main-render-data level-render-data] :as game} dt]
-;   (let [new-tick (+ dt  tick) ]
-;     (do
-
-;       (assoc game
-;              :level-render-data (make-level-render-data level-render-data new-tick )
-;              :main-render-data (make-game-render-data level-render-data new-tick rendered-level)
-;              :tick new-tick))
-;     ))
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (defn make-pogue-game [renderer resource-manager]
-;   (game/make-game
-;     (reify
-;       game/IGameInit
-;       (game-init [_]
-;         (println "initialised game!"))
-
-;       game/IGameUpdate
-;       (game-update [this dt]
-;         (println "updated game!")))))
-
-(def img-chan (chan))
-(def rt-chan (chan))
-
-(defn om-loader [_ owner]
-  (reify
-    om/IWillMount
-    (will-mount [_]
-      (go-loop []
-               (let [[msg port] (alts! [img-chan rt-chan])]
-                 (cond
-                   (= port img-chan) (println (str "img: " msg))
-                   (= port rt-chan) (println (str "rt: " msg))
-                   ))
-               (recur)))
-
-    om/IDidUpdate
-    (did-update [this next-props next-state]
-      )
-
-    om/IRender
-    (render [_]
-      (dom/p nil "Loaded")
-      )
-    )
-  )
-
-(def app-div (. js/document (getElementById "app")))
-
-(defonce loader-atom (atom {:rt-chan (chan) :img-chan (chan)}))
-
-(defn str->bytes [s]
-  (->
-    (fn [ch]
-      (let [cc (.charCodeAt ch 0)]
-        (if (> cc 255)
-          [(bit-and cc 255) (bit-shift-right cc 8)]
-          [cc])))
-    (mapcat s)
-    ))
-
-(defn col->array [col]
-  (let [arr #js []]
-    (doseq [i (range (count col))]
-      (.push arr (nth col i)))
-    arr))
-
-(defn str->enc64 [s]
-  (b64/encodeByteArray (-> s str->bytes col->array)))
-
-(defn str->inline-png [s]
-  (str "data:image/png;base64," (str->enc64 s)))
-
-(defn <!-inline-img-enc [url]
-  (let [ret (chan)]
-    (go (->>
-          (http/get url)
-          (<!)
-          (:body)
-          (put! ret)))
-    ret))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn hexify
-  ([v min-width]
-   (let [width (max min-width (num-digits v 16))
-         htab [\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f]]
-     (-> (fn [r i]
-           (let [cc (nth htab (bit-and 15  (bit-shift-right v (* i 4))))]
-             (str cc r )))
-         (reduce "" (range width)))))
-
-  ([v]
-   (hexify v (num-digits v 16))
-   ))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn log-window 
   [{:keys [in-chan class-name] :as data} owner ]
   (let [in-chan    (or in-chan (chan)) 
@@ -216,12 +77,116 @@
 
 (def draggable-log-window (draggable-item log-window [:position]))
 
+;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def log-state (atom {}) )
-(def log-chan (chan))
+;; {{{ FPS Component
+
+(def time-chan (chan))
+(defn fps-calc-chan
+  ([in-chan window-size]
+   (let [ret-chan (chan)]
+     (go-loop [last-x () fr-num 0]
+              (let [dt (<! in-chan)
+                    new-last-x (take window-size (cons dt last-x))
+                    data  {:avg-fps (/ (reduce + 0 new-last-x) (count new-last-x))
+                           :min-fps (apply min new-last-x)
+                           :max-fps (apply max new-last-x)
+                           :frame fr-num
+                           }
+                    
+                    ]
+                (put! ret-chan data)
+                (recur new-last-x (inc fr-num))))
+     ret-chan))
+
+  ([in-chan]
+   (fps-calc-chan in-chan 10)))
+
+(defn frame-rate-component
+  [{:keys [in-chan class-name] :as data} owner ]
+  (reify
+    om/IWillMount
+    (will-mount [ this ]
+      (let [fps-chan (fps-calc-chan in-chan) ]
+        (go-loop []
+                 (om/set-state! owner :fps (<! fps-chan))
+                 (recur))))
+
+    om/IRenderState 
+    (render-state [_ {:keys [fps]}]
+      (when fps 
+        (dom/div nil
+                 (dom/p nil ( str "avg: " (:avg-fps fps) ))
+                 (dom/p nil ( str "min: " (:min-fps fps) ))
+                 (dom/p nil ( str "max: " (:max-fps fps) ))
+                 (dom/p nil ( str "num: " (:frame fps) ))
+                 )))))
+;; }}}
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Timer
+(defprotocol ITimer
+  (tick! [_]))
+
+(defn is-valid? [{:keys [previous now] :as c}]
+  (not (or
+         (nil? previous)
+         (nil? now))))
+
+(defn time-passed [{:keys [previous now] :as c}]
+  (if (is-valid? c)
+    (- now previous)
+    0))
+
+(defn html-timer []
+  (let [c (atom {:previous nil
+                 :now nil})]
+    (reify ITimer
+      (tick! [_]
+        (do
+          (swap!  c assoc
+               :previous (:now @c)
+               :now (.now js/performace)))
+        (if (is-valid? @c)
+          (- (:now @c) (:previous @c))
+          0)))))
+
+;; }}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Every Frame
+(defprotocol IEveryFrame
+  (get-fps [_])
+  (get-ms-per-frame [_])
+  (every [_ f]))
+;; }}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Main
+(def my-timer (html-timer))
+
+(defn animate [f]
+  (do
+    (.requestAnimationFrame js/window animate)
+    (let [dt (tick! my-timer)]
+      (when (not= dt 0)
+        (f dt)))))
+
+(defonce first-time? (atom true))
+
+(when @first-time?
+    (do
+      (swap! first-time? not)
+      (js/setInterval (fn [] (put! time-chan (/ 1 60))) 16))) 
 
 (defn main []
   (do
+    (om/root
+      frame-rate-component
+      {:in-chan time-chan :class-name "pane" }
+      {:target (by-id "test") })
+
     (om/root
       draggable-log-window
       {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
@@ -232,39 +197,39 @@
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
-          img-chan (load-img! rm "tiles")
+          ; img-chan (load-img! rm "tiles")
           rend (create-render-target! rm "shit" 300 300) ]
-      (go
-        (let [img (<! img-chan)]
-          (logjs (rman/height img))
-          (logjs (rman/width img)))))))
+      )
 
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (defonce first-time? (atom true))
+    ; (let [rm (rmhtml/mk-resource-manager "resources")
+    ;       _ (clear-resources! rm)
+    ;       img-chan (load-img! rm "tiles")
+    ;       rend (create-render-target! rm "shit" 300 300) ]
+    ;   (go
+    ;     (let [img (<! img-chan)]
+    ;       (log-js (rman/height img))
+    ;       (log-js (rman/width img)))))
 
-; (defn main' []
-;   (om/root
-;     (fn [game-state owner]
-;       (reify
-;         om/IWillMount
-;         (will-mount [_ ]
-;           (go-loop []
-;                    (let [dt (<! update-chan) ]
-;                      (om/transact! game-state #(update-game % dt))
-;                      (recur))))
+    ))
 
-;         om/IRender
-;         (render [_]
-;           (dom/div #js {:id "wrapper"}
-;                    (dom/div nil (dom/h1 nil (-> game-state :main-app :name)))
-;                    (dom/p nil (-> game-state :tick))
-;                    ))))
-;     app-state
-;     {:target (. js/document (getElementById "app"))})
+;; }}}
 
-;   (when @first-time?
-;     (do
-;       (swap! first-time? not)
-;       (js/setInterval (fn [] (put! update-chan (/ 1 60))) 16))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Game obect
+(def pogue-game
+  (game/make-game
+    (reify 
+      game/IGameInit
+      (game-init [this]
+        this)
 
+      game/IGameUpdate
+      (game-update [this dt]
+        this)
 
+      game/IGameClose
+      (game-close [this]
+        this))))
+;; }}}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;ends
