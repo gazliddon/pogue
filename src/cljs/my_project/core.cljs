@@ -1,3 +1,4 @@
+;; {{{ Requires
 (ns my-project.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
@@ -42,11 +43,16 @@
 
     [om.core :as om :include-macros true]
     [om.dom  :as dom :include-macros true]))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
+;;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Log Window
+(def log-chan (chan))
+(def log-state (atom {}) )
+
 (defn log-window 
   [{:keys [in-chan class-name] :as data} owner ]
   (let [in-chan    (or in-chan (chan)) 
@@ -71,7 +77,10 @@
 
 (def draggable-log-window (draggable-item log-window [:position]))
 
+;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ FPS Component
 (defn fps-calc-chan
   ([in-chan window-size]
    (let [ret-chan (chan)]
@@ -87,10 +96,6 @@
 
   ([in-chan]
    (fps-calc-chan in-chan 10)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def log-state (atom {}) )
-(def log-chan (chan))
 
 (defn frame-rate-component
   [{:keys [in-chan class-name] :as data} owner ]
@@ -110,7 +115,10 @@
                  (dom/p nil ( str "min: " (:min-fps fps) ))
                  (dom/p nil ( str "max: " (:max-fps fps) ))
                  )))))
+;; }}}
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Main
 (defn main []
   (do
     (om/root
@@ -131,10 +139,10 @@
         (let [img (<! img-chan)]
           (log-js (rman/height img))
           (log-js (rman/width img)))))))
-
+;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; {{{ Game obect
 (def pogue-game
   (game/make-game
     (reify 
@@ -149,6 +157,6 @@
       game/IGameClose
       (game-close [this]
         this))))
-
+;; }}}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;ends
