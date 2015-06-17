@@ -248,11 +248,9 @@
                  (dom/p nil ( str "num: " (:frame fps) ))
                  )))))
 ;; }}}
+
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def counter (atom {:previous nil
-                    :now nil}))
-
+;; {{{ Timer / Animation Stuff
 (defprotocol ITimer
   (tick! [_]))
 
@@ -288,45 +286,6 @@
       (when (not= dt 0)
         (f dt)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Main
-(defonce first-time? (atom true))
-
-(when @first-time?
-    (do
-      (swap! first-time? not)
-      (js/setInterval (fn [] (put! time-chan (/ 1 60))) 16))) 
-
-(defn main []
-  (do
-    (om/root
-      frame-rate-component
-      {:in-chan time-chan :class-name "pane" }
-      {:target (by-id "test") })
-
-    (om/root
-      draggable-log-window
-      {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
-      )
-      {:target (by-id "app")})
-
-    (let [rm (rmhtml/mk-resource-manager "resources")
-          _ (clear-resources! rm)
-          ; img-chan (load-img! rm "tiles")
-          rend (create-render-target! rm "shit" 300 300) ]
-      )
-
-    ; (let [rm (rmhtml/mk-resource-manager "resources")
-    ;       _ (clear-resources! rm)
-    ;       img-chan (load-img! rm "tiles")
-    ;       rend (create-render-target! rm "shit" 300 300) ]
-    ;   (go
-    ;     (let [img (<! img-chan)]
-    ;       (log-js (rman/height img))
-    ;       (log-js (rman/width img)))))
-
-    ) 
-
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -346,5 +305,48 @@
       (game-close [this]
         this))))
 ;; }}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Main
+
+(defonce first-time? (atom true))
+
+(when @first-time?
+    (do
+      (swap! first-time? not)
+      (js/setInterval (fn [] (put! time-chan (/ 1 60))) 16))) 
+
+(defn main []
+  (do
+    (om/root
+      frame-rate-component
+      {:in-chan time-chan :class-name "pane" }
+      {:target (by-id "test") })
+
+    (om/root
+      draggable-log-window
+      {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
+      {:target (by-id "app")} 
+      )
+
+    (let [rm (rmhtml/mk-resource-manager "resources")
+          _ (clear-resources! rm)
+          ; img-chan (load-img! rm "tiles")
+          rend (create-render-target! rm "shit" 300 300) ]
+      )
+    )
+
+  ; (let [rm (rmhtml/mk-resource-manager "resources")
+  ;       _ (clear-resources! rm)
+  ;       img-chan (load-img! rm "tiles")
+  ;       rend (create-render-target! rm "shit" 300 300) ]
+  ;   (go
+  ;     (let [img (<! img-chan)]
+  ;       (log-js (rman/height img))
+  ;       (log-js (rman/width img)))))
+  ) 
+
+;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;ends

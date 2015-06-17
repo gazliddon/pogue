@@ -3,14 +3,12 @@
 
   (:require [cloj.resources.manager :as rman]
             [cloj.render.canvas     :as canvas-render]
-            ))
             [cloj.web.utils         :refer [by-id get-dims]]
             [cljs.core.async        :refer [put! >! chan <! alts! close!]]
             [cloj.render.protocols  :as rp]
             [cljs-http.client       :as http]
             [dommy.core             :as dommy :include-macros true]    
             [hipo.core              :as hipo  :include-macros true]))
-
 
 (defprotocol ICanvasImage
   (img [_]))
