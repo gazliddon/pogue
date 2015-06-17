@@ -129,10 +129,48 @@
 ;; {{{ Main
 (defonce first-time? (atom true))
 
+(def counter (atom {:previous nil
+                    :now nil}))
+
+(defprotocol ITimer
+  (tick! [_]))
+
+(defn is-valid? [{:keys [previous now] :as c}]
+  (not (or
+         (nil? previous)
+         (nil? now))))
+
+(defn time-passed [{:keys [previous now] :as c}]
+  (if (is-valid? c)
+    (- now previous)
+    0))
+
+(defn html-timer []
+  (let [c (atom {:previous nil
+                 :now nil})]
+    (reify ITimer
+      (tick! [_]
+        (do
+          (swap!  c assoc
+               :previous (:now @c)
+               :now (.now js/performace)))
+        (if (is-valid? @c)
+          (- (:now @c) (:previous @c))
+          0)))))
+
+(def my-timer (html-timer))
+
+(defn animate [f]
+  (do
+    (.requestAnimationFrame js/window animate)
+    (let [dt (tick! my-timer)]
+      (when (not= dt 0)
+        (f dt)))))
+
 (when @first-time?
     (do
       (swap! first-time? not)
-      (js/setInterval (fn [] (put! time-chan (/ 1 60))) 16)))
+      (js/setInterval (fn [] (put! time-chan (/ 1 60))) 16))) 
 
 (defn main []
   (do
@@ -146,6 +184,12 @@
       {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
       {:target (by-id "app")})
 
+    (let [rm (rmhtml/mk-resource-manager "resources")
+          _ (clear-resources! rm)
+          ; img-chan (load-img! rm "tiles")
+          rend (create-render-target! rm "shit" 300 300) ]
+      )
+
     ; (let [rm (rmhtml/mk-resource-manager "resources")
     ;       _ (clear-resources! rm)
     ;       img-chan (load-img! rm "tiles")
@@ -154,7 +198,9 @@
     ;     (let [img (<! img-chan)]
     ;       (log-js (rman/height img))
     ;       (log-js (rman/width img)))))
+
     ))
+
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
