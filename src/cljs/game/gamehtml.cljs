@@ -11,6 +11,10 @@
         rend (create-render-target! rm canvas-id 100 100)]
     (reify
       ISystem
+
+      (log [_ txt]
+        (.log js/console txt))
+
       (get-resource-manager [_]
         rm)
 
