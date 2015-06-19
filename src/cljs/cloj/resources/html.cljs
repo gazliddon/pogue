@@ -18,10 +18,10 @@
 (defn mk-canvas-el [id w h]
   (hipo/create [:canvas ^:attrs {:id id :width w :heigh h}]))
 
-(defn create-data-img [id img-data]
+(defn data->element [id img-data]
   (hipo/create [:img ^:attrs {:id id :src img-data}] ))
 
-(defn imageize
+(defn element->iimage
   "Turn a HTML image element into an reified IImage"
   [img]
   (reify
@@ -29,15 +29,23 @@
     (id [_] (.-id img))
     (width [_]  (.-width img))
     (height [_] (.-height img))
-    (img [_] img))
-  )
+    (img [_] img)))
+
+(defn xhr->iimage! [img-req parent id]
+  (->>
+    img-req
+    (:body)
+    (data->element id)
+    (dommy/append! parent)
+    (by-id id)
+    (element->iimage)))
 
 (defn mk-resource-manager [dom-div-id]
   (let [store (atom {:imgs [] :targets []})
         dom-div (by-id dom-div-id) ]
     (reify
       rman/IResourceManagerInfo
-      (find-img [_ id] (imageize (by-id id)))
+      (find-img [_ id] (element->iimage (by-id id)))
 
       (find-render-target [_ id]
         (println "not implemented"))
@@ -63,17 +71,8 @@
         (let [ret-chan (chan)
               get-chan (http/get (str "rez/png/" id))]
           (go
-            (let [img-req  (<! get-chan)
-                  new-img (->>
-                            img-req
-                            (:body)
-                            (create-data-img id)
-                            (dommy/append! dom-div)
-                            (by-id id)
-                            (imageize)) ]
-              (put! ret-chan new-img)))
+            (let [img-req  (<! get-chan)]
+              (put! ret-chan (xhr->iimage! img-req dom-div id))))
 
           ret-chan)))))
-
-
 
