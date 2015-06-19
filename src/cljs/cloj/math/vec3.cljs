@@ -6,6 +6,10 @@
 (mk-vec-op mul * :x :y :z)
 (mk-vec-op div / :x :y :z)
 
-(defn v3 [x y z] {:x x :y y :z z})
-(defn v3 [s] {:x s :y s :z s})
+(defn vec3
+  ([s] (vec3 s s s))
+  ([x y z] { :x x :y y :z z }))
+
+(defn to-vec [v]
+  (mapv v [:x :y :z]))
 

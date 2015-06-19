@@ -17,6 +17,7 @@
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
     [cloj.math.vec2         :as v2 :refer [v2]]
+    [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
@@ -251,16 +252,30 @@
 ;; {{{ Main
 
 (def log-chan (chan))
-
-(def time-chan (chan (dropping-buffer 10)))
-(def time-chan-mult (mult time-chan))
+(defonce time-chan (chan (dropping-buffer 10)))
+(defonce time-chan-mult (mult time-chan))
+(defonce g-time (atom 0))
 
 (defonce first-time? (atom true))
+
+(defn funny-col [tm]
+  (->>
+    (v3/div
+      (vec3 tm tm tm)  
+      (vec3 1000 500 100))
+    (v3/to-vec)
+    (mapv cos-01)))
 
 (when @first-time?
   (do
     (swap! first-time? not)
-    (animate #(put! time-chan %))))
+    (->
+      (fn [dt]
+        (swap! g-time #(+ dt %))
+        (do
+          (rp/clear! rend (funny-col @g-time))
+          (put! time-chan dt)))
+      (animate))))
 
 (defn main []
   (do
@@ -286,10 +301,10 @@
 
   ; {{{
 
-    ; (om/root
-    ;   draggable-log-window
-    ;   {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
-    ;   {:target (by-id "app")})
+  ; (om/root
+  ;   draggable-log-window
+  ;   {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
+  ;   {:target (by-id "app")})
 
   ; (let [rm (rmhtml/mk-resource-manager "resources")
   ;       _ (clear-resources! rm)
