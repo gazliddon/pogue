@@ -4,6 +4,7 @@
   (:require [cloj.resources.manager :as rman]
             [cloj.render.canvas     :as canvas-render]
             [cloj.web.utils         :refer [by-id]]
+            [cloj.math.vec2 :refer [v2]]
             [cljs.core.async        :refer [put! >! chan <! alts! close!]]
             [cljs-http.client       :as http]
             [dommy.core             :as dommy :include-macros true]    
@@ -53,11 +54,22 @@
       (clear-resources! [_]
         (dommy/clear! dom-div))
 
+      (attach-renderer [this id]
+        (print id)
+        (let [el (by-id id)
+              ctx (.getContext el "2d")
+              w (aget ctx "width")
+              h (aget ctx "height") ]
+        (canvas-render/canvas ctx (v2 w h))))
+
       (create-render-target! [this id w h]
         (let [canvas-el (->>
                           (mk-canvas-el id w h)
                           (dommy/append! dom-div)
-                          (by-id id))]
+                          (by-id id))
+              ctx (.getContext canvas-el "2d")
+              ]
+          (println "This is the ctx")
           (canvas-render/canvas (.getContext canvas-el "2d") {:x w :y h})))
 
       (load-img! [this id]

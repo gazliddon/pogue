@@ -1,11 +1,12 @@
 (ns cloj.render.canvas
   (:require 
-    [cloj.math.vec2        :as v2]
+    [gaz.color :refer [rgb-str]]
+    [cloj.math.vec2        :refer [ v2 ]]
     [cloj.render.protocols :as rp]))
 
 (defn canvas [ctx dims]
   (reify
-    ITransformable
+    rp/ITransformable
 
     (matrix! [this [a c e b d f]]
       (.setTransform ctx a b c d e f)
@@ -27,18 +28,23 @@
       (.rotate ctx v)
       this)
 
-    IRenderBackend
+    rp/IRenderBackend
 
-    (spr-scaled! [_ _]
-      (println "not implemented"))
+    (spr-scaled! [this _]
+      (println "not implemented")
+      this)
 
-    (spr! [_ _]
-      (println "not implemented"))
+    (spr! [this _]
+      (println "not implemented")
+      this)
 
     (clear! [this col]
-      (box! this [(v2 0 0) dims col]))
+      (do
+        (.log js/console ctx)
+        (rp/box! this [(v2 0 0) col])))
 
-    (box! [[{x :x y :y} {w :x h :y} col]]
+    (box! [this [{x :x y :y} {w :x h :y} col]]
       (let [col-str (rgb-str col)]
         (set! (.-fillStyle ctx) col-str)
-        (.fillRect ctx x y w h)))))
+        (.fillRect ctx x y w h))
+      this)))

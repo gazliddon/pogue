@@ -2,13 +2,18 @@
   (:require
     [cloj.resources.html    :refer [mk-resource-manager]]
     [cloj.system            :refer [ISystem]]
-    [cloj.resources.manager :refer [create-render-target!]]
+    ; [cloj.math.vec2         :refer [v2]]
+    ; [cloj.resources.manager :refer [create-render-target!]]
+    ; [cloj.render.canvas     :as canvas-render]
+    [cloj.web.utils         :refer [by-id]]
+    [cloj.resources.manager :as rman]
     ))
 
-
 (defn mk-system [resource-div-id canvas-id]
+  (print "here we go!")
   (let [rm   ( mk-resource-manager resource-div-id)
-        rend (create-render-target! rm canvas-id 400 (/ 900 4))]
+        rm2 (mk-resource-manager "app")
+        rend (rman/create-render-target! rm2 canvas-id 400 225)]
     (reify
       ISystem
       (log [_ txt]
@@ -20,4 +25,5 @@
       (get-render-engine [_]
         rend
         ))))
+
 

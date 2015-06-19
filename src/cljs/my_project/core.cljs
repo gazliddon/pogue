@@ -21,6 +21,7 @@
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
+    [cloj.utils             :refer [format]] 
     (cloj.render.protocols  :as rp)
 
     [cloj.web.utils         :refer [by-id log-js]]
@@ -35,7 +36,7 @@
     [gaz.canvascomp         :refer [build-canvas-component ]]
 
 
-    [cljs.core.async        :refer [put! >! chan <! alts! close!]]
+    [cljs.core.async        :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
     [ff-om-draggable.core   :refer [draggable-item]]
 
     [goog.crypt.base64      :as b64]
@@ -71,7 +72,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
-(def time-chan (chan))
 
 (defn fps-calc-chan
   ([in-chan window-size]
@@ -105,13 +105,13 @@
 
     om/IRenderState 
     (render-state [_ {:keys [fps]}]
-      #_(when fps 
+      (when fps 
         (let [elems (map
                      (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
                      [["avg" :avg-fps]
                       ["min" :min-fps]
-                      ["max" :max-fps]])])
-        (apply dom/div nil  elems)))))
+                      ["max" :max-fps]])]
+        (apply dom/div nil  elems))))))
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -193,7 +193,7 @@
      ret))
   )
 
-(def audio-html 
+(defonce audio-html 
   (let [constructor (or js/window.AudioContext
                         js/window.webkitAudioContext)
         ctx (constructor.) ]
@@ -202,29 +202,33 @@
       (sq [_]
         (mk-ins ctx "square")))))
 
-(def sq-1 (sq audio-html))
-(def sq-2 (sq audio-html))
+(defonce sq-1 (sq audio-html))
+(defonce sq-2 (sq audio-html))
 
-(do
+#_(do
   (freq! sq-1 30)
   (freq! sq-2 30.13721)
   (vol! sq-1 5)
   (vol! sq-2 5)
   (start! sq-1 )
   (start! sq-2 )
+  
+  
+  
   )
 
 ;; }}}
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Main
+;; =============================================================================
+;; Game System Stuff {{{
 
-(defonce first-time? (atom true))
 
-(when @first-time?
-  (do
-    (swap! first-time? not)
-    (animate #(put! time-chan %))))
+;; Make and test the system first
+
+(def html-system (mk-system "app" "game"))
+(def rend (get-render-engine html-system))
+(log-js rend)
+(rp/clear! rend [0 1 0])
 
 (defn game-component [data owner]
   (reify
@@ -242,46 +246,33 @@
     (render-state [_ state]
       (dom/p nil (str (:dt state))))))
 
-(defn chan-component [data owner]
-  (let [{:keys [in-chan state-key render]} data]
-    (reify
-      om/IWillMount
-      (will-mount [this]
-        (let [in-chan (:in-chan data)]
-          (go-loop []
-                   (let [dt (<! in-chan)]
-                     (om/set-state! owner state-key dt))
-                   (recur))))
+;; }}}
 
-      om/IRenderState
-      (render-state [_ state]
-        (if-let [item (state-key state)]
-          (render item))))))
-
-(defn game-component-2 [data owner])
+;; =============================================================================
+;; {{{ Main
 
 (def log-chan (chan))
 
+(def time-chan (chan (dropping-buffer 10)))
+(def time-chan-mult (mult time-chan))
 
+(defonce first-time? (atom true))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def html-system (mk-system "app" "game"))
-
-(def rend (get-render-engine html-system))
-(rp/clear! rend [0 1 0])
+(when @first-time?
+  (do
+    (swap! first-time? not)
+    (animate #(put! time-chan %))))
 
 (defn main []
   (do
-    #_(om/root
+    (om/root
       frame-rate-component
-      {:in-chan time-chan }
+      {:in-chan (tap time-chan-mult (chan)) }
       {:target (by-id "test") })
 
     (om/root
       game-component
-      {:in-chan time-chan}
+      {:in-chan (tap time-chan-mult (chan) )}
       {:target (by-id "test") })
 
     (let [rm (rmhtml/mk-resource-manager "resources")
