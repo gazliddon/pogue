@@ -102,7 +102,6 @@
 
     om/IRenderState 
     (render-state [_ {:keys [fps]}]
-      
       (when fps 
         (let [elems (map
                      (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
