@@ -67,9 +67,7 @@
                           (mk-canvas-el id w h)
                           (dommy/append! dom-div)
                           (by-id id))
-              ctx (.getContext canvas-el "2d")
-              ]
-          (println "This is the ctx")
+              ctx (.getContext canvas-el "2d") ]
           (canvas-render/canvas (.getContext canvas-el "2d") {:x w :y h})))
 
       (load-img! [this id]

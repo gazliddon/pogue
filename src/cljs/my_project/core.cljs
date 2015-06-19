@@ -227,7 +227,6 @@
 
 (def html-system (mk-system "app" "game"))
 (def rend (get-render-engine html-system))
-(log-js rend)
 (rp/clear! rend [0 1 0])
 
 (defn game-component [data owner]

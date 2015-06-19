@@ -9,42 +9,47 @@
     rp/ITransformable
 
     (matrix! [this [a c e b d f]]
-      (.setTransform ctx a b c d e f)
+      (do
+        (.setTransform ctx a b c d e f))
       this)
 
     (identity! [this]
-      (.resetTransform ctx)
+      (do
+        (.resetTransform ctx))
       this)
 
     (translate! [this [ {:keys [x y]}]]
-      (.translate ctx x y)
+      (do
+        (.translate ctx x y))
       this)
 
     (scale! [this [ {:keys [x y] } ]]
-      (.scale ctx x y)
+      (do
+        (.scale ctx x y))
       this)
 
     (rotate! [this v]
-      (.rotate ctx v)
+      (do 
+        (.rotate ctx v))
       this)
 
     rp/IRenderBackend
 
     (spr-scaled! [this _]
-      (println "not implemented")
+      (do 
+        (println "not implemented"))
       this)
 
     (spr! [this _]
-      (println "not implemented")
+      (do 
+        (println "not implemented"))
       this)
 
     (clear! [this col]
-      (do
-        (.log js/console ctx)
-        (rp/box! this [(v2 0 0) col])))
+      (rp/box! this [(v2 0 0) dims col]))
 
     (box! [this [{x :x y :y} {w :x h :y} col]]
-      (let [col-str (rgb-str col)]
-        (set! (.-fillStyle ctx) col-str)
-        (.fillRect ctx x y w h))
-      this)))
+      (do
+        (let [col-str (rgb-str col)]
+          (set! (.-fillStyle ctx) col-str)
+          (.fillRect ctx x y w h))))))

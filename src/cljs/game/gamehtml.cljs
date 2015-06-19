@@ -10,7 +10,6 @@
     ))
 
 (defn mk-system [resource-div-id canvas-id]
-  (print "here we go!")
   (let [rm   ( mk-resource-manager resource-div-id)
         rm2 (mk-resource-manager "app")
         rend (rman/create-render-target! rm2 canvas-id 400 225)]
