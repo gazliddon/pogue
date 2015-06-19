@@ -5,6 +5,7 @@
   (:require
     [clojure.string         :refer [split join]]
 
+
     [cljs-http.client       :as http]
 
 
@@ -20,6 +21,8 @@
 
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
+
+    [cloj.utils             :as utils]
 
     [cloj.web.utils         :refer [by-id log-js]]
 
@@ -45,6 +48,7 @@
 (enable-console-print!)
 
 ;;; }}}
+
 
 ;; {{{ Ignore for now
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -90,6 +94,9 @@
   ([in-chan]
    (fps-calc-chan in-chan 10)))
 
+
+
+
 (defn frame-rate-component
   [{:keys [in-chan class-name] :as data} owner ]
   (reify
@@ -104,13 +111,20 @@
     (render-state [_ {:keys [fps]}]
       (when fps 
         (let [elems (map
-                     (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
-                     [["avg" :avg-fps]
-                      ["min" :min-fps]
-                      ["max" :max-fps]])])
-        (apply dom/div nil  elems)))))
+                      (fn [[txt id]] (dom/p nil (utils/format "%s: %0.2f" txt (id fps))))
+                      [["avg" :avg-fps]
+                       ["min" :min-fps]
+                       ["max" :max-fps]])]
+          (apply dom/div nil  elems))))))
 ;; }}}
 
+
+(println
+  (utils/format "%02d" 100)
+
+  ; (g-format "%02d" 100)
+  
+  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
