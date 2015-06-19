@@ -21,19 +21,23 @@
 (defn create-data-img [id img-data]
   (hipo/create [:img ^:attrs {:id id :src img-data}] ))
 
+(defn imageize
+  "Turn a HTML image element into an reified IImage"
+  [img]
+  (reify
+    rman/IImage
+    (id [_] (.-id img))
+    (width [_]  (.-width img))
+    (height [_] (.-height img))
+    (img [_] img))
+  )
+
 (defn mk-resource-manager [dom-div-id]
   (let [store (atom {:imgs [] :targets []})
         dom-div (by-id dom-div-id) ]
     (reify
       rman/IResourceManagerInfo
-      (find-img [_ id]
-        (let [img (by-id id) ]
-          (reify
-            rman/IImage
-            (id [_] id)
-            (width [_]  (.-width img))
-            (height [_] (.-height img))
-            (img [_] img))))
+      (find-img [_ id] (imageize (by-id id)))
 
       (find-render-target [_ id]
         (println "not implemented"))
@@ -64,9 +68,11 @@
                             img-req
                             (:body)
                             (create-data-img id)
-                            (dommy/append! dom-div))
-                  ret-obj   (rman/find-img this id) ]
-              (put! ret-chan ret-obj)))
+                            (dommy/append! dom-div)
+                            (by-id id)
+                            (imageize)) ]
+              (put! ret-chan new-img)))
+
           ret-chan)))))
 
 
