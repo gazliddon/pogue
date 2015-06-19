@@ -7,11 +7,10 @@
 
 
 (defn mk-system [resource-div-id canvas-id]
-  (let [rm   ( mk-resource-manager )
-        rend (create-render-target! rm canvas-id 100 100)]
+  (let [rm   ( mk-resource-manager resource-div-id)
+        rend (create-render-target! rm canvas-id 400 (/ 900 4))]
     (reify
       ISystem
-
       (log [_ txt]
         (.log js/console txt))
 

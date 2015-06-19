@@ -13,7 +13,7 @@
   (hipo/create [:img ^:attrs {:id id :src (str "data/" id ".png")}]))
 
 (defn mk-canvas-el [id w h]
-  (hipo/create [:canvas ^:attrs {:id id :width w :heigh h}]))
+  (hipo/create [:canvas ^:attrs {:id id :width w :height h}]))
 
 (defn data->element [id img-data]
   (hipo/create [:img ^:attrs {:id id :src img-data}] ))

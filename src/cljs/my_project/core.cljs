@@ -21,6 +21,8 @@
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
+    (cloj.render.protocols  :as rp)
+
     [cloj.web.utils         :refer [by-id log-js]]
 
     [game.html              :refer [mk-system]]
@@ -160,6 +162,7 @@
   (saw [_ ]))
 
 (defprotocol ISFX
+  (instrument [_])
   (type! [_ t])
   (freq! [_ v])
   (start! [_])
@@ -178,6 +181,7 @@
          vca (.createGain ctx)
          ret (reify
                ISFX
+               (instrument [_] {:vco vco :vca vca})
                (start! [_] (.start vco))
                (stop!  [_] (.stop vco))
                (type!  [_ osc-type] (set! (.-type vco) osc-type))
@@ -197,6 +201,19 @@
       IAudio
       (sq [_]
         (mk-ins ctx "square")))))
+
+(def sq-1 (sq audio-html))
+(def sq-2 (sq audio-html))
+
+(do
+  (freq! sq-1 30)
+  (freq! sq-2 30.13721)
+  (vol! sq-1 5)
+  (vol! sq-2 5)
+  (start! sq-1 )
+  (start! sq-2 )
+  )
+
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -249,6 +266,11 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def html-system (mk-system "app" "game"))
+
+(def rend (get-render-engine html-system))
+(rp/clear! rend [0 1 0])
 
 (defn main []
   (do
