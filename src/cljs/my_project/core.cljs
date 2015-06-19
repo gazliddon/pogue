@@ -5,7 +5,6 @@
   (:require
     [clojure.string         :refer [split join]]
 
-
     [cljs-http.client       :as http]
 
 
@@ -22,8 +21,6 @@
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
-    [cloj.utils             :as utils]
-
     [cloj.web.utils         :refer [by-id log-js]]
 
     [game.html              :refer [mk-system]]
@@ -36,18 +33,21 @@
     [gaz.canvascomp         :refer [build-canvas-component ]]
 
 
-    [cljs.core.async       :refer [put! >! chan <! alts! close!]]
-    [ ff-om-draggable.core :refer [draggable-item]]
+    [cljs.core.async        :refer [put! >! chan <! alts! close!]]
+    [ff-om-draggable.core   :refer [draggable-item]]
 
-    [goog.crypt.base64 :as b64]
+    [goog.crypt.base64      :as b64]
 
-    [om.core :as om :include-macros true]
-    [om.dom  :as dom :include-macros true]))
+    [om.core                :as om :include-macros true]
+    [om.dom                 :as dom :include-macros true]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
 ;;; }}}
+
+;; {{{ Ignore for now
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
@@ -67,7 +67,6 @@
         this))))
 ;; }}}
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
 (def time-chan (chan))
 
@@ -91,7 +90,6 @@
   ([in-chan]
    (fps-calc-chan in-chan 10)))
 
-
 (defn frame-rate-component
   [{:keys [in-chan class-name] :as data} owner ]
   (reify
@@ -104,45 +102,15 @@
 
     om/IRenderState 
     (render-state [_ {:keys [fps]}]
-      (when fps 
+      #_(when fps 
         (let [elems (map
-                      (fn [[txt id]] (dom/p nil (utils/format "%s: %0.2f" txt (id fps))))
-                      [["avg" :avg-fps]
-                       ["min" :min-fps]
-                       ["max" :max-fps]])]
-          (apply dom/div nil  elems))))))
+                     (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
+                     [["avg" :avg-fps]
+                      ["min" :min-fps]
+                      ["max" :max-fps]])])
+        (apply dom/div nil  elems)))))
 ;; }}}
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Log Window
-(def log-chan (chan))
-(def log-state (atom {}) )
-
-(defn log-window 
-  [{:keys [in-chan class-name] :as data} owner ]
-  (let [in-chan    (or in-chan (chan)) 
-        class-name (or class-name "pane")]
-    (reify
-      om/IWillMount
-      (will-mount [ this ]
-        (go
-          (om/set-state! owner :text "")
-          (loop []
-            (let [txt (<! in-chan)
-                  txt-req {:text txt}]
-              (om/update-state! owner [:text] #(str % "\n" txt ))
-              (recur)))))
-
-      om/IRenderState
-      (render-state [_ {:keys [text]}]
-        (dom/div
-          #js { :className class-name }
-          (dom/span nil "Logs")
-          (dom/textarea #js {:width "100%" :value text}))))))
-
-(def draggable-log-window (draggable-item log-window [:position]))
-
-;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Timer
@@ -188,35 +156,68 @@
 ;; {{{ Main
 
 (defonce first-time? (atom true))
+
 (when @first-time?
   (do
     (swap! first-time? not)
     (animate #(put! time-chan %))))
 
+(defn game-component [data owner]
+  (reify
+    om/IWillMount
+    (will-mount [this]
+      (om/set-state! owner :dt 0)
+      (let [in-chan (:in-chan data)]
+        (go-loop []
+          (let [dt (<! in-chan)]
+            (om/set-state! owner :dt dt))
+          (recur)
+          )))
+
+    om/IRenderState
+    (render-state [_ state]
+      (dom/p nil (str (:dt state))))))
+
+(defn chan-component [data owner]
+  (let [{:keys [in-chan state-key render]} data]
+    (reify
+      om/IWillMount
+      (will-mount [this]
+        (let [in-chan (:in-chan data)]
+          (go-loop []
+                   (let [dt (<! in-chan)]
+                     (om/set-state! owner state-key dt))
+                   (recur))))
+
+      om/IRenderState
+      (render-state [_ state]
+        (if-let [item (state-key state)]
+          (render item))))))
+
+(defn game-component-2 [data owner])
+
+(def log-chan (chan))
+
 (defn main []
   (do
-    (om/root
+    #_(om/root
       frame-rate-component
-      {:in-chan time-chan :class-name "pane" }
+      {:in-chan time-chan }
+      {:target (by-id "test") })
+
+    (om/root
+      game-component
+      {:in-chan time-chan}
       {:target (by-id "test") })
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
           img-chan (load-img! rm "tiles")
           rend (create-render-target! rm "shit" 300 300) ]
-
       (go
-        (let [img (<! img-chan)
-              i (rman/img img)
-              
-              ]
-          (println "received something")
-          (println (rman/id img))
-          (println (rman/width img))
-          (println (rman/height img))
-          )
-        )
-
+        (let [img (<! img-chan)]
+          (log-js (rman/width img))
+          (log-js (rman/height img))))
       )) 
 
   ; {{{
