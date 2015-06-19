@@ -68,17 +68,17 @@
 
 
 ;; {{{ FPS Component
-
 (def time-chan (chan))
+
 (defn fps-calc-chan
   ([in-chan window-size]
    (let [ret-chan (chan)]
      (go-loop [last-x () fr-num 0]
               (let [dt (<! in-chan)
                     new-last-x (take window-size (cons dt last-x))
-                    data  {:avg-fps (/ (reduce + 0 new-last-x) (count new-last-x))
-                           :min-fps (apply min new-last-x)
-                           :max-fps (apply max new-last-x)
+                    data  {:avg-fps (/ 1000  (/ (reduce + 0 new-last-x) (count new-last-x)))
+                           :min-fps (/ 1000  (apply min new-last-x))
+                           :max-fps (/ 1000  (apply max new-last-x))
                            :frame fr-num
                            }
                     
@@ -102,14 +102,16 @@
 
     om/IRenderState 
     (render-state [_ {:keys [fps]}]
+      
       (when fps 
-        (dom/div nil
-                 (dom/p nil ( str "avg: " (:avg-fps fps) ))
-                 (dom/p nil ( str "min: " (:min-fps fps) ))
-                 (dom/p nil ( str "max: " (:max-fps fps) ))
-                 (dom/p nil ( str "num: " (:frame fps) ))
-                 )))))
+        (let [elems (map
+                     (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
+                     [["avg" :avg-fps]
+                      ["min" :min-fps]
+                      ["max" :max-fps]])])
+        (apply dom/div nil  elems)))))
 ;; }}}
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -143,85 +145,6 @@
 
 ;; }}}
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Log Window
-(def log-chan (chan))
-(def log-state (atom {}) )
-
-(defn log-window 
-  [{:keys [in-chan class-name] :as data} owner ]
-  (let [in-chan    (or in-chan (chan)) 
-        class-name (or class-name "pane")]
-    (reify
-      om/IWillMount
-      (will-mount [ this ]
-        (go
-          (om/set-state! owner :text "")
-          (loop []
-            (let [txt (<! in-chan)
-                  txt-req {:text txt}]
-              (om/update-state! owner [:text] #(str % "\n" txt ))
-              (recur)))))
-
-      om/IRenderState
-      (render-state [_ {:keys [text]}]
-        (dom/div
-          #js { :className class-name }
-          (dom/span nil "Logs")
-          (dom/textarea #js {:width "100%" :value text}))))))
-
-(def draggable-log-window (draggable-item log-window [:position]))
-
-;; }}}
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ FPS Component
-
-(def time-chan (chan))
-(defn fps-calc-chan
-  ([in-chan window-size]
-   (let [ret-chan (chan)]
-     (go-loop [last-x () fr-num 0]
-              (let [dt (<! in-chan)
-                    new-last-x (take window-size (cons dt last-x))
-                    data  {:avg-fps (/ (reduce + 0 new-last-x) (count new-last-x))
-                           :min-fps (apply min new-last-x)
-                           :max-fps (apply max new-last-x)
-                           :frame fr-num
-                           }
-                    
-                    ]
-                (put! ret-chan data)
-                (recur new-last-x (inc fr-num))))
-     ret-chan))
-
-  ([in-chan]
-   (fps-calc-chan in-chan 10)))
-
-(defn frame-rate-component
-  [{:keys [in-chan class-name] :as data} owner ]
-  (reify
-    om/IWillMount
-    (will-mount [ this ]
-      (let [fps-chan (fps-calc-chan in-chan) ]
-        (go-loop []
-                 (om/set-state! owner :fps (<! fps-chan))
-                 (recur))))
-
-    om/IRenderState 
-    (render-state [_ {:keys [fps]}]
-      (when fps 
-        (dom/div nil
-                 (dom/p nil ( str "avg: " (:avg-fps fps) ))
-                 (dom/p nil ( str "min: " (:min-fps fps) ))
-                 (dom/p nil ( str "max: " (:max-fps fps) ))
-                 (dom/p nil ( str "num: " (:frame fps) ))
-                 )))))
-;; }}}
-
-
-;; }}}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; {{{ Timer
@@ -229,9 +152,7 @@
   (tick! [_]))
 
 (defn is-valid? [{:keys [previous now] :as c}]
-  (not (or
-         (nil? previous)
-         (nil? now))))
+  (not (or (nil? previous) (nil? now))))
 
 (defn time-passed [{:keys [previous now] :as c}]
   (if (is-valid? c)
@@ -239,28 +160,21 @@
     0))
 
 (defn html-timer []
-  (let [c (atom {:previous nil
-                 :now nil}) ]
+  (let [c (atom {:previous nil :now nil}) ]
     (reify ITimer
       (tick! [_]
-        (let [perf-now    (.now (aget js/window "performance"))
-              new-c (assoc @c
-                           :previous (:now @c)
-                           :now perf-now)  ] 
-          (do
-            (reset! c new-c)
-            (time-passed new-c)))))))
+        (do
+          (->>
+            (assoc @c
+                   :previous (:now @c)
+                   :now (.now (aget js/window "performance")))
+            (reset! c)
+            (time-passed)))))))
 
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Animator with Timer
-
-(defprotocol IEveryFrame
-  (get-fps [_])
-  (get-ms-per-frame [_])
-  (every [_ f]))
-
 (def my-timer (html-timer))
 
 (defn animate [callback-fn]
@@ -276,14 +190,10 @@
 ;; {{{ Main
 
 (defonce first-time? (atom true))
-
-(defn do-update [ dt ]
- (put! time-chan dt) )
-
 (when @first-time?
   (do
     (swap! first-time? not)
-    (animate do-update)))
+    (animate #(put! time-chan %))))
 
 (defn main []
   (do
