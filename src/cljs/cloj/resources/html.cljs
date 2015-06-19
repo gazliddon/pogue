@@ -10,8 +10,7 @@
             [dommy.core             :as dommy :include-macros true]    
             [hipo.core              :as hipo  :include-macros true]))
 
-(defprotocol ICanvasImage
-  (img [_]))
+
 
 (defn mk-img-el [id]
   (hipo/create [:img ^:attrs {:id id :src (str "data/" id ".png")}]))
@@ -28,11 +27,13 @@
     (reify
       rman/IResourceManagerInfo
       (find-img [_ id]
-        (let [img (by-id id)
-              [w h] get-dims  ]
+        (let [img (by-id id) ]
           (reify
-            rman/IImage (width [_]  w) (height [_] h)
-            ICanvasImage (img [_] img))))
+            rman/IImage
+            (id [_] id)
+            (width [_]  (.-width img))
+            (height [_] (.-height img))
+            (img [_] img))))
 
       (find-render-target [_ id]
         (println "not implemented"))
@@ -64,7 +65,7 @@
                             (:body)
                             (create-data-img id)
                             (dommy/append! dom-div))
-                  ret-obj   (rman/find-img this id)]
+                  ret-obj   (rman/find-img this id) ]
               (put! ret-chan ret-obj)))
           ret-chan)))))
 

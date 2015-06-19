@@ -49,9 +49,6 @@
 
 ;;; }}}
 
-
-;; {{{ Ignore for now
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
 (def pogue-game
@@ -70,7 +67,7 @@
         this))))
 ;; }}}
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
 (def time-chan (chan))
 
@@ -95,8 +92,6 @@
    (fps-calc-chan in-chan 10)))
 
 
-
-
 (defn frame-rate-component
   [{:keys [in-chan class-name] :as data} owner ]
   (reify
@@ -117,15 +112,6 @@
                        ["max" :max-fps]])]
           (apply dom/div nil  elems))))))
 ;; }}}
-
-
-(println
-  (utils/format "%02d" 100)
-
-  ; (g-format "%02d" 100)
-  
-  )
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Log Window
@@ -159,7 +145,6 @@
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; {{{ Timer
 (defprotocol ITimer
   (tick! [_]))
@@ -217,8 +202,21 @@
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
-          ; img-chan (load-img! rm "tiles")
+          img-chan (load-img! rm "tiles")
           rend (create-render-target! rm "shit" 300 300) ]
+
+      (go
+        (let [img (<! img-chan)
+              i (rman/img img)
+              
+              ]
+          (println "received something")
+          (println (rman/id img))
+          (println (rman/width img))
+          (println (rman/height img))
+          )
+        )
+
       )) 
 
   ; {{{
