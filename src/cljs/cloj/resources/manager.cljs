@@ -6,6 +6,12 @@
   (height [_])
   (img [_]))
 
+(defprotocol IReourceLoader
+  (load! [_ uri]))
+
+(defprotocol IResourceStore
+  )
+
 (defprotocol IResourceManagerInfo
   (find-img [_ id])
   (find-render-target [_ id])

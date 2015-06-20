@@ -5,8 +5,6 @@
   (:require
     [clojure.string         :refer [split join]]
 
-    [cljs-http.client       :as http]
-
 
     [cloj.resources.manager :as rman
                             :refer [create-render-target!
@@ -40,11 +38,8 @@
     [cljs.core.async        :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
     [ff-om-draggable.core   :refer [draggable-item]]
 
-    [goog.crypt             :as crypt]
-    [goog.crypt.base64      :as b64]
-    ; [goog.labs.net.xhr      :as xhr2]
     [hipo.core              :as hipo  :include-macros true]  
-            [dommy.core             :as dommy :include-macros true]    
+    [dommy.core             :as dommy :include-macros true]    
 
     [om.core                :as om :include-macros true]
     [om.dom                 :as dom :include-macros true]))
@@ -57,25 +52,30 @@
 ;; =============================================================================
 ;; {{{ XHR2 experiment
 
-(def file-name "/data/tiles.png")
+
+
+;; =============================================================================
+;; Multi method to turn a blob into an element
+(defmulti blob->element (fn [e] (.-type e)))
+
+(defmethod blob->element "image/png" [blob]
+  (log-js blob)
+  (let [blobURL (.createObjectURL js/URL blob)
+        img (hipo/create [:img ^:attrs {:src blobURL}]) ]
+    img))
+
+(defmethod blob->element :default [e]
+  (println (str "unknown type " e)))
 
 (defprotocol IXHRReq
   (get-status [_])
   (okay? [_])
-  (get-img! [_ uri cb])
   (get-blob! [_ uri cb]))
 
 (extend-type js/XMLHttpRequest
   IXHRReq
   (get-status [this] (.-status this))
   (okay? [this] (== 200 (get-status this)))
-  (get-img! [xhr uri cb]
-    (->>
-      (fn [blob]
-        (let [blobURL (.createObjectURL js/URL blob)
-              img (hipo/create [:img ^:attrs {:src blobURL}]) ]
-          (cb img)))
-      (get-blob! xhr uri)))
 
   (get-blob! [xhr uri cb]
     (do
@@ -87,12 +87,15 @@
       (.send xhr))))
 
 (defn load-image! [uri]
-  (let [ret-chan (chan)]
+  (let [ret-chan (chan)
+        put-fn (fn [blob]
+                (put! ret-chan (blob->element blob)) ) ]
     (-> (js/XMLHttpRequest.)
-        (get-img! uri #(put! ret-chan %)))
+        (get-blob! uri put-fn))
     ret-chan))
 
 (do
+  (def file-name "/data/tiles.png")
   (go
     (let [img (<! (load-image! file-name)) ]
       (log-js "Got img!")
