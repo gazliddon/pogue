@@ -1,55 +1,69 @@
 (ns cloj.render.canvas
   (:require 
-    [gaz.color :refer [rgb-str]]
-    [cloj.math.vec2        :refer [ v2 ]]
-    [cloj.render.protocols :as rp]))
 
-(defn canvas [ctx dims]
-  (reify
-    rp/ITransformable
+    [gaz.color              :refer [rgb-str]]
+    [cloj.math.vec2         :refer [ v2 ]]
+    [hipo.core              :as hipo  :include-macros true]  
+    [cloj.render.protocols  :as rp]))
 
-    (matrix! [this [a c e b d f]]
-      (do
-        (.setTransform ctx a b c d e f))
-      this)
 
-    (identity! [this]
-      (do
-        (.resetTransform ctx))
-      this)
+(defprotocol IHTMLCanvas
+  (get-element [_])
+  (get-ctx-2d [_]))
 
-    (translate! [this [ {:keys [x y]}]]
-      (do
-        (.translate ctx x y))
-      this)
 
-    (scale! [this [ {:keys [x y] } ]]
-      (do
-        (.scale ctx x y))
-      this)
+(defn canvas [canvas-id dims]
+  (let [canvas-el (hipo/create [:canvas ^:attrs {:id id :width w :height h}])
+        ctx (.getContext canvas-el "2d")]
+    (reify
+      IHTMLCanvas
+      (get-element [_] canvas-el)
+      (get-ctx-2d [_]  ctx)
 
-    (rotate! [this v]
-      (do 
-        (.rotate ctx v))
-      this)
+      rp/ITransformable
+      (matrix! [this [a c e b d f]]
+        (do
+          (.setTransform ctx a b c d e f))
+        this)
 
-    rp/IRenderBackend
+      (identity! [this]
+        (do
+          (.resetTransform ctx))
+        this)
 
-    (spr-scaled! [this _]
-      (do 
-        (println "not implemented"))
-      this)
+      (translate! [this [ {:keys [x y]}]]
+        (do
+          (.translate ctx x y))
+        this)
 
-    (spr! [this _]
-      (do 
-        (println "not implemented"))
-      this)
+      (scale! [this [ {:keys [x y] } ]]
+        (do
+          (.scale ctx x y))
+        this)
 
-    (clear! [this col]
-      (rp/box! this [(v2 0 0) dims col]))
+      (rotate! [this v]
+        (do 
+          (.rotate ctx v))
+        this)
 
-    (box! [this [{x :x y :y} {w :x h :y} col]]
-      (do
-        (let [col-str (rgb-str col)]
-          (set! (.-fillStyle ctx) col-str)
-          (.fillRect ctx x y w h))))))
+      rp/IRenderBackend
+
+      (spr-scaled! [this _]
+        (do 
+          (println "not implemented"))
+        this)
+
+      (spr! [this _]
+        (do 
+          (println "not implemented"))
+        this)
+
+      (clear! [this col]
+        (rp/box! this [(v2 0 0) dims col]))
+
+      (box! [this [{x :x y :y} {w :x h :y} col]]
+        (do
+          (let [col-str (rgb-str col)]
+            (set! (.-fillStyle ctx) col-str)
+            (.fillRect ctx x y w h)))))  )
+  )

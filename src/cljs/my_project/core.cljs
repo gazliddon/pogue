@@ -49,62 +49,6 @@
 
 ;;; }}}
 
-;; =============================================================================
-;; {{{ XHR2 experiment
-
-
-
-;; =============================================================================
-;; Multi method to turn a blob into an element
-(defmulti blob->element (fn [e] (.-type e)))
-
-(defmethod blob->element "image/png" [blob]
-  (log-js blob)
-  (let [blobURL (.createObjectURL js/URL blob)
-        img (hipo/create [:img ^:attrs {:src blobURL}]) ]
-    img))
-
-(defmethod blob->element :default [e]
-  (println (str "unknown type " e)))
-
-(defprotocol IXHRReq
-  (get-status [_])
-  (okay? [_])
-  (get-blob! [_ uri cb]))
-
-(extend-type js/XMLHttpRequest
-  IXHRReq
-  (get-status [this] (.-status this))
-  (okay? [this] (== 200 (get-status this)))
-
-  (get-blob! [xhr uri cb]
-    (do
-      (.open xhr "GET" uri true)
-      (aset xhr "responseType" "blob")
-      (aset xhr "onload" (fn [r]
-                           (when (okay? xhr)
-                             (cb (.-response xhr)))))
-      (.send xhr))))
-
-(defn load-image! [uri]
-  (let [ret-chan (chan)
-        put-fn (fn [blob]
-                (put! ret-chan (blob->element blob)) ) ]
-    (-> (js/XMLHttpRequest.)
-        (get-blob! uri put-fn))
-    ret-chan))
-
-(do
-  (def file-name "/data/tiles.png")
-  (go
-    (let [img (<! (load-image! file-name)) ]
-      (log-js "Got img!")
-      (log-js img)   
-      (dommy/append! (by-id "app") img)
-      )))
-
-;; }}}
-
 ;; {{{ Ignore for now
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -348,10 +292,16 @@
       {:in-chan (tap time-chan-mult (chan) )}
       {:target (by-id "test") })
 
-    (let [rm (rmhtml/mk-resource-manager "resources")
+    (let [rm (rmhtml/mk-resource-manager nil)
           _ (clear-resources! rm)
-          rend (create-render-target! rm "shit" 300 300) ]
-      )) 
+          rend (create-render-target! rm "shit" 301 300)
+          img (load-img! rm "data/tiles.png")
+          ]
+      (log-js rend)
+      (go
+        (log-js (<! img))
+        )
+      ))
 
   ; {{{
 

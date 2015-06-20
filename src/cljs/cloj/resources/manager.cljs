@@ -21,5 +21,4 @@
 (defprotocol IResourceManager
   (clear-resources! [_])
   (create-render-target! [_ id w h])
-  (attach-renderer [this id])
   (load-img! [_ source]))
