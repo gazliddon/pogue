@@ -40,7 +40,9 @@
     [cljs.core.async        :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
     [ff-om-draggable.core   :refer [draggable-item]]
 
+    [goog.crypt             :as crypt]
     [goog.crypt.base64      :as b64]
+    [goog.labs.net.xhr      :as xhr2]
 
     [om.core                :as om :include-macros true]
     [om.dom                 :as dom :include-macros true]))
@@ -49,6 +51,112 @@
 (enable-console-print!)
 
 ;;; }}}
+
+;; =============================================================================
+;; {{{ XHR2 experiment
+
+(def file-name "/data/tiles.png")
+
+
+
+(defprotocol IBytesPlz
+  (get-str [_])
+  (get-b64 [_])
+  (get-bytes [_ ]))
+; var utf8 = unescape(encodeURIComponent(str));
+
+; var arr = [];
+; for  var i = 0; i < utf8.length; i++) {
+;     arr.push(utf8.charCodeAt(i));
+
+(defn get-bytes-str [this]
+  (let [ret (js/Uint8ClampedArray. (count this))]
+    (doseq [i (range (count this))]
+      (let [c (.charCodeAt this i)]
+
+        (aset ret i (bit-and 0xff(if (< c 0)
+                      (- 65536 c)
+                      c)) )))
+    ret
+    ))
+
+(extend-type js/XMLHttpRequest
+  IBytesPlz
+
+  (get-str [this]
+    (.-responseText this))
+
+  (get-b64 [this]
+    (->
+      this
+      (get-bytes)
+      (b64/encodeByteArray)))
+
+  (get-bytes [this]
+    (->
+      this
+
+      ; (get-str)
+      ; (get-bytes-str)
+      (get-str)
+      (crypt/stringToUtf8ByteArray)
+      )))
+
+
+
+(def opts #js {"Content-type" "text/plain;charset=x-user-defined"
+               "responseType" "blob"})
+
+; (def ret (xhr2/send "GET" file-name nil opts))
+
+
+; (.then ret (fn [r]
+;              (let [arr (get-bytes r)
+;                    enc (get-b64 r) 
+;                    ostr (get-str r) ]
+
+;                (println (.charCodeAt ostr 0))
+;                (println (.charCodeAt ostr 1))
+;                (log-js (get-bytes-str ostr))
+
+;                )
+
+;              ))
+
+
+(defn rep-array [arr]
+  (str "size: " (.-length arr) "\n"
+       "type: " (type arr) "\n"))
+
+(defn gaz-send [uri cb]
+  (let [xhr (js/XMLHttpRequest.) ]
+    (do
+      (.open xhr "GET" uri true)
+      (.overrideMimeType xhr "text/plain; charset=x-user-defined")
+      (aset xhr "onreadystatechange"
+            (fn [e]
+              (let [ready-state (.-readyState xhr)
+                    status (.-status xhr)
+                    arr (get-bytes-str (.-responseText xhr)) ]
+                (when (and (== ready-state 4) (== status 200)) 
+                  (cb arr)
+                  )
+                )))
+      (.send xhr))))
+
+
+(gaz-send file-name (fn [i]
+                      (log-js i)
+                      ))
+
+
+
+
+
+
+
+
+;; }}}
 
 ;; {{{ Ignore for now
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
