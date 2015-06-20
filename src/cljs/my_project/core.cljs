@@ -43,6 +43,8 @@
     [goog.crypt             :as crypt]
     [goog.crypt.base64      :as b64]
     ; [goog.labs.net.xhr      :as xhr2]
+    [hipo.core              :as hipo  :include-macros true]  
+            [dommy.core             :as dommy :include-macros true]    
 
     [om.core                :as om :include-macros true]
     [om.dom                 :as dom :include-macros true]))
@@ -57,15 +59,23 @@
 
 (def file-name "/data/tiles.png")
 
-(defprotocol IABitNicer
+(defprotocol IXHRReq
   (get-status [_])
   (okay? [_])
+  (get-img! [_ uri cb])
   (get-blob! [_ uri cb]))
 
 (extend-type js/XMLHttpRequest
-  IABitNicer
+  IXHRReq
   (get-status [this] (.-status this))
   (okay? [this] (== 200 (get-status this)))
+  (get-img! [xhr uri cb]
+    (->>
+      (fn [blob]
+        (let [blobURL (.createObjectURL js/URL blob)
+              img (hipo/create [:img ^:attrs {:src blobURL}]) ]
+          (cb img)))
+      (get-blob! xhr uri)))
 
   (get-blob! [xhr uri cb]
     (do
@@ -76,18 +86,19 @@
                              (cb (.-response xhr)))))
       (.send xhr))))
 
-(defn load! [uri]
+(defn load-image! [uri]
   (let [ret-chan (chan)]
     (-> (js/XMLHttpRequest.)
-        (get-blob! uri #(put! ret-chan %)))
+        (get-img! uri #(put! ret-chan %)))
     ret-chan))
 
 (do
   (go
-    (let [load-chan (load! file-name)
-          blob (<! load-chan)]
-      (log-js "Got blob!")
-      (log-js blob))))
+    (let [img (<! (load-image! file-name)) ]
+      (log-js "Got img!")
+      (log-js img)   
+      (dommy/append! (by-id "app") img)
+      )))
 
 ;; }}}
 
