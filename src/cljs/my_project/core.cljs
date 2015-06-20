@@ -329,8 +329,12 @@
           (put! time-chan dt)))
       (animate))))
 
+
+(def app-div (by-id "app"))
+
 (defn main []
   (do
+    ; (dommy/clear! app-div)
     (om/root
       frame-rate-component
       {:in-chan (tap time-chan-mult (chan)) }
@@ -343,12 +347,7 @@
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
-          img-chan (load-img! rm "tiles")
           rend (create-render-target! rm "shit" 300 300) ]
-      (go
-        (let [img (<! img-chan)]
-          (log-js (rman/width img))
-          (log-js (rman/height img))))
       )) 
 
   ; {{{
