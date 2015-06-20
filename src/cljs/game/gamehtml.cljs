@@ -12,7 +12,6 @@
   (let [rm   ( mk-resource-manager resource-div-id)
         rend (rman/create-render-target! rm canvas-id 400 225)]
     (do
-      (.log js/console rend)
       (dommy/append! (by-id "app") (canvas/get-element rend )))
 
     (reify

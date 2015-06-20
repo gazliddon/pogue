@@ -24,7 +24,6 @@
 (defmethod blob->element "image" [id blob]
   (let [blobURL (.createObjectURL js/URL blob)
         img (hipo/create [:img ^:attrs {:id (str id) :src blobURL}]) ]
-    (.log js/console img)
     (img->iimage img)))
 
 (defmethod blob->element :default [e] (println (str "unknown type " (.-type e))))
