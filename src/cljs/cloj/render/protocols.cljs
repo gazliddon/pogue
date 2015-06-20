@@ -8,10 +8,10 @@
   (rotate! [this v]))
 
 (defprotocol IRenderBackend
-  (clear! [this info])
-  (box! [this info])
-  (spr! [this info])
-  (spr-scaled! [this info]))
+  (clear! [this col])
+  (box! [this pos dims col])
+  (spr! [this img pos])
+  (spr-scaled! [this img pos dims]))
 
 (defprotocol ITextureManager
   (add-texture! [this info])

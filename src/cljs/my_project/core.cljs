@@ -224,10 +224,8 @@
 
 
 ;; Make and test the system first
-
 (def html-system (mk-system "app" "game"))
 (def rend (get-render-engine html-system))
-(rp/clear! rend [0 1 0])
 
 (defn game-component [data owner]
   (reify
@@ -272,7 +270,7 @@
       (fn [dt]
         (swap! g-time #(+ dt %))
         (do
-          (rp/clear! rend (funny-col @g-time))
+          ; (rp/clear! rend (funny-col @g-time))
           (put! time-chan dt)))
       (animate))))
 
@@ -292,16 +290,17 @@
       {:in-chan (tap time-chan-mult (chan) )}
       {:target (by-id "test") })
 
-    (let [rm (rmhtml/mk-resource-manager nil)
+    (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
-          rend (create-render-target! rm "shit" 301 300)
-          img (load-img! rm "data/tiles.png")
+          img-chan (load-img! rm "tiles" "data/tiles.png")
           ]
-      (log-js rend)
       (go
-        (log-js (<! img))
-        )
-      ))
+        (println "loading it")
+        (let [img (<! img-chan  ) ]
+          (dommy/append! (by-id "resources") (rman/img img))
+          (rp/clear! rend [1 0 1])
+          (rp/spr! rend (by-id "tiles") (v2 0 0))
+          (log-js (rman/img img))))))
 
   ; {{{
 
@@ -322,6 +321,10 @@
   ) 
 
 ;; }}}
+
+(defprotocol ISpr
+  (get-img [_])
+  (get-stamp [_]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;ends

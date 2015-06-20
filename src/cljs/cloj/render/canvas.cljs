@@ -12,8 +12,8 @@
   (get-ctx-2d [_]))
 
 
-(defn canvas [canvas-id dims]
-  (let [canvas-el (hipo/create [:canvas ^:attrs {:id id :width w :height h}])
+(defn canvas [canvas-id {:keys [x y] :as dims}]
+  (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
         ctx (.getContext canvas-el "2d")]
     (reify
       IHTMLCanvas
@@ -48,22 +48,25 @@
 
       rp/IRenderBackend
 
-      (spr-scaled! [this _]
+      (spr-scaled! [this img {x :x y :y} {w :x h :y}]
         (do 
+          (.drawImage ctx img x y w h) 
+
           (println "not implemented"))
         this)
 
-      (spr! [this _]
+      (spr! [this img {x :x y :y}]
         (do 
-          (println "not implemented"))
+          (.drawImage ctx img x y 100 100 0 0 100 100))
         this)
 
       (clear! [this col]
-        (rp/box! this [(v2 0 0) dims col]))
+        (rp/box! this (v2 0 0) dims col))
 
-      (box! [this [{x :x y :y} {w :x h :y} col]]
+      (box! [this {x :x y :y} {w :x h :y} col]
         (do
           (let [col-str (rgb-str col)]
             (set! (.-fillStyle ctx) col-str)
             (.fillRect ctx x y w h)))))  )
+
   )
