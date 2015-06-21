@@ -46,30 +46,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
-(println "HERE I AM")
-
-;;; }}}
-
 ;; {{{ Ignore for now
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Game obect
-(def pogue-game
-  (game/make-game
-    (reify 
-      game/IGameInit
-      (game-init [this]
-        this)
-
-      game/IGameUpdate
-      (game-update [this dt]
-        this)
-
-      game/IGameClose
-      (game-close [this]
-        this))))
-;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
@@ -273,10 +252,29 @@
       (animate))))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Game obect
+
 (def html-system (mk-system "game" "game-canvas"))
 (def rm (get-resource-manager html-system))
 (def rend (get-render-engine html-system))
 
+(def pogue-game
+  (game/make-game
+    (reify 
+      game/IGameInit
+      (game-init [this]
+        this)
+
+      game/IGameUpdate
+      (game-update [this dt]
+        this)
+
+      game/IGameClose
+      (game-close [this]
+        this))))
+;; }}}
 (defn mk-spr [id img x y w h]
   (reify rman/IImage
     (id [_] id)
@@ -308,8 +306,21 @@
 
           (rp/clear! rend [1 0 1])
           (rp/spr! rend img (v2 0 0))
-          (rp/spr-scaled! rend t0 (v2 0 0) (v2 30 30))
-          (rp/spr-scaled! rend t1 (v2 30 30) (v2 30 30))
+
+          (let [in-chan (tap time-chan-mult (chan))]
+            (loop []
+              (let [dt (<! in-chan)
+                    t @g-time
+                    p-x (* 30  (cos-01 (/ t 100) ))
+                    p-y (* 90  (cos-01 (/ t 990) ))
+                    s-x (* 100 (cos-01 (/ t 500)))
+                    s-y (* 100 (cos-01 (/ t 500)))
+                    ]
+          (rp/clear! rend [1 0 1])
+                (rp/spr-scaled! rend t0 (v2 p-x  p-y) (v2 s-x s-y))
+                (rp/spr-scaled! rend t1 (v2 30 30) (v2 30 30))
+                )
+              (recur)))
           ))))
 
   ; {{{

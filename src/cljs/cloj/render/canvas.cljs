@@ -62,7 +62,7 @@
           (do 
             (let [[sx sy sw sh] (rman/dims spr)
                   spr-img (rman/img spr) ]
-              (.drawImage ctx spr-img sx sy sw sh x y w h)))
+              (.drawImage ctx spr-img sx sy sw sh (int x ) (int y ) (int w ) (int h ))))
           this)
 
         (spr! [this spr pos]
