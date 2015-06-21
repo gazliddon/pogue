@@ -56,8 +56,8 @@
 
 (defn cb->chan
   "Convert a callback function "
-( [ cb-fn transducer ]
-   (let [ret-chan (chan 10 transducer)]
+( [ cb-fn ]
+   (let [ret-chan (chan )]
      (do
        (->>
          (fn [ret-val] (put! ret-chan ret-val) )
@@ -94,14 +94,6 @@
     (height [_] (.-height el))
     (img [_] el)))
 
-
-(defn mk-blob->image [div-el id]
-  (comp
-    (map  blob->element)
-    (map  #(aset % "id" id))
-    (map  #(el->in-div div-el %))
-    (map  el->img)))
-
 (defn mk-resource-manager [save-div]
   (let [store (atom empty-store)
         div-el (by-id save-div)
@@ -121,6 +113,17 @@
         (canvas-render/canvas id {:x w :y h}))
 
       (load-img! [this id file-name]
-        (let [xhr (js/XMLHttpRequest.)]
-          (cb->chan #(get-blob! xhr file-name %) (mk-blob->image div-el id)))))))
+        (let [xhr (js/XMLHttpRequest.)
+              blob-chan (cb->chan #(get-blob! xhr file-name %))]
+          (go
+            (let [ret-chan (chan)
+
+                  blob->img (comp
+                              blob->element
+                              #(aset % "id" id)
+                              #(el->in-div div-el %)
+                              el->img) ]
+
+              (put! ret-chan (blob->img (<! blob-chan)))
+              ret-chan)))))))
 
