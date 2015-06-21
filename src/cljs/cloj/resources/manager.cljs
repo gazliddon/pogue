@@ -2,6 +2,7 @@
 
 (defprotocol IImage
   (id [_])
+  (dims [_])
   (width [_])
   (height [_])
   (img [_]))

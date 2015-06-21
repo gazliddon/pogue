@@ -273,7 +273,7 @@
       (animate))))
 
 
-(def html-system (mk-system "game" "resources" "game-canvas"))
+(def html-system (mk-system "game" "game-canvas"))
 (def rm (get-resource-manager html-system))
 (def rend (get-render-engine html-system))
 
@@ -294,14 +294,8 @@
           ]
       (go
         (let [img (<! img-chan) ]
-
-          (println (str "width "  (rman/width img) ))
-          (println (str "height " (rman/height img) ))
-          (log-js (rman/img img))
-
           (rp/clear! rend [1 0 1])
-          (rp/spr! rend img (v2 0 0))
-          ))))
+          (rp/spr! rend img (v2 0 0))))))
 
   ; {{{
 

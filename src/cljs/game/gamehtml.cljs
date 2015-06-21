@@ -8,10 +8,9 @@
     [cloj.web.utils         :refer [by-id]]
     [cloj.resources.manager :as rman]))
 
-(defn mk-system [main-div-id resource-div-id canvas-id]
+(defn mk-system [main-div-id canvas-id]
   (let [main-div-el (by-id main-div-id)
-        resource-div-el (by-id resource-div-id)
-        rm   (mk-resource-manager resource-div-el)
+        rm   (mk-resource-manager)
         rend (rman/create-render-target! rm canvas-id 400 225)]
     (do
       (rman/clear-resources! rm)
@@ -27,8 +26,6 @@
 
         (get-resource-manager [_]
           rm)
-
-
 
         (get-render-engine [_]
           rend

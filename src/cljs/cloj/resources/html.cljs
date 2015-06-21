@@ -108,14 +108,15 @@
     IImage
     (width [_] (.-width el))
     (height [_] (.-height el))
+    (dims [this]
+      [0 0 (rman/width this) (rman/height this)])
     (img [_] el)))
-
 
 (defn msg [v s]
   (println (str s "(" (type v) ")"))
   v)
 
-(defn mk-resource-manager [div-el]
+(defn mk-resource-manager []
   (let [store (atom empty-store)]
     (println "TRYIN THIS!")
     (do
@@ -128,7 +129,6 @@
 
         IResourceManager
         (clear-resources! [_]
-          (dommy/clear! div-el)
           (reset! store empty-store))
 
         (create-render-target! [this id w h]

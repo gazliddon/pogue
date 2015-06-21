@@ -54,7 +54,8 @@
           (let [spr-w   (rman/width spr)
                 spr-h   (rman/height spr)
                 spr-img (rman/img spr) ]
-            (.drawImage ctx spr-img x y w h)))
+            (.drawImage ctx spr-img 0 0 spr-w spr-h x y w h)  
+            ))
         this)
 
       (spr! [this spr {x :x y :y}]
@@ -62,7 +63,7 @@
           (let [spr-w   (rman/width spr)
                 spr-h   (rman/height spr)
                 spr-img (rman/img spr) ]
-            (.drawImage ctx spr-img x y 100 100 0 0 100 100)))
+            (.drawImage ctx spr-img 0 0 spr-w spr-h x y spr-w spr-h)))
         this)
 
       (clear! [this col]
