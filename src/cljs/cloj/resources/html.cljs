@@ -4,8 +4,10 @@
   (:require [cloj.resources.manager :as rman :refer [IResourceManager IResourceManagerInfo IImage]]
             [cloj.render.canvas     :as canvas-render]
             [cloj.math.vec2 :refer [v2]]
-            [cloj.web.utils :refer [by-id]]
+            [cloj.web.utils :refer [by-id log-js]]
+
             [cljs.core.async        :refer [put! >! chan <! alts! close!]]
+            [dommy.core             :as dommy :include-macros true]    
             [hipo.core              :as hipo  :include-macros true]))
 
 
@@ -19,12 +21,13 @@
     (height [_] (.-height img))
     (img [_] img)))
 
-(defmulti blob->element (fn [id e] (-> (.-type e) (.split "/") (aget 0))))
+(defmulti blob->element (fn [e] (-> (.-type e) (.split "/") (aget 0))))
 
-(defmethod blob->element "image" [id blob]
+(defmethod blob->element "image" [blob]
   (let [blobURL (.createObjectURL js/URL blob)
-        img (hipo/create [:img ^:attrs {:id (str id) :src blobURL}]) ]
-    (img->iimage img)))
+        img (hipo/create [:img ^:attrs { :src blobURL}]) ]
+    (log-js img)
+    img))
 
 (defmethod blob->element :default [e] (println (str "unknown type " (.-type e))))
 
@@ -33,7 +36,6 @@
 (defprotocol IXHRReq
   (get-status [_])
   (u-okay-hun? [_])
-  (get-elem! [_ id uri cb])
   (get-blob! [_ uri cb]))
 
 (extend-type js/XMLHttpRequest
@@ -41,9 +43,6 @@
   (get-status [this] (.-status this))
 
   (u-okay-hun? [this] (== 200 (get-status this)))
-
-  (get-elem! [xhr id uri cb]
-    (get-blob! xhr uri #(cb (blob->element id %))))
 
   (get-blob! [xhr uri cb]
     (doto xhr
@@ -57,13 +56,16 @@
 
 (defn cb->chan
   "Convert a callback function "
-  [ cb-fn ]
-  (let [ret-chan (chan)]
-    (do
-      (->>
-        (fn [ret-val] (put! ret-chan ret-val) )
-        (cb-fn))
-      ret-chan)))
+( [ cb-fn transducer ]
+   (let [ret-chan (chan 10 transducer)]
+     (do
+       (->>
+         (fn [ret-val] (put! ret-chan ret-val) )
+         (cb-fn))
+       ret-chan)))
+   )
+
+(defn dump-it [s] (log-js s) s)
 
 ;; =============================================================================
 ;; todo
@@ -79,8 +81,26 @@
 (def empty-store {:imgs {} :targets {}})
 
 
-(defprotocol ILoader
-  (load-async! [_ file-name]))
+(defn el->in-div [div-el el]
+  (let [id (.-id el)]
+    (do
+      (dommy/append! div-el el)
+      (by-id id))))
+
+(defn el->img [el]
+  (reify
+    IImage
+    (width [_] (.-width el))
+    (height [_] (.-height el))
+    (img [_] el)))
+
+
+(defn mk-blob->image [div-el id]
+  (comp
+    (map  blob->element)
+    (map  #(aset % "id" id))
+    (map  #(el->in-div div-el %))
+    (map  el->img)))
 
 (defn mk-resource-manager [save-div]
   (let [store (atom empty-store)
@@ -101,6 +121,6 @@
         (canvas-render/canvas id {:x w :y h}))
 
       (load-img! [this id file-name]
-        (cb->chan #(get-elem! (js/XMLHttpRequest.) id file-name %))))))
-
+        (let [xhr (js/XMLHttpRequest.)]
+          (cb->chan #(get-blob! xhr file-name %) (mk-blob->image div-el id)))))))
 

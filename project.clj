@@ -17,6 +17,7 @@
                  [enlive "1.1.5"]
                  [bostonou/cljs-pprint "0.0.1"]
                  [org.clojure/data.codec "0.1.0"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [prismatic/dommy "1.1.0"]
                  [base64-clj "0.1.1"]
                  [cljs-http "0.1.35"]
@@ -29,6 +30,8 @@
             [lein-environ "1.0.0"]]
 
   :min-lein-version "2.5.0"
+
+  :jvm-opts ["-Xverify:none"]
 
   :uberjar-name "my-project.jar"
 

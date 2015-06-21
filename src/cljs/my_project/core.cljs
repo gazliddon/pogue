@@ -47,6 +47,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
+(println "HERE I AM")
+
 ;;; }}}
 
 ;; {{{ Ignore for now
@@ -296,9 +298,9 @@
           ]
       (go
         (let [img (<! img-chan  ) ]
-          (dommy/append! (by-id "resources") (rman/img img))
-          (rp/clear! rend [1 0 1])
-          (rp/spr! rend (by-id "tiles") (v2 0 0))
+          (log-js img)
+          ; (rp/clear! rend [1 0 1])
+          ; (rp/spr! rend (by-id "tiles") (v2 0 0))
           ))))
 
   ; {{{
@@ -321,20 +323,6 @@
 
 ;; }}}
 
-(defprotocol ISpr
-  (get-img [_])
-  (get-stamp [_]))
-
-
-;; {{{ Testing Transducers
-
-(def add-poo (map #(str % "poo")))
-(def add-wee (map #(str % "wee")))
-
-(println (into [] (comp add-poo add-wee) [1 2 3 4]))
-;; Woo they work on this version of cscript
-
-;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;ends
