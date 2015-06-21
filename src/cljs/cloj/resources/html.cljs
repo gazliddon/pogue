@@ -73,12 +73,17 @@
   (reify ILoader
     (load-blob! [_ file-name]
       (let [ret-chan (chan)
+            pipe-chan (chan)
             xhr (js/XMLHttpRequest.)]
         (go
-          (put! ret-chan (-> (fn [cb] (get-blob! xhr file-name cb))
-                             (cb->chan )
-                             (<!)))
-          ret-chan)))))
+          (get-blob! xhr file-name (fn [v]
+                                     (put! pipe-chan v)))
+          (let [ret-v (<! pipe-chan)]
+            (put! ret-chan ret-v))
+          )
+          ret-chan 
+        ))))
+
 
 ;; =============================================================================
 ;; todo
