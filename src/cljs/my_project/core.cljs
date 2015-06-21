@@ -9,7 +9,7 @@
     [cloj.resources.manager :as rman
                             :refer [create-render-target!
                                     load-img!
-                                    clear-resources!]]
+                                    clear-resources!  ]]
 
     [cloj.resources.html    :as rmhtml]
 
@@ -226,9 +226,6 @@
 
 
 ;; Make and test the system first
-(def html-system (mk-system "app" "game"))
-(def rend (get-render-engine html-system))
-
 (defn game-component [data owner]
   (reify
     om/IWillMount
@@ -277,11 +274,12 @@
       (animate))))
 
 
-(def app-div (by-id "app"))
+(def html-system (mk-system "game" "resources" "game-canvas"))
+(def rm (get-resource-manager html-system))
+(def rend (get-render-engine html-system))
 
 (defn main []
   (do
-    ; (dommy/clear! app-div)
     (om/root
       frame-rate-component
       {:in-chan (tap time-chan-mult (chan)) }
@@ -292,14 +290,17 @@
       {:in-chan (tap time-chan-mult (chan) )}
       {:target (by-id "test") })
 
-    (let [rm (rmhtml/mk-resource-manager "resources")
-          _ (clear-resources! rm)
+    (let [_ (clear-resources! rm)
           img-chan (load-img! rm "tiles" "data/tiles.png")
           ]
       (go
-        (let [img (<! img-chan  ) ]
+        (let [img (<! img-chan) ]
+
+          (println (str "width " (rman/width img) ))
+          (println (str "height " (rman/height img) ))
+
           (rp/clear! rend [1 0 1])
-          (rp/spr! rend (by-id "tiles") (v2 0 0))
+          (rp/spr! rend (rman/img img) (v2 0 0))
           ))))
 
   ; {{{

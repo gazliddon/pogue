@@ -8,22 +8,33 @@
     [cloj.web.utils         :refer [by-id]]
     [cloj.resources.manager :as rman]))
 
-(defn mk-system [resource-div-id canvas-id]
-  (let [rm   ( mk-resource-manager resource-div-id)
+(defn mk-system [main-div-id resource-div-id canvas-id]
+  (let [main-div-el (by-id main-div-id)
+        resource-div-el (by-id resource-div-id)
+        rm   (mk-resource-manager resource-div-el)
         rend (rman/create-render-target! rm canvas-id 400 225)]
     (do
-      (dommy/append! (by-id "app") (canvas/get-element rend )))
+      (rman/clear-resources! rm)
 
-    (reify
-      ISystem
-      (log [_ txt]
-        (.log js/console txt))
+      (doto main-div-el
+        (dommy/clear! )
+        (dommy/append! (canvas/get-element rend)))
 
-      (get-resource-manager [_]
-        rm)
+      (reify
+        ISystem
+        (log [_ txt]
+          (.log js/console txt))
 
-      (get-render-engine [_]
-        rend
-        ))))
+        (get-resource-manager [_]
+          rm)
+
+
+
+        (get-render-engine [_]
+          rend
+          ))  
+
+      )
+    ))
 
 

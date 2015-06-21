@@ -24,9 +24,15 @@
 (defmulti blob->element (fn [e id] (-> (.-type e) (.split "/") (aget 0))))
 
 (defmethod blob->element "image" [blob id]
-  (let [blobURL (.createObjectURL js/URL blob)
-        img (hipo/create [:img ^:attrs { :src blobURL :id id}]) ]
-    img))
+  (let [img (js/Image.)
+        ret-chan (chan)]
+
+    (doto img
+      (aset "id" id)
+      (aset "onload" (fn [_] (put! ret-chan img)))
+      (aset "src" (.createObjectURL js/URL blob)))
+
+    ret-chan))
 
 (defmethod blob->element :default [e] (println (str "unknown type " (.-type e))))
 
@@ -84,13 +90,6 @@
           ret-chan 
         ))))
 
-#_(go
-  (->>
-    (load-blob! xhr-loader "data/tiles.png")
-    (<!)
-    (log-js)))
-
-
 ;; =============================================================================
 ;; todo
 ;; split into 3 I guese
@@ -104,12 +103,6 @@
 
 (def empty-store {:imgs {} :targets {}})
 
-(defn el->in-div [el div-el]
-  (let [id (.-id el)]
-    (do
-      (dommy/append! div-el el)
-      (by-id id))))
-
 (defn el->img [el]
   (reify
     IImage
@@ -118,33 +111,41 @@
     (img [_] el)))
 
 
-(defn mk-resource-manager [save-div]
-  (let [store (atom empty-store)
-        div-el (by-id save-div) ]
-    (reify
-      IResourceManagerInfo
-      (find-img [_ id]           (println "not implemented"))
-      (find-render-target [_ id] (println "not implemented"))
-      (list-render-targets [_]   (println "not implemented"))
-      (list-imgs [_]             (println "not implemented"))
+(defn msg [v s]
+  (println (str s "(" (type v) ")"))
+  v)
 
-      IResourceManager
-      (clear-resources! [_]
-        (reset! store empty-store))
+(defn mk-resource-manager [div-el]
+  (let [store (atom empty-store)]
+    (println "TRYIN THIS!")
+    (do
+      (reify
+        IResourceManagerInfo
+        (find-img [_ id]           (println "not implemented"))
+        (find-render-target [_ id] (println "not implemented"))
+        (list-render-targets [_]   (println "not implemented"))
+        (list-imgs [_]             (println "not implemented"))
 
-      (create-render-target! [this id w h]
-        (canvas-render/canvas id {:x w :y h}))
+        IResourceManager
+        (clear-resources! [_]
+          (dommy/clear! div-el)
+          (reset! store empty-store))
 
-      (load-img! [this id file-name]
-        (let [ret-chan (chan)]
-          (go
-            (put! ret-chan (-> 
-                             (load-blob! xhr-loader file-name)
-                             (<!)
-                             (blob->element id)
-                             (el->in-div div-el)
-                             (el->img))))
-          ret-chan)))))
+        (create-render-target! [this id w h]
+          (canvas-render/canvas id {:x w :y h}))
+
+        (load-img! [this id file-name]
+          (let [ret-chan (chan)]
+            (go
+              (put! ret-chan (-> 
+                               (load-blob! xhr-loader file-name)
+                               (<!) 
+                               (blob->element id)
+                               (<!)
+                               (el->img))))
+            ret-chan)))  
+      )
+    ))
 
 
 
