@@ -73,16 +73,22 @@
   (reify ILoader
     (load-blob! [_ file-name]
       (let [ret-chan (chan)
-            pipe-chan (chan)
             xhr (js/XMLHttpRequest.)]
         (go
-          (get-blob! xhr file-name (fn [v]
-                                     (put! pipe-chan v)))
-          (let [ret-v (<! pipe-chan)]
-            (put! ret-chan ret-v))
-          )
+          (->>
+            (fn [cb] (get-blob! xhr file-name cb))
+            (cb->chan)
+            (<!)
+            (put! ret-chan)))
+
           ret-chan 
         ))))
+
+#_(go
+  (->>
+    (load-blob! xhr-loader "data/tiles.png")
+    (<!)
+    (log-js)))
 
 
 ;; =============================================================================
@@ -130,16 +136,15 @@
         (canvas-render/canvas id {:x w :y h}))
 
       (load-img! [this id file-name]
-        (let [xhr (js/XMLHttpRequest.)]
+        (let [ret-chan (chan)]
           (go
-            (let [ret-chan (chan)]
-              (put! ret-chan (-> (cb->chan #(get-blob! xhr file-name %))
-                                 (<! )
-                                 (blob->element id)
-                                 (el->in-div div-el)
-                                 (el->img)))
-              
-              ret-chan)))))))
+            (put! ret-chan (-> 
+                             (load-blob! xhr-loader file-name)
+                             (<!)
+                             (blob->element id)
+                             (el->in-div div-el)
+                             (el->img))))
+          ret-chan)))))
 
 
 

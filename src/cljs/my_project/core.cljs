@@ -296,11 +296,10 @@
           _ (clear-resources! rm)
           img-chan (load-img! rm "tiles" "data/tiles.png")
           ]
-      #_(go
+      (go
         (let [img (<! img-chan  ) ]
-          (log-js img)
-          ; (rp/clear! rend [1 0 1])
-          ; (rp/spr! rend (by-id "tiles") (v2 0 0))
+          (rp/clear! rend [1 0 1])
+          (rp/spr! rend (by-id "tiles") (v2 0 0))
           ))))
 
   ; {{{
