@@ -34,7 +34,9 @@
     [gaz.appstate           :refer [app-state]]
 
 
-    [cljs.core.async        :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
+    [cljs.core.async        :as async
+                            :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
+
     [ff-om-draggable.core   :refer [draggable-item]]
 
     [hipo.core              :as hipo  :include-macros true]  
@@ -46,9 +48,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (enable-console-print!)
 
-;; {{{ Ignore for now
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
@@ -202,8 +202,6 @@
 ;; =============================================================================
 ;; Game System Stuff {{{
 
-
-;; Make and test the system first
 (defn game-component [data owner]
   (reify
     om/IWillMount
@@ -218,8 +216,37 @@
 
     om/IRenderState
     (render-state [_ state]
-      (dom/p nil (str (:dt state))))))
+      (dom/p nil (str "ROGUEBOW ISLANDS : "(:dt state))))))
 
+;; }}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Game obect
+
+(def system (mk-system "game" "game-canvas"))
+
+(def pogue-game
+  (game/make-game
+    (reify 
+      game/IGameInit
+      (game-init [this]
+        this)
+
+      game/IGameUpdate
+      (game-update [this dt]
+        this)
+
+      game/IGameClose
+      (game-close [this]
+        this))))
+
+(defn prn-spr [rend spr t]
+  (let [p-x (* 230  (cos-01 (/ t 100) ))
+        p-y (* 90  (cos-01 (/ t 199) ))
+        s-x (* 100 (cos-01 (/ t 500)))
+        s-y (* 100 (cos-01 (/ t 500)))]
+    (doto rend
+      (rp/spr! spr (v2 p-x p-y)))))
 ;; }}}
 
 ;; =============================================================================
@@ -251,30 +278,6 @@
           (put! time-chan dt)))
       (animate))))
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Game obect
-
-(def html-system (mk-system "game" "game-canvas"))
-(def rm (get-resource-manager html-system))
-(def rend (get-render-engine html-system))
-
-(def pogue-game
-  (game/make-game
-    (reify 
-      game/IGameInit
-      (game-init [this]
-        this)
-
-      game/IGameUpdate
-      (game-update [this dt]
-        this)
-
-      game/IGameClose
-      (game-close [this]
-        this))))
-;; }}}
 (defn mk-spr [id img x y w h]
   (reify rman/IImage
     (id [_] id)
@@ -284,55 +287,50 @@
     (height [_] h)
     (img [_] (rman/img img)) ))
 
-
-(defn prn-spr [rend spr t]
-  (let [p-x (* 30  (cos-01 (/ t 100) ))
-        p-y (* 90  (cos-01 (/ t 990) ))
-        s-x (* 100 (cos-01 (/ t 500)))
-        s-y (* 100 (cos-01 (/ t 500)))]
-    (doto rend
-      (rp/spr! spr (v2 p-x p-y)))))
-
 (defn main []
-  (do
-    (om/root
-      frame-rate-component
-      {:in-chan (tap time-chan-mult (chan)) }
-      {:target (by-id "app") })
+  (let [rm (get-resource-manager system)
+        rend (get-render-engine system)]
+    (do
+      (om/root
+        frame-rate-component
+        {:in-chan (tap time-chan-mult (chan)) }
+        {:target (by-id "app") })
 
-    (om/root
-      game-component
-      {:in-chan (tap time-chan-mult (chan) )}
-      {:target (by-id "app") })
+      (om/root
+        game-component
+        {:in-chan (tap time-chan-mult (chan) )}
+        {:target (by-id "app") })
 
-    (let [_ (clear-resources! rm)
-          img-chan (load-img! rm "tiles" "data/bubbob.png")
-          ]
-      (go
-        (let [img (<! img-chan)
-              t0 (mk-spr :t0 img 22 20 22 32)
-              t1 (mk-spr :t0 img 8 0 8 8) ]
+      (let [_ (clear-resources! rm)
+            img-chan (load-img! rm "tiles" "data/bubbob.png")
+            items-chan (load-img! rm "tiles" "data/items.png") ]
+        (go
+          (let [img (<! img-chan)
+                t0 (mk-spr :t0 img 22 20 22 32)
+                t1 (mk-spr :t0 img 8 0 8 8)
+                items (<! items-chan)
+                trez (mk-spr :treasure items 72 416 80 80) ]
 
-          (rp/clear! rend [1 0 1])
-          (rp/spr! rend img (v2 0 0))
+            (rp/clear! rend [1 0 1])
+            (rp/spr! rend img (v2 0 0))
 
-          (let [in-chan (tap time-chan-mult (chan))]
-            (loop []
-              (let [dt (<! in-chan)
-                    t @g-time ]
+            (let [in-chan (tap time-chan-mult (chan))]
+              (loop []
+                (let [dt (<! in-chan)
+                      t @g-time ]
 
-                (doto rend
-                  (rp/clear! [1 0 1])
-                  (rp/identity! )
-                  (rp/scale! (v2 3 3))
-                  ; (prn-spr t0 t)
+                  (doto rend
+                    (rp/clear! [1 0 1])
+                    (rp/identity! )
+                    (rp/scale! (v2 2 2 ))
+                    (prn-spr t0 (/ t 3)))
+                  (doseq [i (range 100)]
+                    (prn-spr rend trez (+ (* (+ 1  (cos-01 (/ t 1000))) i) (* t 0.2) ))
+                    )
                   )
-                (doseq [i (range 10)]
-                  (prn-spr rend t0 (+ (* 30 i) t))
-                  )
-                )
-              (recur)))
-          ))))
+                (recur)))
+            )))) )
+
 
   ; {{{
 
@@ -354,9 +352,59 @@
 
 ;; }}}
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Some Spr Printing Stuff {{{
+(defn spr16
+  ([x y] [(* x 16) (* y 16) 16 16])
+  ([n]
+   (let [x (mod n 16)
+         y (int (/ n 16)) ]
+     (spr16 x y))))
 
+(def sprs
+  {:blocks {:b0 (spr16 0)
+            :b1 (spr16 1)
+            :b2 (spr16 2)
+            :b3 (spr16 3)
+            :b4 (spr16 4)
+            :b5 (spr16 5)
+            :b6 (spr16 6) }})
 
+(defn sprs->files [spr-defs]
+  (->>
+    spr-defs
+    (map (fn [[k v]]
+           [k (str "data/" (name k ) ".png")] ))
+    (into {})
+    ))
 
+(defn load-sprs [rman files]
+  (let [n (count files)]
+    (->
+      (fn [id-file] (apply rman/load-img! rman id-file))
+      (map files)
+      (async/merge)
+      (async/take 1))))
+
+(do
+  (let [rm (get-resource-manager system)
+        rend (get-render-engine system)]
+    (println "about to go")
+    (go
+      (let [in-ch (->> (sprs->files sprs)
+                       (load-sprs rm))
+            coll (<! in-ch)
+            coll2 (<! in-ch)
+            ]
+
+        (println "about to go 2")
+
+        (do
+          (log-js coll)
+          (log-js coll2)
+          )))))
+
+;;; }}}
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

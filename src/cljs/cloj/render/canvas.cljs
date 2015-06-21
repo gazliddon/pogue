@@ -21,6 +21,10 @@
         (aset "msImageSmoothingEnabled"      v)
         (aset "imageSmoothingEnabled"        v)))
 
+
+(defn px [v]
+  (int (+ 0.5 v)))
+
 (defn canvas [canvas-id {:keys [x y] :as dims}]
   (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
         ctx (.getContext canvas-el "2d")]
@@ -62,7 +66,7 @@
           (do 
             (let [[sx sy sw sh] (rman/dims spr)
                   spr-img (rman/img spr) ]
-              (.drawImage ctx spr-img sx sy sw sh (int x ) (int y ) (int w ) (int h ))))
+              (.drawImage ctx spr-img sx sy sw sh (px x ) (px y ) (px w ) (px h ))))
           this)
 
         (spr! [this spr pos]

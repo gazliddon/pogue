@@ -6,11 +6,14 @@
             [cloj.math.vec2 :refer [v2]]
             [cloj.web.utils :refer [by-id log-js]]
 
-            [cljs.core.async        :refer [put! >! chan <! alts! close!]]
+            [cljs.core.async        :as async :refer [>! chan <! alts!]]
             [dommy.core             :as dommy :include-macros true]    
             [hipo.core              :as hipo  :include-macros true]))
 
-
+(defn put-close! [ch v]
+  (do
+    (async/put! ch v)
+    (async/close! ch)))
 
 ;; =============================================================================
 ;; Multi method to turn a blob into an element
@@ -29,7 +32,7 @@
 
     (doto img
       (aset "id" id)
-      (aset "onload" (fn [_] (put! ret-chan img)))
+      (aset "onload" (fn [_] (put-close! ret-chan img)))
       (aset "src" (.createObjectURL js/URL blob)))
 
     ret-chan))
@@ -65,7 +68,7 @@
   (let [ret-chan (chan )]
     (do
       (->>
-        (fn [ret-val] (put! ret-chan ret-val) )
+        (fn [ret-val] (put-close! ret-chan ret-val))
         (cb-fn))
       ret-chan))
   )
@@ -85,8 +88,8 @@
             (fn [cb] (get-blob! xhr file-name cb))
             (cb->chan)
             (<!)
-            (put! ret-chan)))
-
+            (put-close! ret-chan))
+          )
           ret-chan 
         ))))
 
@@ -137,12 +140,13 @@
         (load-img! [this id file-name]
           (let [ret-chan (chan)]
             (go
-              (put! ret-chan (-> 
-                               (load-blob! xhr-loader file-name)
-                               (<!) 
-                               (blob->element id)
-                               (<!)
-                               (el->img))))
+              (put-close! ret-chan
+                          (-> 
+                            (load-blob! xhr-loader file-name)
+                            (<!) 
+                            (blob->element id)
+                            (<!)
+                            (el->img))))
             ret-chan)))  
       )
     ))
