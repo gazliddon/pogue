@@ -42,12 +42,12 @@
             (.resetTransform ctx))
           this)
 
-        (translate! [this [ {:keys [x y]}]]
+        (translate! [this {:keys [x y]}]
           (do
             (.translate ctx x y))
           this)
 
-        (scale! [this [ {:keys [x y] } ]]
+        (scale! [this {:keys [x y] }]
           (do
             (.scale ctx x y))
           this)

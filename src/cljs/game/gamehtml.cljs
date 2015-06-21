@@ -8,10 +8,14 @@
     [cloj.web.utils         :refer [by-id]]
     [cloj.resources.manager :as rman]))
 
+
+(def w (.-innerWidth js/window))
+(def h (.-innerHeight js/window))
+
 (defn mk-system [main-div-id canvas-id]
   (let [main-div-el (by-id main-div-id)
         rm   (mk-resource-manager)
-        rend (rman/create-render-target! rm canvas-id 400 225)]
+        rend (rman/create-render-target! rm canvas-id w h )]
     (do
       (rman/clear-resources! rm)
 

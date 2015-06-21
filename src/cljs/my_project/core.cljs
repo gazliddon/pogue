@@ -284,24 +284,33 @@
     (height [_] h)
     (img [_] (rman/img img)) ))
 
+
+(defn prn-spr [rend spr t]
+  (let [p-x (* 30  (cos-01 (/ t 100) ))
+        p-y (* 90  (cos-01 (/ t 990) ))
+        s-x (* 100 (cos-01 (/ t 500)))
+        s-y (* 100 (cos-01 (/ t 500)))]
+    (doto rend
+      (rp/spr! spr (v2 p-x p-y)))))
+
 (defn main []
   (do
     (om/root
       frame-rate-component
       {:in-chan (tap time-chan-mult (chan)) }
-      {:target (by-id "test") })
+      {:target (by-id "app") })
 
     (om/root
       game-component
       {:in-chan (tap time-chan-mult (chan) )}
-      {:target (by-id "test") })
+      {:target (by-id "app") })
 
     (let [_ (clear-resources! rm)
-          img-chan (load-img! rm "tiles" "data/tiles.png")
+          img-chan (load-img! rm "tiles" "data/bubbob.png")
           ]
       (go
         (let [img (<! img-chan)
-              t0 (mk-spr :t0 img 0 0 8 8)
+              t0 (mk-spr :t0 img 22 20 22 32)
               t1 (mk-spr :t0 img 8 0 8 8) ]
 
           (rp/clear! rend [1 0 1])
@@ -310,15 +319,17 @@
           (let [in-chan (tap time-chan-mult (chan))]
             (loop []
               (let [dt (<! in-chan)
-                    t @g-time
-                    p-x (* 30  (cos-01 (/ t 100) ))
-                    p-y (* 90  (cos-01 (/ t 990) ))
-                    s-x (* 100 (cos-01 (/ t 500)))
-                    s-y (* 100 (cos-01 (/ t 500)))
-                    ]
-          (rp/clear! rend [1 0 1])
-                (rp/spr-scaled! rend t0 (v2 p-x  p-y) (v2 s-x s-y))
-                (rp/spr-scaled! rend t1 (v2 30 30) (v2 30 30))
+                    t @g-time ]
+
+                (doto rend
+                  (rp/clear! [1 0 1])
+                  (rp/identity! )
+                  (rp/scale! (v2 3 3))
+                  ; (prn-spr t0 t)
+                  )
+                (doseq [i (range 10)]
+                  (prn-spr rend t0 (+ (* 30 i) t))
+                  )
                 )
               (recur)))
           ))))
