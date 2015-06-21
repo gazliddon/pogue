@@ -51,20 +51,14 @@
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (do 
-          (let [spr-w   (rman/width spr)
-                spr-h   (rman/height spr)
+          (let [[sx sy sw sh] (rman/dims spr)
                 spr-img (rman/img spr) ]
-            (.drawImage ctx spr-img 0 0 spr-w spr-h x y w h)  
-            ))
+            (.drawImage ctx spr-img sx sy sw sh x y w h)))
         this)
 
-      (spr! [this spr {x :x y :y}]
-        (do 
-          (let [spr-w   (rman/width spr)
-                spr-h   (rman/height spr)
-                spr-img (rman/img spr) ]
-            (.drawImage ctx spr-img 0 0 spr-w spr-h x y spr-w spr-h)))
-        this)
+      (spr! [this spr pos]
+        (let [[sx sy sw sh] (rman/dims spr)]
+          (rp/spr-scaled! this spr pos (v2 sw sh) )))
 
       (clear! [this col]
         (rp/box! this (v2 0 0) dims col))

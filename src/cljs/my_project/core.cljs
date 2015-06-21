@@ -277,6 +277,15 @@
 (def rm (get-resource-manager html-system))
 (def rend (get-render-engine html-system))
 
+(defn mk-spr [id img x y w h]
+  (reify rman/IImage
+    (id [_] id)
+    (dims [_]
+      [x y w h])
+    (width [_] w)
+    (height [_] h)
+    (img [_] (rman/img img)) ))
+
 (defn main []
   (do
     (om/root
@@ -293,9 +302,15 @@
           img-chan (load-img! rm "tiles" "data/tiles.png")
           ]
       (go
-        (let [img (<! img-chan) ]
+        (let [img (<! img-chan)
+              t0 (mk-spr :t0 img 0 0 8 8)
+              t1 (mk-spr :t0 img 8 0 8 8) ]
+
           (rp/clear! rend [1 0 1])
-          (rp/spr! rend img (v2 0 0))))))
+          (rp/spr! rend img (v2 0 0))
+          (rp/spr-scaled! rend t0 (v2 0 0) (v2 30 30))
+          (rp/spr-scaled! rend t1 (v2 30 30) (v2 30 30))
+          ))))
 
   ; {{{
 
