@@ -32,7 +32,6 @@
                                     render-level]]
 
     [gaz.appstate           :refer [app-state]]
-    [gaz.canvascomp         :refer [build-canvas-component ]]
 
 
     [cljs.core.async        :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
@@ -296,11 +295,12 @@
       (go
         (let [img (<! img-chan) ]
 
-          (println (str "width " (rman/width img) ))
+          (println (str "width "  (rman/width img) ))
           (println (str "height " (rman/height img) ))
+          (log-js (rman/img img))
 
           (rp/clear! rend [1 0 1])
-          (rp/spr! rend (rman/img img) (v2 0 0))
+          (rp/spr! rend img (v2 0 0))
           ))))
 
   ; {{{

@@ -4,13 +4,14 @@
     [gaz.color              :refer [rgb-str]]
     [cloj.math.vec2         :refer [ v2 ]]
     [hipo.core              :as hipo  :include-macros true]  
-    [cloj.render.protocols  :as rp]))
+    [cloj.render.protocols  :as rp]
+    [cloj.resources.manager :as rman]
+    ))
 
 
 (defprotocol IHTMLCanvas
   (get-element [_])
   (get-ctx-2d [_]))
-
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]
   (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
@@ -48,16 +49,20 @@
 
       rp/IRenderBackend
 
-      (spr-scaled! [this img {x :x y :y} {w :x h :y}]
+      (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (do 
-          (.drawImage ctx img x y w h) 
-
-          (println "not implemented"))
+          (let [spr-w   (rman/width spr)
+                spr-h   (rman/height spr)
+                spr-img (rman/img spr) ]
+            (.drawImage ctx spr-img x y w h)))
         this)
 
-      (spr! [this img {x :x y :y}]
+      (spr! [this spr {x :x y :y}]
         (do 
-          (.drawImage ctx img x y 100 100 0 0 100 100))
+          (let [spr-w   (rman/width spr)
+                spr-h   (rman/height spr)
+                spr-img (rman/img spr) ]
+            (.drawImage ctx spr-img x y 100 100 0 0 100 100)))
         this)
 
       (clear! [this col]
