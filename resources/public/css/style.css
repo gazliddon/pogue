@@ -17,10 +17,6 @@ body {
     height: 100%;
 }
 
-#resources {
-    display: none;
-}
-
 /* Log pane */
 .pane {
     color: #aaa;
