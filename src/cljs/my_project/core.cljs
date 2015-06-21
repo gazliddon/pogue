@@ -294,7 +294,7 @@
 
     (let [rm (rmhtml/mk-resource-manager "resources")
           _ (clear-resources! rm)
-          ; img-chan (load-img! rm "tiles" "data/tiles.png")
+          img-chan (load-img! rm "tiles" "data/tiles.png")
           ]
       #_(go
         (let [img (<! img-chan  ) ]
@@ -323,32 +323,6 @@
 
 ;; }}}
 
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; {{{ Transducer core async test
-;; No transducers in this version of chestnut :(
-
-(defn add-poo [] (map #(str % "-poo")))
-(defn add-wee [] (map #(str % "-wee")))
-
-(defn add-wee-poo [] (comp add-wee add-poo))
-
-; (def ch (chan 1 add-wee-poo))
-(def ch (chan))
-
-(do
-
-  (println "about to start")
-
-  (go
-    (println (<! ch))
-    )
-
-  (put! ch "test")
-  
-  )
 
 
 

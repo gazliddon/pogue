@@ -21,12 +21,11 @@
     (height [_] (.-height img))
     (img [_] img)))
 
-(defmulti blob->element (fn [e] (-> (.-type e) (.split "/") (aget 0))))
+(defmulti blob->element (fn [e id] (-> (.-type e) (.split "/") (aget 0))))
 
-(defmethod blob->element "image" [blob]
+(defmethod blob->element "image" [blob id]
   (let [blobURL (.createObjectURL js/URL blob)
-        img (hipo/create [:img ^:attrs { :src blobURL}]) ]
-    (log-js img)
+        img (hipo/create [:img ^:attrs { :src blobURL :id id}]) ]
     img))
 
 (defmethod blob->element :default [e] (println (str "unknown type " (.-type e))))
@@ -56,16 +55,30 @@
 
 (defn cb->chan
   "Convert a callback function "
-( [ cb-fn ]
-   (let [ret-chan (chan )]
-     (do
-       (->>
-         (fn [ret-val] (put! ret-chan ret-val) )
-         (cb-fn))
-       ret-chan)))
-   )
+  [ cb-fn ]
+  (let [ret-chan (chan )]
+    (do
+      (->>
+        (fn [ret-val] (put! ret-chan ret-val) )
+        (cb-fn))
+      ret-chan))
+  )
 
-(defn dump-it [s] (log-js s) s)
+;; =============================================================================
+;; Crappy stab at seperating out loading into a channel
+(defprotocol ILoader
+  (load-blob! [_ file-name]))
+
+(def xhr-loader
+  (reify ILoader
+    (load-blob! [_ file-name]
+      (let [ret-chan (chan)
+            xhr (js/XMLHttpRequest.)]
+        (go
+          (put! ret-chan (-> (fn [cb] (get-blob! xhr file-name cb))
+                             (cb->chan )
+                             (<!)))
+          ret-chan)))))
 
 ;; =============================================================================
 ;; todo
@@ -80,8 +93,7 @@
 
 (def empty-store {:imgs {} :targets {}})
 
-
-(defn el->in-div [div-el el]
+(defn el->in-div [el div-el]
   (let [id (.-id el)]
     (do
       (dommy/append! div-el el)
@@ -94,10 +106,10 @@
     (height [_] (.-height el))
     (img [_] el)))
 
+
 (defn mk-resource-manager [save-div]
   (let [store (atom empty-store)
-        div-el (by-id save-div)
-        ]
+        div-el (by-id save-div) ]
     (reify
       IResourceManagerInfo
       (find-img [_ id]           (println "not implemented"))
@@ -113,17 +125,16 @@
         (canvas-render/canvas id {:x w :y h}))
 
       (load-img! [this id file-name]
-        (let [xhr (js/XMLHttpRequest.)
-              blob-chan (cb->chan #(get-blob! xhr file-name %))]
+        (let [xhr (js/XMLHttpRequest.)]
           (go
-            (let [ret-chan (chan)
-
-                  blob->img (comp
-                              blob->element
-                              #(aset % "id" id)
-                              #(el->in-div div-el %)
-                              el->img) ]
-
-              (put! ret-chan (blob->img (<! blob-chan)))
+            (let [ret-chan (chan)]
+              (put! ret-chan (-> (cb->chan #(get-blob! xhr file-name %))
+                                 (<! )
+                                 (blob->element id)
+                                 (el->in-div div-el)
+                                 (el->img)))
+              
               ret-chan)))))))
+
+
 
