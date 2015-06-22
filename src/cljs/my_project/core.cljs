@@ -372,16 +372,7 @@
             :wacdonalds   (spr16 0 2)
             }})
 
-(defn sprs->files [spr-defs]
-  (->>
-    spr-defs
-    (map (fn [[k v]]
-           [k (str "data/" (name k ) ".png")] ))
-    (into {})
-    ))
-
 (defn mk-spr-2
-
   ([img id [x y w h]]
    (reify rman/IImage
      (id [_] id)
@@ -394,28 +385,47 @@
   ([img id x y w h]
    (mk-spr-2 img id [x y w h])))
 
-(defn load-sprs [rman files]
-  (->>
-    files 
-    (map (fn [id-file] (apply rman/load-img! rman id-file)))
-    (async/merge)
-    (async/into ())))
+(defn dump [s v]
+  (println s)
+  (println v)
+  )
 
-(do
-  (let [rm (get-resource-manager system)
-        rend (get-render-engine system)]
+(defn load-sprs [rman sprs]
+  ;; TODO should be transducers
+  (let [ret-chan (chan)
+        spr-chan (->>
+                   sprs
+                   (dump "got here 1")
+                   (map (fn [[k v]] [k (str "data/" (name k ) ".png")]))
+                   (dump "got here 2")
+                   (map (fn [id-file] (apply rman/load-img! rman id-file)))
+                   (dump "got here 3")
+                   (async/merge)
+                   (async/into ()))]
+
     (go
-      (let [img-seq (->>
-                      (sprs->files sprs)
-                      (load-sprs rm)
-                      (<!))]
-        (->
-          (fn [i]
-            (let [img (rman/img i) 
-                  spr-list ((rman/id i) sprs) ]
-              (map (fn [a] (apply mk-spr-2 img a )) spr-list)))
-          (mapcat img-seq))
-        ))))
+      (let [img-seq (<! spr-chan)]
+        ;; TODO : Should be put-close!
+        (put! ret-chan 
+                    (->
+                      (fn [i]
+                        (let [img (rman/img i) 
+                              spr-list ((rman/id i) sprs) ]
+                          (map (fn [a] (apply mk-spr-2 img a )) spr-list)))
+                      (mapcat img-seq)))))
+
+    ret-chan))
+
+(go
+  (->>
+    (load-sprs sprs (get-resource-manager system))
+    (<! )
+    (keys)
+    (dump "and here")
+    )
+  
+  )
+
 
 ;;; }}}
 
