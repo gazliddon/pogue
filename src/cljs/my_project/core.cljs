@@ -395,6 +395,7 @@
 (defn dump [s v]
   (println s)
   (println v)
+  (log-js v)
   (println "")
   )
 
@@ -403,11 +404,8 @@
   (let [ret-chan (chan)
         spr-chan (->>
                    sprs
-                   (dump "got here 1")
                    (map (fn [[k v]] [k (str "data/" (name k ) ".png")]))
-                   (dump "got here 2")
                    (map (fn [id-file] (apply rman/load-img! rman id-file)))
-                   (dump "got here 3")
                    (async/merge)
                    (async/into ()))]
 
@@ -415,6 +413,7 @@
       (let [img-seq (<! spr-chan)]
         (println "got img seq")
         (println (count img-seq))
+        (log-js img-seq)
         ;; TODO : Should be put-close!
         (put! ret-chan 
                     (->
@@ -428,7 +427,7 @@
 
 (go
   (->>
-    (load-sprs sprs (get-resource-manager system))
+    (load-sprs (get-resource-manager system) sprs )
     (<! )
     (keys)
     (dump "and here")
