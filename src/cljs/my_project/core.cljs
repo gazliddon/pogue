@@ -305,6 +305,8 @@
             items-chan (load-img! rm "tiles" "data/items.png") ]
         (go
           (let [items (<! items-chan)
+                cake (mk-spr :treasure items 128 176 32 32)  
+                chaz (mk-spr :treasure items 168 397 58 71)
                 trez (mk-spr :treasure items 72 416 80 80) ]
 
             (rp/clear! rend [1 0 1])
@@ -312,14 +314,19 @@
             (let [in-chan (tap time-chan-mult (chan))]
               (loop []
                 (let [dt (<! in-chan)
-                      t @g-time ]
+                      t @g-time
+                      c-t (* t 1.5)
+                      ]
 
                   (doto rend
                     (rp/clear! [1 0 1])
                     (rp/identity! )
-                    (rp/scale! (v2 2 2 )))
+                    (rp/scale! (v2 4 4 )))
                   (doseq [i (range 100)]
-                    (prn-spr rend trez (+ (* (+ 1  (cos-01 (/ t 1000))) i) (* t 0.2) ))
+                    (if (odd? i)
+                      (prn-spr rend cake (+ (* (+ 1  (/ t 2000)) (* i 8)) (* c-t 0.2) ))
+                      (prn-spr rend chaz (+ (* (+ 1  (cos-01 (/ t 1000))) i) (* (+ 10 t) 0.2) ))
+                      )
                     )
                   )
                 (recur)))
@@ -388,6 +395,7 @@
 (defn dump [s v]
   (println s)
   (println v)
+  (println "")
   )
 
 (defn load-sprs [rman sprs]
@@ -405,6 +413,8 @@
 
     (go
       (let [img-seq (<! spr-chan)]
+        (println "got img seq")
+        (println (count img-seq))
         ;; TODO : Should be put-close!
         (put! ret-chan 
                     (->
