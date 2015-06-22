@@ -380,6 +380,20 @@
     (into {})
     ))
 
+(defn mk-spr-2
+
+  ([img id [x y w h]]
+   (reify rman/IImage
+     (id [_] id)
+     (dims [_]
+       [x y w h])
+     (width [_] w)
+     (height [_] h)
+     (img [_] (rman/img img))))
+  
+  ([img id x y w h]
+   (mk-spr-2 img id [x y w h])))
+
 (defn load-sprs [rman files]
   (->>
     files 
@@ -395,10 +409,12 @@
                       (sprs->files sprs)
                       (load-sprs rm)
                       (<!))]
-
-        (doseq [i img-seq]
-          (println (rman/id i))
-          )
+        (->
+          (fn [i]
+            (let [img (rman/img i) 
+                  spr-list ((rman/id i) sprs) ]
+              (map (fn [a] (apply mk-spr-2 img a )) spr-list)))
+          (mapcat img-seq))
         ))))
 
 ;;; }}}
