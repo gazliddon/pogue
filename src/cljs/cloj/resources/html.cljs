@@ -106,9 +106,10 @@
 
 (def empty-store {:imgs {} :targets {}})
 
-(defn el->img [el]
+(defn el->img [el id]
   (reify
     IImage
+    (id [_] id)
     (width [_] (.-width el))
     (height [_] (.-height el))
     (dims [this]
@@ -146,7 +147,7 @@
                             (<!) 
                             (blob->element id)
                             (<!)
-                            (el->img))))
+                            (el->img id))))
             ret-chan)))  
       )
     ))

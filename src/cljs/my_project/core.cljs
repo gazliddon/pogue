@@ -302,17 +302,12 @@
         {:target (by-id "app") })
 
       (let [_ (clear-resources! rm)
-            img-chan (load-img! rm "tiles" "data/bubbob.png")
             items-chan (load-img! rm "tiles" "data/items.png") ]
         (go
-          (let [img (<! img-chan)
-                t0 (mk-spr :t0 img 22 20 22 32)
-                t1 (mk-spr :t0 img 8 0 8 8)
-                items (<! items-chan)
+          (let [items (<! items-chan)
                 trez (mk-spr :treasure items 72 416 80 80) ]
 
             (rp/clear! rend [1 0 1])
-            (rp/spr! rend img (v2 0 0))
 
             (let [in-chan (tap time-chan-mult (chan))]
               (loop []
@@ -322,8 +317,7 @@
                   (doto rend
                     (rp/clear! [1 0 1])
                     (rp/identity! )
-                    (rp/scale! (v2 2 2 ))
-                    (prn-spr t0 (/ t 3)))
+                    (rp/scale! (v2 2 2 )))
                   (doseq [i (range 100)]
                     (prn-spr rend trez (+ (* (+ 1  (cos-01 (/ t 1000))) i) (* t 0.2) ))
                     )
@@ -355,7 +349,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Some Spr Printing Stuff {{{
 (defn spr16
-  ([x y] [(* x 16) (* y 16) 16 16])
+  ([x y w h] (mapv #(* 16 %) [x y w h]))
+  ([x y] (spr16 x y 1 1))
   ([n]
    (let [x (mod n 16)
          y (int (/ n 16)) ]
@@ -368,7 +363,14 @@
             :b3 (spr16 3)
             :b4 (spr16 4)
             :b5 (spr16 5)
-            :b6 (spr16 6) }})
+            :b6 (spr16 6)}
+
+   :items  {:green-pepper (spr16 3)
+            :aubergine    (spr16 4)
+            :carrot       (spr16 5)
+            :onion        (spr16 6)
+            :wacdonalds   (spr16 0 2)
+            }})
 
 (defn sprs->files [spr-defs]
   (->>
@@ -379,30 +381,25 @@
     ))
 
 (defn load-sprs [rman files]
-  (let [n (count files)]
-    (->
-      (fn [id-file] (apply rman/load-img! rman id-file))
-      (map files)
-      (async/merge)
-      (async/take 1))))
+  (->>
+    files 
+    (map (fn [id-file] (apply rman/load-img! rman id-file)))
+    (async/merge)
+    (async/into ())))
 
 (do
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)]
-    (println "about to go")
     (go
-      (let [in-ch (->> (sprs->files sprs)
-                       (load-sprs rm))
-            coll (<! in-ch)
-            coll2 (<! in-ch)
-            ]
+      (let [img-seq (->>
+                      (sprs->files sprs)
+                      (load-sprs rm)
+                      (<!))]
 
-        (println "about to go 2")
-
-        (do
-          (log-js coll)
-          (log-js coll2)
-          )))))
+        (doseq [i img-seq]
+          (println (rman/id i))
+          )
+        ))))
 
 ;;; }}}
 
