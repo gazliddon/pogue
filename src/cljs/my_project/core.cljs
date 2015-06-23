@@ -15,7 +15,7 @@
     [cloj.resources.html    :as rmhtml]
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
-    [cloj.math.vec2         :as v2 :refer [v2]]
+    [cloj.math.vec2         :refer [vec2]]
     [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
@@ -29,6 +29,7 @@
     [game.html              :refer [mk-system]]
     [game.game              :as game]
     [game.sprs              :as sprs]
+    [game.sprdata           :as sprdata]
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
                                     render-level]]
@@ -248,7 +249,7 @@
         s-x (* 100 (cos-01 (/ t 500)))
         s-y (* 100 (cos-01 (/ t 500)))]
     (doto rend
-      (rp/spr! spr (v2 p-x p-y)))))
+      (rp/spr! spr (vec2 p-x p-y)))))
 ;; }}}
 
 ;; =============================================================================
@@ -309,13 +310,13 @@
               (loop []
                 (let [dt (<! in-chan)
                       t @g-time
-                      c-t (* t 1.5)
-                      ]
+                      c-t (* t 1.5)]
 
                   (doto rend
                     (rp/clear! [1 0 1])
                     (rp/identity! )
-                    (rp/scale! (v2 4 4 )))
+                    (rp/scale! (vec2 4 4 )))
+
                   (doseq [i (range 100)]
                     (if (odd? i)
                       (prn-spr rend cake (+ (* (+ 1  (/ t 2000)) (* i 8)) (* c-t 0.2) ))
@@ -346,5 +347,22 @@
 
 ;; }}}
 
+(do
+  (def system (mk-system "game" "game-canvas"))
+  (def rman (get-resource-manager system))
+  (def rend (get-render-engine system))
+  (def spr-ch (sprs/load-sprs rman sprdata/spr-data)) 
+
+  (go
+    (let [sprs (<! spr-ch)
+          spr-printer (sprs/mk-spr-printer rend sprs)
+          ]
+      (rp/clear! rend [0 0 1])
+      (rp/scale! rend (vec2 2 2))
+      (doseq [i (range 100)]
+        (doseq [k (keys sprs)]
+          (rp/spr! spr-printer k (vec2 (rand-int 400) (rand-int 400)))))))
+
+  (println "started loading "))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;ends
