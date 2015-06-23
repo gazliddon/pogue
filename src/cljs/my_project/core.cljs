@@ -32,7 +32,7 @@
     [game.sprdata           :as sprdata]
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
-                                    render-level]]
+                                    render-level!]]
 
     [gaz.appstate           :refer [app-state]]
 
@@ -53,6 +53,24 @@
 
 ;; }}}
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ tiles
+(defn mk-level-spr [sprs rman id w-b h-b ]
+  (let [[w h] [(* 16 w-b) (* 16 h-b)]
+        render-target (create-render-target! rman (name id ) w h)
+        spr-printer (sprs/mk-spr-printer render-target sprs)
+        level (->
+                (mk-tile-map w-b h-b :b0)
+                (mix-it-up))
+        ]
+    (do
+      (rp/clear! render-target [0 1 0])
+      (render-level! spr-printer level)
+      render-target)))
+
+;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
 
@@ -67,7 +85,7 @@
                            :max-fps (/ 1000  (apply max new-last-x))
                            :frame fr-num
                            }
-                    
+
                     ]
                 (put! ret-chan data)
                 (recur new-last-x (inc fr-num))))
@@ -90,11 +108,11 @@
     (render-state [_ {:keys [fps]}]
       (when fps 
         (let [elems (map
-                     (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
-                     [["avg" :avg-fps]
-                      ["min" :min-fps]
-                      ["max" :max-fps]])]
-        (apply dom/div nil  elems))))))
+                      (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
+                      [["avg" :avg-fps]
+                       ["min" :min-fps]
+                       ["max" :max-fps]])]
+          (apply dom/div nil  elems))))))
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -189,16 +207,16 @@
 (defonce sq-2 (sq audio-html))
 
 #_(do
-  (freq! sq-1 30)
-  (freq! sq-2 30.13721)
-  (vol! sq-1 5)
-  (vol! sq-2 5)
-  (start! sq-1 )
-  (start! sq-2 )
-  
-  
-  
-  )
+    (freq! sq-1 30)
+    (freq! sq-2 30.13721)
+    (vol! sq-1 5)
+    (vol! sq-2 5)
+    (start! sq-1 )
+    (start! sq-2 )
+
+
+
+    )
 
 ;; }}}
 
@@ -212,10 +230,10 @@
       (om/set-state! owner :dt 0)
       (let [in-chan (:in-chan data)]
         (go-loop []
-          (let [dt (<! in-chan)]
-            (om/set-state! owner :dt dt))
-          (recur)
-          )))
+                 (let [dt (<! in-chan)]
+                   (om/set-state! owner :dt dt))
+                 (recur)
+                 )))
 
     om/IRenderState
     (render-state [_ state]
@@ -281,8 +299,22 @@
           (put! time-chan dt)))
       (animate))))
 
-(defn rand-spr []
-  )
+
+(defn dump->> [s v]
+  (println (str s " : " v))
+  v)
+
+(defn funny-vec [t-secs uniq]
+  (->>
+    uniq
+    (v2/mul (vec2 10 10))
+    (v2/mul (vec2  t-secs t-secs))
+    (v2/add (vec2 0 0.5))
+    (v2/applyv (vec2 cos-01 cos-01))
+    (v2/mul (vec2 10 10))
+    ))
+
+
 
 (defn main []
   (let [rm (get-resource-manager system)
@@ -308,8 +340,10 @@
         (let [sprs (<! spr-ch)
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
-              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) )] )
-              positions (vec (repeatedly 400 rand-spr)) ]
+              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
+              positions (vec (repeatedly 200 rand-spr))
+              level-spr (mk-level-spr sprs rm :level 16 16) ]
+
           (loop []
             (let [dt (<! in-chan)
                   t @g-time
@@ -320,16 +354,17 @@
                 (rp/clear! [1 0 1])
                 (rp/identity! )
                 (rp/scale! (vec2 4.5 4.5 )) 
-                (rp/translate! (vec2 0 (* 10  (cos-01 t-secs)) )))
+                (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
+                (rp/spr! level-spr (vec2 0 0)))
 
-              (doseq [[img {:keys [x y] :as pos}] positions]
-                (let [add-pos (vec2
-                                (* 20  (cos-01 (* (+ y t-secs) 5)))
-                                0)]
-                  (rp/spr! spr-printer img (v2/add add-pos pos)))))
+              (doseq [[img pos uniq] positions]
+                (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
+                  (rp/spr! spr-printer img final-pos))))
             (recur))
           ))
       ))
+
+
 
   ; {{{
 

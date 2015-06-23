@@ -1,7 +1,8 @@
 (ns cloj.resources.html
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ] )
 
-  (:require [cloj.resources.manager :as rman :refer [IResourceManager IResourceManagerInfo IImage]]
+  (:require [cloj.resources.manager :as rman :refer [IResourceManager IResourceManagerInfo ]]
+            [cloj.render.protocols :as rp]
             [cloj.render.canvas     :as canvas-render]
             [cloj.math.vec2 :refer [v2]]
             [cloj.web.utils :refer [by-id log-js]]
@@ -19,7 +20,7 @@
 ;; Multi method to turn a blob into an element
 (defn img->iimage [img]
   (reify
-    IImage
+    rp/IImage
     (width [_] (.-width img))
     (height [_] (.-height img))
     (img [_] img)))
@@ -108,12 +109,12 @@
 
 (defn el->img [el id]
   (reify
-    IImage
+    rp/IImage
     (id [_] id)
     (width [_] (.-width el))
     (height [_] (.-height el))
     (dims [this]
-      [0 0 (rman/width this) (rman/height this)])
+      [0 0 (rp/width this) (rp/height this)])
     (img [_] el)))
 
 (defn msg [v s]

@@ -25,7 +25,8 @@
 (defn px [v]
   v
   ; (int v) 
-  #_(int (+ 0.5 v)))
+  ; (int (+ 0.5 v))
+  )
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]
   (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
@@ -63,16 +64,24 @@
             (.rotate ctx v))
           this)
 
+        rp/IImage
+
+        (id [_] canvas-id)
+        (dims [_] [0 0 x y])
+        (width [_] x)
+        (height [_] y)
+        (img [_] canvas-el)
+
         rp/IRenderBackend
         (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
           (do 
-            (let [[sx sy sw sh] (rman/dims spr)
-                  spr-img (rman/img spr) ]
+            (let [[sx sy sw sh] (rp/dims spr)
+                  spr-img (rp/img spr) ]
               (.drawImage ctx spr-img sx sy sw sh (px x ) (px y ) (px w ) (px h ))))
           this)
 
         (spr! [this spr pos]
-          (let [[sx sy sw sh] (rman/dims spr)]
+          (let [[sx sy sw sh] (rp/dims spr)]
             (rp/spr-scaled! this spr pos (v2 sw sh) )))
 
         (clear! [this col]

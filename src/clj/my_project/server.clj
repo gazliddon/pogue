@@ -58,3 +58,13 @@
   (run port))
 
 
+(defn rand-v2 []
+  {:x (rand-int 100)
+   :y (rand-int 100)})
+
+(do
+  (take 1
+        (repeatedly rand-v2))
+  )
+
+

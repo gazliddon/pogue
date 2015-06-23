@@ -8,7 +8,7 @@
 
 
 (defn spr32
-  ([x y] (mapv #(* 32 %) [x y 32 32])))
+  ([x y] (mapv #(* 32 %) [x y 1 1])))
 
 
 (def spr-data
@@ -33,8 +33,7 @@
             :bub4 (spr32 0 4)
             :bub5 (spr32 0 5)
             :bub6 (spr32 0 6)
-            :bub7 (spr32 0 7)
-            }
+            :bub7 (spr32 0 7)}
 
    })
 
