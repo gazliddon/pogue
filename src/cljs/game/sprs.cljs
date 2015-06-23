@@ -14,7 +14,7 @@
     [cloj.resources.html    :as rmhtml]
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
-    [cloj.math.vec2         :as v2 :refer [v2]]
+    [cloj.math.vec2         :as v2 :refer [vec2]]
     [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
@@ -41,7 +41,7 @@
        [x y w h])
      (width [_] w)
      (height [_] h)
-     (img [_] (rman/img img))))
+     (img [_] img)))
   
   ([img id x y w h]
    (mk-spr img id [x y w h])))
@@ -64,8 +64,9 @@
   (reduce (fn [m v]
             (assoc m v (k->file-name v))) {} spr-keys))
 
+
 (defn load-sprs [rman sprs]
-  (let [spr-chan (->> (map #((rman/load-img! rman % (k->file-name  %))) (keys sprs) )
+  (let [spr-chan (->> (map #(rman/load-img! rman % (k->file-name  %)) (keys sprs) )
                       (async/merge)
                       (async/into ()))
         ret-chan (chan) ]
@@ -75,34 +76,44 @@
             (->>
               (<! spr-chan)
               (mapcat  (fn [i]
-                         (let [img      (rman/img i)
-                               spr-list ((rman/id i) sprs) ]
-                           (map (fn [ [id & dims ] ] [id (mk-spr img id dims)] ) spr-list  ))))
+                         (->
+                           (fn [[sprite-id dims]]
+                             [sprite-id (mk-spr (rman/img i) sprite-id dims)])
+                           (map ((rman/id i) sprs)))))
               (into {}))))
     ret-chan))
 
-(defn mk-spr-printer [spr-seq])
-
+(defn mk-spr-printer [rend sprs]
+  (reify
+    rp/IRenderBackend
+    (spr! [this img-key pos]
+      (let [i-img (img-key sprs)]
+        (println img-key)
+        (println (type i-img ))
+        (rp/spr! rend i-img pos)))))
 
 (do
   (def system (mk-system "game" "game-canvas"))
-
-  (let [rman (get-resource-manager system)
-        rend (get-render-engine system)
-        spr-ch (load-sprs rman spr-data) ]
-
-    (go
-      (let [sprs (<! spr-ch)]
-        (println "loaded")
-        )
-      )
+  (def rman (get-resource-manager system))
+  (def rend (get-render-engine system))
+  (def spr-ch (load-sprs rman spr-data)) 
 
 
-    
-    )
-  
-  
-  )
+
+  (go
+    (let [sprs (<! spr-ch)
+          spr-printer (mk-spr-printer rend sprs)
+          ]
+      (println "loaded")
+      (doseq [k (keys sprs)]
+        (println k)
+        (println (type (k sprs)))
+        (println (rman/dims  (k sprs))))
+      (rp/clear! rend [0 0 1])
+      (rp/spr! spr-printer :aubergine (vec2 10 10))
+      ))
+
+  (println "started loading "))
 
 ;;; }}}
 
