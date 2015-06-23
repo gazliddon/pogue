@@ -1,11 +1,5 @@
 (ns cloj.resources.manager)
 
-(defprotocol IImage
-  (id [_])
-  (dims [_])
-  (width [_])
-  (height [_])
-  (img [_]))
 
 (defprotocol IReourceLoader
   (load! [_ uri]))

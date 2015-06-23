@@ -12,7 +12,7 @@
 (defn mk-spr
   "Makes an IImage from  spr"
   ([img id [x y w h]]
-   (reify rman/IImage
+   (reify rp/IImage
      (id [_] id)
      (dims [_]
        [x y w h])
@@ -49,8 +49,8 @@
               (mapcat  (fn [i]
                          (->
                            (fn [[sprite-id dims]]
-                             [sprite-id (mk-spr (rman/img i) sprite-id dims)])
-                           (map ((rman/id i) sprs)))))
+                             [sprite-id (mk-spr (rp/img i) sprite-id dims)])
+                           (map ((rp/id i) sprs)))))
               (into {}))))
     ret-chan))
 

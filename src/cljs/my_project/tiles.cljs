@@ -2,7 +2,8 @@
   (:require [gaz.tilemapprotocol :as tmp]
             [gaz.tilemaputils :as tmu]
             [gaz.color :as col]
-            [cloj.math.vec2 :as v2]
+            [cloj.render.protocols :as rp]
+            [cloj.math.vec2 :as v2 :refer [vec2]]
             [cloj.math.misc :refer [in-range?
                                     clamp]]))
 
@@ -58,20 +59,28 @@
       (cons (f level (v2/v2 x y) v) memo))
     ()))
 
-(def duff-tile {:col col/purple})
+(def duff-tile {:b0 col/purple})
 
 (def tiles
-  {:blank  {:col [0.15 0.15 0.15]}
-   :ground {:col [0 1 0]}
-   :water  {:col [0 0 0.75]}
-   :wall   {:col [0.25 0.25 0]} })
+  {
+   :b0      {:col [0.15 0.15 0.15]}
+   :b1      {:col [0 1 0]}
+   :b2      {:col [0 0 0.75]}
+   :b-floor {:col [0.25 0.25 0]}
+   :b4      {:col [0.25 0.25 0]}
+   :b5      {:col [0.25 0.25 0]}
+   :b6      {:col [0.25 0.25 0]}
+   :b7      {:col [0.25 0.25 0]}
+   })
 
-(defn render-tile [level pos v]
+(defn render-tile! [rend level pos v]
   (let [tile  (get tiles v duff-tile) ]
-    [:box pos {:x 1 :y 1} (:col tile) ]))
+    (rp/spr! rend v (v2/mul (vec2 16 16) pos))))
 
-(defn render-level [level]
-  (traverse-map render-tile level))
+(defn render-level! [rend level]
+  (let [render-tile! (partial render-tile! rend)] 
+    (traverse-map render-tile! level)
+    rend))
 
 (defn rand-coord [level]
   (let [[w h] (tmu/get-size level)

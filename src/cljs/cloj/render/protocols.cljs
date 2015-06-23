@@ -1,5 +1,12 @@
 (ns cloj.render.protocols)
 
+(defprotocol IImage
+  (id [_])
+  (dims [_])
+  (width [_])
+  (height [_])
+  (img [_]))
+
 (defprotocol ITransformable
   (matrix! [this v])
   (identity! [this])

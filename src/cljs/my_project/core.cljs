@@ -1,4 +1,4 @@
-;; {{{ Requires
+; {{{ Requires
 (ns my-project.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
@@ -32,10 +32,7 @@
     [game.sprdata           :as sprdata]
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
-                                    render-level]]
-
-    [gaz.appstate           :refer [app-state]]
-
+                                    render-level!]]
 
     [cljs.core.async        :as async
                             :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
@@ -53,6 +50,25 @@
 
 ;; }}}
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ tiles
+(defn mk-level-spr [sprs rman id w-b h-b ]
+  (let [[w h] [(* 16 w-b) (* 16 h-b)]
+        render-target (create-render-target! rman (name id ) w h)
+        spr-printer (sprs/mk-spr-printer render-target sprs)
+        level (->
+                (mk-tile-map w-b h-b :b-floor)
+                ; (mix-it-up)
+                )
+        ]
+    (do
+      (rp/clear! render-target [0 1 0])
+      (render-level! spr-printer level)
+      render-target)))
+
+;; }}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ FPS Component
 
@@ -67,7 +83,7 @@
                            :max-fps (/ 1000  (apply max new-last-x))
                            :frame fr-num
                            }
-                    
+
                     ]
                 (put! ret-chan data)
                 (recur new-last-x (inc fr-num))))
@@ -90,11 +106,11 @@
     (render-state [_ {:keys [fps]}]
       (when fps 
         (let [elems (map
-                     (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
-                     [["avg" :avg-fps]
-                      ["min" :min-fps]
-                      ["max" :max-fps]])]
-        (apply dom/div nil  elems))))))
+                      (fn [[txt id]] (dom/p nil (format "%s: %02f" txt (id fps))))
+                      [["avg" :avg-fps]
+                       ["min" :min-fps]
+                       ["max" :max-fps]])]
+          (apply dom/div nil  elems))))))
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -120,7 +136,8 @@
                    :previous (:now @c)
                    :now (.now (aget js/window "performance")))
             (reset! c)
-            (time-passed)))))))
+            (time-passed))
+          )))))
 
 ;; }}}
 
@@ -189,16 +206,16 @@
 (defonce sq-2 (sq audio-html))
 
 #_(do
-  (freq! sq-1 30)
-  (freq! sq-2 30.13721)
-  (vol! sq-1 5)
-  (vol! sq-2 5)
-  (start! sq-1 )
-  (start! sq-2 )
-  
-  
-  
-  )
+    (freq! sq-1 30)
+    (freq! sq-2 30.13721)
+    (vol! sq-1 5)
+    (vol! sq-2 5)
+    (start! sq-1 )
+    (start! sq-2 )
+
+
+
+    )
 
 ;; }}}
 
@@ -212,16 +229,113 @@
       (om/set-state! owner :dt 0)
       (let [in-chan (:in-chan data)]
         (go-loop []
-          (let [dt (<! in-chan)]
-            (om/set-state! owner :dt dt))
-          (recur)
-          )))
+                 (let [dt (<! in-chan)]
+                   (om/set-state! owner :dt dt))
+                 (recur)
+                 )))
 
     om/IRenderState
     (render-state [_ state]
       (dom/p nil (str "ROGUEBOW ISLANDS : "(:dt state))))))
 
 ;; }}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def key-states (atom {}))
+
+(defrecord KeyState [state last-state pressed released])
+
+(def default-key-state (KeyState. false false false false))
+
+(defn get-key-state [key-code]
+  (get @key-states key-code default-key-state))
+
+(defn generate-new-key-record [new-state {:keys [state last-state pressed released]}]
+  (KeyState. new-state state (and (not state) new-state) (and state (not new-state))))
+
+(defn update-key! [key-code state ]
+  (let [current-record (get-key-state key-code)
+        new-record (generate-new-key-record state current-record ) ]
+    (when (not= (:state current-record ) state)
+      (swap! key-states assoc key-code new-record ))))
+
+(defn reset-keys! []
+  (reset! key-states {}))
+
+(defn update-keys! []
+
+  (if (.hasFocus js/document)
+    (reset! key-states
+            (reduce
+              (fn [res [k {:keys [state] :as v}]]
+                (assoc res k (generate-new-key-record state v)))
+              {}
+              @key-states))
+    (reset-keys!)
+    )
+  )
+
+
+(defn handle-key-event! [event new-state]
+  (do
+    (update-key! (.-keyCode event) new-state)
+    (.stopPropagation event)))
+
+;; Lets read some keys
+(defn kb-attach! [dom-id]
+  (let [dom-el js/document]
+    (do
+      (dommy/listen!  dom-el :onblur #(do
+                                      ( reset-keys! )
+                                      (println "reset")
+                                      ))
+      (dommy/listen!  dom-el :keyup #(handle-key-event! % false))
+      (dommy/listen!  dom-el :keydown #(handle-key-event! % true)))))
+
+(kb-attach! "game")
+
+;; Game keyboard stuff
+(def key-table
+  {\A :left  
+   \D :right 
+   \W :up    
+   \S :down  })
+
+(defn decide [key-states key-table]
+  (->>
+    key-states
+    (filter (fn [[k {state :state}]]
+              (and state (get key-table k)) ))
+
+    (map (fn [[k _]] (get key-table k :none)))
+    (into #{})
+    ))
+
+;; JS dependent
+(defn ->js-key-table 
+  "convert game key table to cooky JS keytable"
+  [key-table]
+  (->
+    (fn [r [k v] ] (assoc r (.charCodeAt k 0) v))
+    (reduce {} key-table)  ))
+
+(def js-key-table (->js-key-table key-table))
+
+(println js-key-table)
+
+(defn my-decide [key-states]
+  (decide key-states js-key-table))
+
+(def combo-vec
+  {#{:left :up}    (vec2 -1 -1)
+   #{:left :down}  (vec2 -1  1)
+   #{:right :up}   (vec2  1 -1)
+   #{:right :down} (vec2  1  1)
+   #{:up}          (vec2  0 -1)
+   #{:down}        (vec2  0  1)
+   #{:left}        (vec2 -1  0)
+   #{:right}       (vec2  1  0)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
@@ -281,14 +395,37 @@
           (put! time-chan dt)))
       (animate))))
 
-(defn rand-spr []
-  )
+
+(defn dump->> [s v]
+  (println (str s " : " v))
+  v)
+
+(defn funny-vec [t-secs uniq]
+  (->>
+    uniq
+    (v2/mul (vec2 10 10))
+    (v2/mul (vec2  t-secs t-secs))
+    (v2/add (vec2 0 0.5))
+    (v2/applyv (vec2 cos-01 cos-01))
+    (v2/mul (vec2 10 10))
+    ))
+
+(defn anim [t s frms]
+  (nth frms 
+       (mod (int (/ t s)) (count frms))) )
+
+(defn mk-anim-fn [ speed frames ]
+  (fn [t]
+    (anim t speed frames)))
+
+(def get-bub-frm
+  (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
+
 
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
-        spr-ch (sprs/load-sprs rm sprdata/spr-data)
-        ]
+        spr-ch (sprs/load-sprs rm sprdata/spr-data) ]
 
     (do
       (om/root
@@ -308,9 +445,14 @@
         (let [sprs (<! spr-ch)
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
-              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) )] )
-              positions (vec (repeatedly 400 rand-spr)) ]
-          (loop []
+              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
+              positions (vec (repeatedly 50 rand-spr))
+              level-spr (mk-level-spr sprs rm :level 16 16) ]
+
+          (loop [pos (vec2 20 20)]
+            (update-keys!)
+
+
             (let [dt (<! in-chan)
                   t @g-time
                   t-secs (/ t 1000)
@@ -319,17 +461,23 @@
               (doto rend
                 (rp/clear! [1 0 1])
                 (rp/identity! )
-                (rp/scale! (vec2 4.5 4.5 )) 
-                (rp/translate! (vec2 0 (* 10  (cos-01 t-secs)) )))
+                (rp/scale! (vec2 3 3 )) 
+                ; (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
+                (rp/spr! level-spr (vec2 0 0)))
 
-              (doseq [[img {:keys [x y] :as pos}] positions]
-                (let [add-pos (vec2
-                                (* 20  (cos-01 (* (+ y t-secs) 5)))
-                                0)]
-                  (rp/spr! spr-printer img (v2/add add-pos pos)))))
-            (recur))
-          ))
-      ))
+              (doseq [[img pos uniq] positions]
+                (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
+                  (rp/spr! spr-printer img final-pos)))
+              
+              (rp/spr! spr-printer (get-bub-frm t-secs) pos))
+
+            (let [actions (my-decide @key-states)
+                 mv (get combo-vec actions (vec2 0 0))]
+              (recur (v2/add mv pos)) )
+            )))))
+
+
+
 
   ; {{{
 
