@@ -23,7 +23,9 @@
 
 
 (defn px [v]
-  (int (+ 0.5 v)))
+  v
+  ; (int v) 
+  #_(int (+ 0.5 v)))
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]
   (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
@@ -74,7 +76,9 @@
             (rp/spr-scaled! this spr pos (v2 sw sh) )))
 
         (clear! [this col]
-          (rp/box! this (v2 0 0) dims col))
+          (doto this
+            (rp/identity! )
+            (rp/box! (v2 0 0) dims col) ))
 
         (box! [this {x :x y :y} {w :x h :y} col]
           (do

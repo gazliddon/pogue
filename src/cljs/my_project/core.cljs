@@ -15,7 +15,7 @@
     [cloj.resources.html    :as rmhtml]
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
-    [cloj.math.vec2         :refer [vec2]]
+    [cloj.math.vec2         :as v2 :refer [vec2]]
     [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
@@ -281,11 +281,16 @@
           (put! time-chan dt)))
       (animate))))
 
+(defn rand-spr []
+  )
+
 (defn main []
   (let [rm (get-resource-manager system)
-        rend (get-render-engine system)]
+        rend (get-render-engine system)
+        spr-ch (sprs/load-sprs rm sprdata/spr-data)
+        ]
 
-    #_(do
+    (do
       (om/root
         frame-rate-component
         {:in-chan (tap time-chan-mult (chan)) }
@@ -296,36 +301,35 @@
         {:in-chan (tap time-chan-mult (chan) )}
         {:target (by-id "app") })
 
-      (let [_ (clear-resources! rm)
-            items-chan (load-img! rm "tiles" "data/items.png") ]
-        (go
-          (let [items (<! items-chan)
-                cake (sprs/mk-spr items :treasure 128 176 32 32)  
-                chaz (sprs/mk-spr items :treasure 168 397 58 71)
-                trez (sprs/mk-spr items :treasure 72 416 80 80) ]
+      (clear-resources! rm)
 
-            (rp/clear! rend [1 0 1])
+      (go
 
-            (let [in-chan (tap time-chan-mult (chan))]
-              (loop []
-                (let [dt (<! in-chan)
-                      t @g-time
-                      c-t (* t 1.5)]
+        (let [sprs (<! spr-ch)
+              spr-printer (sprs/mk-spr-printer rend sprs)
+              in-chan (tap time-chan-mult (chan))
+              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) )] )
+              positions (vec (repeatedly 400 rand-spr)) ]
+          (loop []
+            (let [dt (<! in-chan)
+                  t @g-time
+                  t-secs (/ t 1000)
+                  c-t (* t 1.5) ]
 
-                  (doto rend
-                    (rp/clear! [1 0 1])
-                    (rp/identity! )
-                    (rp/scale! (vec2 4 4 )))
+              (doto rend
+                (rp/clear! [1 0 1])
+                (rp/identity! )
+                (rp/scale! (vec2 4.5 4.5 )) 
+                (rp/translate! (vec2 0 (* 10  (cos-01 t-secs)) )))
 
-                  (doseq [i (range 100)]
-                    (if (odd? i)
-                      (prn-spr rend cake (+ (* (+ 1  (/ t 2000)) (* i 8)) (* c-t 0.2) ))
-                      (prn-spr rend chaz (+ (* (+ 1  (cos-01 (/ t 1000))) i) (* (+ 10 t) 0.2) ))
-                      )
-                    )
-                  )
-                (recur)))
-            )))))
+              (doseq [[img {:keys [x y] :as pos}] positions]
+                (let [add-pos (vec2
+                                (* 20  (cos-01 (* (+ y t-secs) 5)))
+                                0)]
+                  (rp/spr! spr-printer img (v2/add add-pos pos)))))
+            (recur))
+          ))
+      ))
 
   ; {{{
 
@@ -347,22 +351,6 @@
 
 ;; }}}
 
-(do
-  (def system (mk-system "game" "game-canvas"))
-  (def rman (get-resource-manager system))
-  (def rend (get-render-engine system))
-  (def spr-ch (sprs/load-sprs rman sprdata/spr-data)) 
 
-  (go
-    (let [sprs (<! spr-ch)
-          spr-printer (sprs/mk-spr-printer rend sprs)
-          ]
-      (rp/clear! rend [0 0 1])
-      (rp/scale! rend (vec2 2 2))
-      (doseq [i (range 100)]
-        (doseq [k (keys sprs)]
-          (rp/spr! spr-printer k (vec2 (rand-int 400) (rand-int 400)))))))
-
-  (println "started loading "))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;ends
