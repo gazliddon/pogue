@@ -3,6 +3,7 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
   (:require
+
     [clojure.string         :refer [split join]]
 
 
@@ -27,6 +28,7 @@
 
     [game.html              :refer [mk-system]]
     [game.game              :as game]
+    [game.sprs              :as sprs]
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
                                     render-level]]
@@ -249,87 +251,6 @@
       (rp/spr! spr (v2 p-x p-y)))))
 ;; }}}
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Some Spr Printing Stuff {{{
-(defn spr16
-  ([x y w h] (mapv #(* 16 %) [x y w h]))
-  ([x y] (spr16 x y 1 1))
-  ([n]
-   (let [x (mod n 16)
-         y (int (/ n 16)) ]
-     (spr16 x y))))
-
-(def sprs
-  {:blocks {:b0 (spr16 0)
-            :b1 (spr16 1)
-            :b2 (spr16 2)
-            :b3 (spr16 3)
-            :b4 (spr16 4)
-            :b5 (spr16 5)
-            :b6 (spr16 6)}
-
-   :items  {:green-pepper (spr16 3)
-            :aubergine    (spr16 4)
-            :carrot       (spr16 5)
-            :onion        (spr16 6)
-            :wacdonalds   (spr16 0 2)
-            }})
-
-(defn mk-spr-2
-  ([img id [x y w h]]
-   (reify rman/IImage
-     (id [_] id)
-     (dims [_]
-       [x y w h])
-     (width [_] w)
-     (height [_] h)
-     (img [_] (rman/img img))))
-  
-  ([img id x y w h]
-   (mk-spr-2 img id [x y w h])))
-
-(defn dump [s v]
-  (println s)
-  (println v)
-  (log-js v)
-  (println ""))
-
-
-(defn k->file-name [k] (str "data/" (name k) ".png"))
-
-(defn img-map->load-chan  [rman img-map]
-  (->> img-map
-       (map (fn [k f] (rman/load-img! rman k f)))
-       (async/merge)
-       (async/into ())))
-
-(defn get-load-info [spr-keys]
-  (reduce (fn [m v]
-            (assoc m v (k->file-name v))) {} spr-keys))
-
-(defn load-sprs [rman sprs]
-  (let [spr-chan (->> (map #((rman/load-img! rman % (k->file-name  %))) (keys sprs) )
-                      (async/merge)
-                      (async/into ()))
-        ret-chan (chan) ]
-
-    (go
-      (put! ret-chan 
-            (->>
-              (<! spr-chan)
-              (mapcat  (fn [i]
-                         (let [img      (rman/img i)
-                               spr-list ((rman/id i) sprs) ]
-                           (map (fn [ [id & dims ] ] [id (mk-spr-2 img id dims)] ) spr-list  ))))
-              (into {}))))
-    ret-chan))
-
-
-(defn mk-spr-printer [spr-seq])
-
-;;; }}}
-
-
 ;; =============================================================================
 ;; {{{ Main
 
@@ -359,19 +280,11 @@
           (put! time-chan dt)))
       (animate))))
 
-(defn mk-spr [id img x y w h]
-  (reify rman/IImage
-    (id [_] id)
-    (dims [_]
-      [x y w h])
-    (width [_] w)
-    (height [_] h)
-    (img [_] (rman/img img)) ))
-
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)]
-    (do
+
+    #_(do
       (om/root
         frame-rate-component
         {:in-chan (tap time-chan-mult (chan)) }
@@ -386,9 +299,9 @@
             items-chan (load-img! rm "tiles" "data/items.png") ]
         (go
           (let [items (<! items-chan)
-                cake (mk-spr :treasure items 128 176 32 32)  
-                chaz (mk-spr :treasure items 168 397 58 71)
-                trez (mk-spr :treasure items 72 416 80 80) ]
+                cake (sprs/mk-spr items :treasure 128 176 32 32)  
+                chaz (sprs/mk-spr items :treasure 168 397 58 71)
+                trez (sprs/mk-spr items :treasure 72 416 80 80) ]
 
             (rp/clear! rend [1 0 1])
 
@@ -411,8 +324,7 @@
                     )
                   )
                 (recur)))
-            )))) )
-
+            )))))
 
   ; {{{
 
