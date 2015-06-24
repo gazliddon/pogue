@@ -62,10 +62,16 @@
 (def duff-tile {:b0 col/purple})
 
 (def tiles
-  {:b0 {:col [0.15 0.15 0.15]}
-   :b1 {:col [0 1 0]}
-   :b2 {:col [0 0 0.75]}
-   :b3 {:col [0.25 0.25 0]} })
+  {
+   :b0      {:col [0.15 0.15 0.15]}
+   :b1      {:col [0 1 0]}
+   :b2      {:col [0 0 0.75]}
+   :b-floor {:col [0.25 0.25 0]}
+   :b4      {:col [0.25 0.25 0]}
+   :b5      {:col [0.25 0.25 0]}
+   :b6      {:col [0.25 0.25 0]}
+   :b7      {:col [0.25 0.25 0]}
+   })
 
 (defn render-tile! [rend level pos v]
   (let [tile  (get tiles v duff-tile) ]

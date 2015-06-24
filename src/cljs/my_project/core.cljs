@@ -1,4 +1,4 @@
-;; {{{ Requires
+; {{{ Requires
 (ns my-project.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop alt!] ]
                    [gaz.rendermac :as rm])
@@ -34,9 +34,6 @@
     [gaz.tiles              :refer [mk-tile-map mix-it-up
                                     render-level!]]
 
-    [gaz.appstate           :refer [app-state]]
-
-
     [cljs.core.async        :as async
                             :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
 
@@ -61,8 +58,9 @@
         render-target (create-render-target! rman (name id ) w h)
         spr-printer (sprs/mk-spr-printer render-target sprs)
         level (->
-                (mk-tile-map w-b h-b :b0)
-                (mix-it-up))
+                (mk-tile-map w-b h-b :b-floor)
+                ; (mix-it-up)
+                )
         ]
     (do
       (rp/clear! render-target [0 1 0])
@@ -242,6 +240,81 @@
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def key-states (atom {}))
+
+(defrecord KeyState [state last-state pressed released])
+
+(def default-key-state (KeyState. false false false false))
+
+(defn get-key-state [key-code]
+  (get @key-states key-code default-key-state))
+
+(defn generate-new-key-record [new-state {:keys [state last-state pressed released]}]
+  (KeyState. new-state state (and (not state) new-state) (and state (not new-state))))
+
+(defn update-key! [key-code state ]
+  (let [current-record (get-key-state key-code)
+        new-record (generate-new-key-record state current-record ) ]
+    (when (not= (:state current-record ) state)
+      (swap! key-states assoc key-code new-record ))))
+
+(defn update-keys! []
+  (reset! key-states
+          (reduce
+            (fn [res [k {:keys [state] :as v}]]
+              (assoc res k (generate-new-key-record state v)))
+            {}
+            @key-states)))
+
+(defn reset-keys! []
+  (reset! key-states {}))
+
+
+(defn handle-key-event! [event new-state]
+  (do
+    (update-key! (.-keyCode event) new-state)
+    (.stopPropagation event)))
+
+;; Lets read some keys
+(defn kb-attach! [dom-id]
+  (let [dom-el js/document]
+    (do
+      (dommy/listen!  dom-el :keyup #(handle-key-event! % false))
+      (dommy/listen!  dom-el :keydown #(handle-key-event! % true)))))
+
+(kb-attach! "game")
+
+;; Game keyboard stuff
+(def key-table
+  {\a :left  
+   \d :right 
+   \w :up    
+   \s :down  })
+
+(defn decide [key-states key-table]
+  (let [is-down (-> (fn [[k {state :state}]]
+                      (and state (get key-table k)))
+                    (filter key-states))]
+    (map (fn [[k _]] (k key-table)))
+    is-down
+    ))
+
+;; JS dependent
+(defn ->js-key-table 
+  "convert game key table to cooky JS keytable"
+  [key-table]
+  (->
+    (fn [r [k v] ] (assoc r (.charCodeAt k 0) v))
+    (reduce {} key-table)  ))
+
+(def js-key-table (->js-key-table key-table))
+
+(defn my-decide []
+  (decide @key-states js-key-table))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
 
 (def system (mk-system "game" "game-canvas"))
@@ -316,11 +389,11 @@
 
 
 
+
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
-        spr-ch (sprs/load-sprs rm sprdata/spr-data)
-        ]
+        spr-ch (sprs/load-sprs rm sprdata/spr-data) ]
 
     (do
       (om/root
@@ -341,20 +414,32 @@
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
-              positions (vec (repeatedly 200 rand-spr))
+              positions (vec (repeatedly 1 rand-spr))
               level-spr (mk-level-spr sprs rm :level 16 16) ]
 
           (loop []
+            (update-keys!)
+
+            (let [actions (my-decide)]
+              (println actions)
+              )
+
+
             (let [dt (<! in-chan)
                   t @g-time
                   t-secs (/ t 1000)
                   c-t (* t 1.5) ]
 
+
+
+
+
+
               (doto rend
                 (rp/clear! [1 0 1])
                 (rp/identity! )
-                (rp/scale! (vec2 4.5 4.5 )) 
-                (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
+                (rp/scale! (vec2 1 1 )) 
+                ; (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
                 (rp/spr! level-spr (vec2 0 0)))
 
               (doseq [[img pos uniq] positions]
@@ -363,6 +448,8 @@
             (recur))
           ))
       ))
+
+
 
 
 

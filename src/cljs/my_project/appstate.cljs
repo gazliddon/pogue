@@ -1,6 +1,5 @@
 (ns gaz.appstate
-  (:require 
-    )
+  
   )
 
 (def app-state
