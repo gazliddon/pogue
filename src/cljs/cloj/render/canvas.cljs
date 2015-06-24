@@ -1,6 +1,5 @@
 (ns cloj.render.canvas
   (:require 
-
     [gaz.color              :refer [rgb-str]]
     [cloj.math.vec2         :refer [ v2 ]]
     [hipo.core              :as hipo  :include-macros true]  
@@ -21,11 +20,8 @@
         (aset "msImageSmoothingEnabled"      v)
         (aset "imageSmoothingEnabled"        v)))
 
-
 (defn px [v]
-  v
-  ; (int v) 
-  ; (int (+ 0.5 v))
+  (int (+ 0.5 v))
   )
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]

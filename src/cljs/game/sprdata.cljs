@@ -28,13 +28,27 @@
             :wacdonalds   (spr16 0 2)}
 
    :bubbob {:bub0 (spr32 0 0)
-            :bub1 (spr32 0 1)
-            :bub2 (spr32 0 2)
-            :bub3 (spr32 0 3)
-            :bub4 (spr32 0 4)
-            :bub5 (spr32 0 5)
-            :bub6 (spr32 0 6)
-            :bub7 (spr32 0 7)}
+            :bub1 (spr32 1 0)
+            :bub2 (spr32 2 0)
+            :bub3 (spr32 3 0)
+            :bub4 (spr32 4 0)
+            :bub5 (spr32 5 0)
+            :bub6 (spr32 6 0)
+            :bub7 (spr32 7 0)}
 
    })
+
+(defn anim [t s frms]
+  (nth frms 
+       (mod (int (/ t s)) (count frms))) )
+
+(defn mk-anim-fn [ speed frames ]
+  (fn [t]
+    (anim t speed frames)))
+
+(def anim-data
+  {:bub-stand  (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3])
+   :bub-walk   (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3])
+   }
+  )
 

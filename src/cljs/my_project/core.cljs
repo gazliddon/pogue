@@ -136,7 +136,8 @@
                    :previous (:now @c)
                    :now (.now (aget js/window "performance")))
             (reset! c)
-            (time-passed)))))))
+            (time-passed))
+          )))))
 
 ;; }}}
 
@@ -259,16 +260,21 @@
     (when (not= (:state current-record ) state)
       (swap! key-states assoc key-code new-record ))))
 
-(defn update-keys! []
-  (reset! key-states
-          (reduce
-            (fn [res [k {:keys [state] :as v}]]
-              (assoc res k (generate-new-key-record state v)))
-            {}
-            @key-states)))
-
 (defn reset-keys! []
   (reset! key-states {}))
+
+(defn update-keys! []
+
+  (if (.hasFocus js/document)
+    (reset! key-states
+            (reduce
+              (fn [res [k {:keys [state] :as v}]]
+                (assoc res k (generate-new-key-record state v)))
+              {}
+              @key-states))
+    (reset-keys!)
+    )
+  )
 
 
 (defn handle-key-event! [event new-state]
@@ -280,6 +286,10 @@
 (defn kb-attach! [dom-id]
   (let [dom-el js/document]
     (do
+      (dommy/listen!  dom-el :onblur #(do
+                                      ( reset-keys! )
+                                      (println "reset")
+                                      ))
       (dommy/listen!  dom-el :keyup #(handle-key-event! % false))
       (dommy/listen!  dom-el :keydown #(handle-key-event! % true)))))
 
@@ -287,17 +297,19 @@
 
 ;; Game keyboard stuff
 (def key-table
-  {\a :left  
-   \d :right 
-   \w :up    
-   \s :down  })
+  {\A :left  
+   \D :right 
+   \W :up    
+   \S :down  })
 
 (defn decide [key-states key-table]
-  (let [is-down (-> (fn [[k {state :state}]]
-                      (and state (get key-table k)))
-                    (filter key-states))]
-    (map (fn [[k _]] (k key-table)))
-    is-down
+  (->>
+    key-states
+    (filter (fn [[k {state :state}]]
+              (and state (get key-table k)) ))
+
+    (map (fn [[k _]] (get key-table k :none)))
+    (into #{})
     ))
 
 ;; JS dependent
@@ -310,9 +322,20 @@
 
 (def js-key-table (->js-key-table key-table))
 
-(defn my-decide []
-  (decide @key-states js-key-table))
+(println js-key-table)
 
+(defn my-decide [key-states]
+  (decide key-states js-key-table))
+
+(def combo-vec
+  {#{:left :up}    (vec2 -1 -1)
+   #{:left :down}  (vec2 -1  1)
+   #{:right :up}   (vec2  1 -1)
+   #{:right :down} (vec2  1  1)
+   #{:up}          (vec2  0 -1)
+   #{:down}        (vec2  0  1)
+   #{:left}        (vec2 -1  0)
+   #{:right}       (vec2  1  0)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
@@ -387,7 +410,16 @@
     (v2/mul (vec2 10 10))
     ))
 
+(defn anim [t s frms]
+  (nth frms 
+       (mod (int (/ t s)) (count frms))) )
 
+(defn mk-anim-fn [ speed frames ]
+  (fn [t]
+    (anim t speed frames)))
+
+(def get-bub-frm
+  (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
 
 
 (defn main []
@@ -414,15 +446,11 @@
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
-              positions (vec (repeatedly 1 rand-spr))
+              positions (vec (repeatedly 50 rand-spr))
               level-spr (mk-level-spr sprs rm :level 16 16) ]
 
-          (loop []
+          (loop [pos (vec2 20 20)]
             (update-keys!)
-
-            (let [actions (my-decide)]
-              (println actions)
-              )
 
 
             (let [dt (<! in-chan)
@@ -430,25 +458,23 @@
                   t-secs (/ t 1000)
                   c-t (* t 1.5) ]
 
-
-
-
-
-
               (doto rend
                 (rp/clear! [1 0 1])
                 (rp/identity! )
-                (rp/scale! (vec2 1 1 )) 
+                (rp/scale! (vec2 3 3 )) 
                 ; (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
                 (rp/spr! level-spr (vec2 0 0)))
 
               (doseq [[img pos uniq] positions]
                 (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
-                  (rp/spr! spr-printer img final-pos))))
-            (recur))
-          ))
-      ))
+                  (rp/spr! spr-printer img final-pos)))
+              
+              (rp/spr! spr-printer (get-bub-frm t-secs) pos))
 
+            (let [actions (my-decide @key-states)
+                 mv (get combo-vec actions (vec2 0 0))]
+              (recur (v2/add mv pos)) )
+            )))))
 
 
 
