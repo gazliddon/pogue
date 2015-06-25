@@ -15,3 +15,20 @@
 (defn applyv [{fx :x fy :y} {x :x y :y}]
   (vec2 (fx x) (fy y)))
 
+
+(def left  (vec2 -1  0))
+(def right (vec2  1  0))
+(def up    (vec2  0 -1))
+(def down  (vec2  0  1))
+
+(def left-up    (vec2 -1 -1))
+(def left-down  (vec2 -1  1))
+(def right-up   (vec2  1 -1))
+(def right-down (vec2  1  1))
+
+(def up-left    left-up)
+(def down-left  left-down)
+(def up-right   right-up)
+(def down-right right-down)
+
+
