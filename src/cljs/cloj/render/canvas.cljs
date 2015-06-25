@@ -62,13 +62,18 @@
 
         rp/IImage
 
-        (id [_] canvas-id)
-        (dims [_] [0 0 x y])
-        (width [_] x)
+        (id     [_] canvas-id)
+        (dims   [_] [0 0 x y])
+        (width  [_] x)
         (height [_] y)
-        (img [_] canvas-el)
+        (img    [_] canvas-el)
 
         rp/IRenderBackend
+
+        (save!    [_] (.save ctx))
+        (restore! [_] (.restore ctx))
+
+
         (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
           (do 
             (let [[sx sy sw sh] (rp/dims spr)
@@ -82,8 +87,10 @@
 
         (clear! [this col]
           (doto this
+            (rp/save!)
             (rp/identity! )
-            (rp/box! (v2 0 0) dims col) ))
+            (rp/box! (v2 0 0) dims col)
+            (rp/restore!)))
 
         (box! [this {x :x y :y} {w :x h :y} col]
           (do

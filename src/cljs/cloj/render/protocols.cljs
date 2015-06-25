@@ -15,6 +15,8 @@
   (rotate! [this v]))
 
 (defprotocol IRenderBackend
+  (save! [this])
+  (restore! [this])
   (clear! [this col])
   (box! [this pos dims col])
   (spr! [this img pos])
