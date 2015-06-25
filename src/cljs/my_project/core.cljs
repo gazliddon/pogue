@@ -84,16 +84,17 @@
 
 (defn shit-room [tmap {:keys [x y] :as pos} {w :x h :y}]
   (let [fl :b-floor
-        wl :b-wall ]
+        wl :b-wall
+        {x1 :x y1 :y} (v2/add pos (vec2 (dec w) (dec h)))
+        ]
     (-> tmap
         (shit-box fl pos (vec2 w h))
         (shit-h-line wl pos w)
-        (shit-h-line wl (v2/add (vec2 0 (dec h)) pos) w)
-        (shit-v-line wl (vec2 x y) h)
-        (shit-v-line wl (v2/add (vec2 (dec w) 0) pos) h)
-      )
+        (shit-h-line wl (vec2 x y1) w)
+        (shit-v-line wl (vec2 x  y) h)
+        (shit-v-line wl (vec2 y1 x) h)
 
-    )
+        ))
   )
 
 
