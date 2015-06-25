@@ -23,6 +23,7 @@
 
     [cloj.utils             :refer [format]] 
     (cloj.render.protocols  :as rp)
+    (cloj.keyboard          :as kb)
 
     [cloj.web.utils         :refer [by-id log-js]]
 
@@ -242,58 +243,23 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def key-states (atom {}))
-
-(defrecord KeyState [state last-state pressed released])
-
-(def default-key-state (KeyState. false false false false))
-
-(defn get-key-state [key-code]
-  (get @key-states key-code default-key-state))
-
-(defn generate-new-key-record [new-state {:keys [state last-state pressed released]}]
-  (KeyState. new-state state (and (not state) new-state) (and state (not new-state))))
-
-(defn update-key! [key-code state ]
-  (let [current-record (get-key-state key-code)
-        new-record (generate-new-key-record state current-record ) ]
-    (when (not= (:state current-record ) state)
-      (swap! key-states assoc key-code new-record ))))
-
-(defn reset-keys! []
-  (reset! key-states {}))
-
-(defn update-keys! []
-
-  (if (.hasFocus js/document)
-    (reset! key-states
-            (reduce
-              (fn [res [k {:keys [state] :as v}]]
-                (assoc res k (generate-new-key-record state v)))
-              {}
-              @key-states))
-    (reset-keys!)
-    )
-  )
-
-
-(defn handle-key-event! [event new-state]
+(defn handle-key-event! [kb-handler event new-state]
   (do
-    (update-key! (.-keyCode event) new-state)
+    (kb/update-key! kb-handler (.-keyCode event) new-state)
     (.stopPropagation event)))
 
 ;; Lets read some keys
-(defn kb-attach! [dom-id]
+(defn kb-attach! [dom-id kb-handler]
   (let [dom-el js/document]
     (do
-      (dommy/listen!  dom-el :onblur #(do
-                                      ( reset-keys! )
-                                      (println "reset")
-                                      ))
-      (dommy/listen!  dom-el :keyup #(handle-key-event! % false))
-      (dommy/listen!  dom-el :keydown #(handle-key-event! % true)))))
+      (dommy/listen!  dom-el :onblur #(kb/init! kb-handler))
+      (dommy/listen!  dom-el :keyup #(handle-key-event! kb-handler % false))
+      (dommy/listen!  dom-el :keydown #(handle-key-event! kb-handler % true)))))
 
-(kb-attach! "game")
+(defn kb-update! [kb-handler]
+  (if (.hasFocus js/document)
+    (kb/update! kb-handler)
+    (kb/init! kb-handler)))
 
 ;; Game keyboard stuff
 (def key-table
@@ -302,15 +268,14 @@
    \W :up    
    \S :down  })
 
-(defn decide [key-states key-table]
+(defn decide [kb-handler key-table]
   (->>
-    key-states
+    (kb/get-key-states kb-handler)
     (filter (fn [[k {state :state}]]
               (and state (get key-table k)) ))
 
     (map (fn [[k _]] (get key-table k :none)))
-    (into #{})
-    ))
+    (into #{})))
 
 ;; JS dependent
 (defn ->js-key-table 
@@ -322,10 +287,8 @@
 
 (def js-key-table (->js-key-table key-table))
 
-(println js-key-table)
-
-(defn my-decide [key-states]
-  (decide key-states js-key-table))
+(defn my-decide [kb-handler]
+  (decide kb-handler js-key-table))
 
 (def combo-vec
   {#{:left :up}    (vec2 -1 -1)
@@ -447,11 +410,17 @@
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
               positions (vec (repeatedly 50 rand-spr))
-              level-spr (mk-level-spr sprs rm :level 16 16) ]
+              level-spr (mk-level-spr sprs rm :level 16 16)
+              
+              kb-handler (kb/default-kb-handler)
+              
+              ]
+
+          (kb-attach! "game" kb-handler)
+
 
           (loop [pos (vec2 20 20)]
-            (update-keys!)
-
+            (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
                   t @g-time
@@ -471,7 +440,7 @@
               
               (rp/spr! spr-printer (get-bub-frm t-secs) pos))
 
-            (let [actions (my-decide @key-states)
+            (let [actions (my-decide kb-handler)
                  mv (get combo-vec actions (vec2 0 0))]
               (recur (v2/add mv pos)) )
             )))))
