@@ -4,6 +4,7 @@
   (init! [_])
   (update-key! [_ k state])
   (get-key-state [_ k])
+  (get-key-states [_])
   (update! [_]))
 
 (defrecord KeyState [state last-state pressed released])
@@ -41,6 +42,10 @@
 
       (get-key-state [_ key-code]
         (get-key-state @key-atom key-code))
+
+      (get-key-states [_]
+        @key-atom
+        )
 
       (update! [_]
         (reset! key-atom (update-keys @key-atom))) 
