@@ -64,16 +64,12 @@
         (let [{x :x y :y} (->
                             (v2/mul add (vec2 i i))
                             (v2/add pos)) ]
-          (println (str x " " y))
           (recur (tmp/set-tile tmap x y block)
                  (dec i)))
         tmap))))
 
-(defn shit-h-line [tmap bl pos len]
-  (shit-line tmap bl pos (vec2 1 0) len))
-
-(defn shit-v-line [tmap bl pos len]
-  (shit-line tmap bl pos (vec2 0 1) len))
+(defn shit-h-line [tmap bl p len] (shit-line tmap bl p v2/right len))
+(defn shit-v-line [tmap bl p len] (shit-line tmap bl p v2/down len))
 
 
 (defn shit-box [tmap bl {:keys [x y] :as pos}  {w :x h :y}]
@@ -93,10 +89,7 @@
         (shit-h-line wl (vec2 x y1) w)
         (shit-v-line wl (vec2 x  y) h)
         (shit-v-line wl (vec2 y1 x) h)
-
-        ))
-  )
-
+        )))
 
 
 (defn mk-level-spr [sprs rman id w-b h-b ]
@@ -336,18 +329,27 @@
   (decide kb-handler js-key-table))
 
 (def combo-vec
-  {#{:left :up}    (vec2 -1 -1)
-   #{:left :down}  (vec2 -1  1)
-   #{:right :up}   (vec2  1 -1)
-   #{:right :down} (vec2  1  1)
-   #{:up}          (vec2  0 -1)
-   #{:down}        (vec2  0  1)
-   #{:left}        (vec2 -1  0)
-   #{:right}       (vec2  1  0)})
+  {#{:left :up}    v2/left-up
+   #{:left :down}  v2/left-down
+   #{:right :up}   v2/right-up
+   #{:right :down} v2/right-down
+   #{:up}          v2/up
+   #{:down}        v2/down
+   #{:left}        v2/left
+   #{:right}       v2/right})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Let's do some player state stuff
+
+(defmulti player-update (fn [{state :state}] state))
+
+(defmethod player-update :standing [player] player)
+(defmethod player-update :walking  [player] player)
+
+;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
-
 (def system (mk-system "game" "game-canvas"))
 
 (def pogue-game
