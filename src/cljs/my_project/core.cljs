@@ -34,6 +34,7 @@
 
     [gaz.tiles              :refer [mk-tile-map mix-it-up
                                     render-level!]]
+    [gaz.tilemapprotocol    :as tmp]
 
     [cljs.core.async        :as async
                             :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
@@ -54,13 +55,57 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ tiles
+
+(defn shit-line [tmap block {:keys [x y] :as pos} add len]
+  (let [v2-len (vec2 len len) ]
+    (loop [tmap (tmp/set-tile tmap x y block)
+           i    (dec len)]
+      (if (pos? i)
+        (let [{x :x y :y} (->
+                            (v2/mul add (vec2 i i))
+                            (v2/add pos)) ]
+          (println (str x " " y))
+          (recur (tmp/set-tile tmap x y block)
+                 (dec i)))
+        tmap))))
+
+(defn shit-h-line [tmap bl pos len]
+  (shit-line tmap bl pos (vec2 1 0) len))
+
+(defn shit-v-line [tmap bl pos len]
+  (shit-line tmap bl pos (vec2 0 1) len))
+
+
+(defn shit-box [tmap bl {:keys [x y] :as pos}  {w :x h :y}]
+  (->
+    (fn [res y]
+      (shit-h-line res bl (v2/add pos (vec2 0 y)) w))
+    (reduce tmap (range h))))
+
+(defn shit-room [tmap {:keys [x y] :as pos} {w :x h :y}]
+  (let [fl :b-floor
+        wl :b-wall
+        {x1 :x y1 :y} (v2/add pos (vec2 (dec w) (dec h)))
+        ]
+    (-> tmap
+        (shit-box fl pos (vec2 w h))
+        (shit-h-line wl pos w)
+        (shit-h-line wl (vec2 x y1) w)
+        (shit-v-line wl (vec2 x  y) h)
+        (shit-v-line wl (vec2 y1 x) h)
+
+        ))
+  )
+
+
+
 (defn mk-level-spr [sprs rman id w-b h-b ]
   (let [[w h] [(* 16 w-b) (* 16 h-b)]
         render-target (create-render-target! rman (name id ) w h)
         spr-printer (sprs/mk-spr-printer render-target sprs)
         level (->
-                (mk-tile-map w-b h-b :b-floor)
-                ; (mix-it-up)
+                (mk-tile-map w-b h-b :b-blank)
+                (shit-room (vec2 3 3) (vec2 10 10 ))
                 )
         ]
     (do
@@ -329,6 +374,20 @@
       (rp/spr! spr (vec2 p-x p-y)))))
 ;; }}}
 
+
+(defn camera [current-pos desired-pos]
+  (let [scaler (vec2 12 12)
+        diff (v2/sub desired-pos current-pos)
+        add (v2/div diff scaler)
+        new-pos (v2/add current-pos add) ]
+    new-pos))
+
+(defn camera [current-pos desired-pos]
+  (->
+    (v2/sub desired-pos current-pos)
+    (v2/div (vec2 12 12))
+    (v2/add current-pos)))
+
 ;; =============================================================================
 ;; {{{ Main
 
@@ -384,7 +443,6 @@
 (def get-bub-frm
   (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
 
-
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
@@ -409,29 +467,39 @@
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
-              positions (vec (repeatedly 50 rand-spr))
-              level-spr (mk-level-spr sprs rm :level 16 16)
+              positions (vec (repeatedly 20 rand-spr))
+              level-spr (mk-level-spr sprs rm :level 160 160)
               
               kb-handler (kb/default-kb-handler)
+
+              mid-scr (-> (vec2 (rp/width rend) (rp/height rend) )
+                          (v2/mul (vec2 0.5 0.5)))
+
+              scale (vec2 3 3)
               
               ]
-
           (kb-attach! "game" kb-handler)
 
-
-          (loop [pos (vec2 20 20)]
+          (loop [pos (vec2 20 20)
+                 cam-pos (vec2 0 0)]
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
                   t @g-time
                   t-secs (/ t 1000)
-                  c-t (* t 1.5) ]
+                  c-t (* t 1.5)
+                  mid-scr (v2/div mid-scr scale)
+                  ]
 
               (doto rend
                 (rp/clear! [1 0 1])
                 (rp/identity! )
-                (rp/scale! (vec2 3 3 )) 
-                ; (rp/translate! (vec2 0 (* 50  (cos-01 ( * 5  t-secs)))))
+                (rp/scale! scale) 
+
+                (rp/translate! (->
+                                   (v2/sub (vec2 0 0) cam-pos) 
+                                   (v2/add mid-scr)
+                                 ))
                 (rp/spr! level-spr (vec2 0 0)))
 
               (doseq [[img pos uniq] positions]
@@ -442,7 +510,9 @@
 
             (let [actions (my-decide kb-handler)
                  mv (get combo-vec actions (vec2 0 0))]
-              (recur (v2/add mv pos)) )
+              (recur (v2/add mv pos)
+                     (camera cam-pos pos)
+                     ) )
             )))))
 
 
