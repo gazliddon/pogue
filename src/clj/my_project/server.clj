@@ -62,9 +62,21 @@
   {:x (rand-int 100)
    :y (rand-int 100)})
 
-(do
-  (take 1
-        (repeatedly rand-v2))
-  )
+
+(defn bits->bools [n bits]
+  (loop [c 0
+         r '()]
+    (if (= c bits)
+      r
+      (recur (inc c)
+             (cons (bit-test n c) r))
+      )))
+
+(defn bmap [v t f]
+  (->>
+    (mapv #(if % t f) (bits->bools v 4))
+    (partition 2)
+    (mapv vec)))
+
 
 

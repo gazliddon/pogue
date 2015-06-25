@@ -35,3 +35,11 @@
     (apply mk-replacements nm op (gensym) (gensym) elems)
     (walk/prewalk-replace fn-template)))
 
+(defmacro import-vars-2 [[_quote ns]]
+  `(do
+     ~@(->>
+         (cljs.analyzer.api/ns-interns ns)
+         (remove (comp :macro second))
+         (map (fn [[k# _]]
+                `(def ~(symbol k#) ~(symbol (name ns) (name k#))))))))
+

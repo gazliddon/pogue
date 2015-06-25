@@ -19,7 +19,10 @@
             :b4             (spr16 4)
             :b5             (spr16 5)
             :b6             (spr16 6)
-            :b-blank        (spr16 7)}
+            :b-blank        (spr16 7)
+
+            :b-purple       (spr16 8)
+            }
 
    :items  {:green-pepper (spr16 3)
             :aubergine    (spr16 4)

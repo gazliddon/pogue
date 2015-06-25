@@ -31,13 +31,14 @@
     [game.game              :as game]
     [game.sprs              :as sprs]
     [game.sprdata           :as sprdata]
+    [game.tiledata          :as tiledata]
 
-    [gaz.tiles              :refer [mk-tile-map mix-it-up
-                                    render-level!]]
+    [gaz.tiles              :as tiles]
+
     [gaz.tilemapprotocol    :as tmp]
 
     [cljs.core.async        :as async
-                            :refer [put! >! chan <! alts! close! dropping-buffer mult tap]]
+                            :refer [put! >! chan <! close! dropping-buffer mult tap]]
 
     [ff-om-draggable.core   :refer [draggable-item]]
 
@@ -55,7 +56,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ tiles
-
 (defn shit-line [tmap block {:keys [x y] :as pos} add len]
   (let [v2-len (vec2 len len) ]
     (loop [tmap (tmp/set-tile tmap x y block)
@@ -64,17 +64,12 @@
         (let [{x :x y :y} (->
                             (v2/mul add (vec2 i i))
                             (v2/add pos)) ]
-          (println (str x " " y))
           (recur (tmp/set-tile tmap x y block)
                  (dec i)))
         tmap))))
 
-(defn shit-h-line [tmap bl pos len]
-  (shit-line tmap bl pos (vec2 1 0) len))
-
-(defn shit-v-line [tmap bl pos len]
-  (shit-line tmap bl pos (vec2 0 1) len))
-
+(defn shit-h-line [tmap bl p len] (shit-line tmap bl p v2/right len))
+(defn shit-v-line [tmap bl p len] (shit-line tmap bl p v2/down len))
 
 (defn shit-box [tmap bl {:keys [x y] :as pos}  {w :x h :y}]
   (->
@@ -83,8 +78,8 @@
     (reduce tmap (range h))))
 
 (defn shit-room [tmap {:keys [x y] :as pos} {w :x h :y}]
-  (let [fl :b-floor
-        wl :b-wall
+  (let [fl :floor
+        wl :wall
         {x1 :x y1 :y} (v2/add pos (vec2 (dec w) (dec h)))
         ]
     (-> tmap
@@ -92,25 +87,38 @@
         (shit-h-line wl pos w)
         (shit-h-line wl (vec2 x y1) w)
         (shit-v-line wl (vec2 x  y) h)
-        (shit-v-line wl (vec2 y1 x) h)
-
-        ))
-  )
+        (shit-v-line wl (vec2 y1 x) h))))
 
 
+(def tile-offsets (for [x [0 1] y [0 1]] (vec2 x y)))
 
-(defn mk-level-spr [sprs rman id w-b h-b ]
+(defn mk-print-one-tile-fn [rend {gfx :gfx}]
+  (fn [pos]
+    (doseq [i (count gfx)]
+      (->>
+        (nth tile-offsets i)       
+        (v2/add pos)
+        (v2/mul (vec2 32 32))
+        (rp/spr! rend (nth gfx i))))))
+
+(defn mk-tile-printer [rend]
+  (reify
+    rp/IRenderBackend
+    (spr! [this tile pos]
+      (let [p-func (mk-print-one-tile-fn rend tile)]
+        (p-func pos)))))
+
+(defn mk-level-spr [sprs rman id w-b h-b all-tile-data]
   (let [[w h] [(* 16 w-b) (* 16 h-b)]
         render-target (create-render-target! rman (name id ) w h)
         spr-printer (sprs/mk-spr-printer render-target sprs)
+        tile-printer (mk-tile-printer spr-printer)
         level (->
-                (mk-tile-map w-b h-b :b-blank)
-                (shit-room (vec2 3 3) (vec2 10 10 ))
-                )
-        ]
+                (tiles/mk-tile-map w-b h-b :blank all-tile-data)
+                (shit-room (vec2 3 3) (vec2 10 10 ))) ]
     (do
       (rp/clear! render-target [0 1 0])
-      (render-level! spr-printer level)
+      ; (render-level! spr-printer level)
       render-target)))
 
 ;; }}}
@@ -336,18 +344,28 @@
   (decide kb-handler js-key-table))
 
 (def combo-vec
-  {#{:left :up}    (vec2 -1 -1)
-   #{:left :down}  (vec2 -1  1)
-   #{:right :up}   (vec2  1 -1)
-   #{:right :down} (vec2  1  1)
-   #{:up}          (vec2  0 -1)
-   #{:down}        (vec2  0  1)
-   #{:left}        (vec2 -1  0)
-   #{:right}       (vec2  1  0)})
+  {#{:left :up}    v2/left-up
+   #{:left :down}  v2/left-down
+   #{:right :up}   v2/right-up
+   #{:right :down} v2/right-down
+   #{:up}          v2/up
+   #{:down}        v2/down
+   #{:left}        v2/left
+   #{:right}       v2/right})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; {{{ Let's do some player state stuff
+
+(defmulti player-update (fn [{state :state}] state))
+
+(defmethod player-update :standing [player] player)
+(defmethod player-update :walking  [player] player)
+
+;; }}}
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; {{{ Game obect
-
 (def system (mk-system "game" "game-canvas"))
 
 (def pogue-game
@@ -468,7 +486,7 @@
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
               positions (vec (repeatedly 20 rand-spr))
-              level-spr (mk-level-spr sprs rm :level 160 160)
+              level-spr (mk-level-spr sprs rm :level 160 160 tiledata/tile-data)
               
               kb-handler (kb/default-kb-handler)
 
@@ -515,25 +533,11 @@
                      ) )
             )))))
 
+  
 
 
 
-  ; {{{
 
-  ; (om/root
-  ;   draggable-log-window
-  ;   {:in-chan log-chan :class-name "pane" :position {:left 100 :top 20}}
-  ;   {:target (by-id "app")})
-
-  ; (let [rm (rmhtml/mk-resource-manager "resources")
-  ;       _ (clear-resources! rm)
-  ;       img-chan (load-img! rm "tiles")
-  ;       rend (create-render-target! rm "shit" 300 300) ]
-  ;   (go
-  ;     (let [img (<! img-chan)]
-  ;       (log-js (rman/height img))
-  ;       (log-js (rman/width img)))))
-  ; }}}
   ) 
 
 ;; }}}
