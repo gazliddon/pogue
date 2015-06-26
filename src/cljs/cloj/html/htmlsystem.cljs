@@ -34,8 +34,6 @@
     (keyboard/init! keyboard))
 
   (update! [ {:keys [keyboard] }]
-    (keyboard/update! keyboard)
-    )
-  )
+    (keyboard/update! keyboard)))
 
 

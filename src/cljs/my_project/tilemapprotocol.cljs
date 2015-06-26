@@ -1,6 +1,7 @@
 (ns gaz.tilemapprotocol)
 
 (defprotocol ITileMap
+  (get-tile-data [_ tile-id])
   (get-width [_])
   (get-height [_])
   (reducer [_ f memo-init])
