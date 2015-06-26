@@ -87,8 +87,8 @@
         (shit-h-line wl pos w)
         (shit-h-line wl (vec2 x y1) w)
         (shit-v-line wl (vec2 x  y) h)
-        (shit-v-line wl (vec2 y1 x) h)
-        )))
+        (shit-v-line wl (vec2 y1 x) h))))
+
 
 (def tile-offsets (for [x [0 1] y [0 1]] (vec2 x y)))
 
