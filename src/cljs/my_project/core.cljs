@@ -46,6 +46,8 @@
     [hipo.core              :as hipo  :include-macros true]  
     [dommy.core             :as dommy :include-macros true]    
 
+    [sablono.core :as html :refer-macros [html]]
+
     [om.core                :as om :include-macros true]
     [om.dom                 :as dom :include-macros true]))
 
@@ -282,7 +284,112 @@
 ;; }}}
 
 ;; =============================================================================
+;; Game Messaging system {{{
+
+(defn increase-by-perc [perc v] (+ v (* perc v)))
+(defn descrease-by-perc [perc v] (- v (* perc v)))
+
+(defmulti handle-message! (fn [command packet] command))
+
+(defmethod handle-message! :default [command packet]
+  (println (str "got command " command " with packet " packet)))
+
+
+(defn message-center []
+  (let [ret-chan (chan) ]
+    (go-loop []
+      (let [[command packet] (<! ret-chan)]
+        (handle-message! command packet)
+        (recur)))
+    ret-chan
+    ))
+
+(def game-message-chan (message-center))
+(defn msg! [k command] (put! game-message-chan [ k command ]))
+
+;; }}}
+ 
+;; =============================================================================
+;; {{{ Some stuff for the game view
+(defn slider [view owner {:keys [e-range e-key e-label e-func]}]
+  (let [[min max] e-range
+        e-label (or e-label "NO LABEL!")]
+    (reify
+      om/IInitState
+      (init-state [_]
+        {:value (e-key @view)
+         :ch    (chan) })
+
+      om/IWillMount
+      (will-mount [_]
+        (let [update-chan (om/get-state owner :ch)]
+          (go (loop []
+                (let [v (<! update-chan)]
+                  (e-func v)
+                  (om/set-state! owner :value v)
+                  (recur))))))
+
+      om/IRenderState
+      (render-state [_ {:keys [value ch]}]
+        (html
+          [:div 
+           {:class "slider"}
+           [:label  e-label ]
+           [:input {:type "range" 
+                    :style {:width "100px"}
+                    :value value
+                    :min min :max max
+                    :on-change #(put! ch (js/parseFloat (.. % -target -value)))}]
+           [:span value]])))))
+;; }}} 
+
+(defn bool [view owner {:keys [e-key e-label e-func]}]
+  (let [ e-label (or e-label "NO LABEL!")]
+    (reify
+      om/IInitState
+      (init-state [_]
+        {:value (e-key @view)
+         :ch    (chan) })
+
+      om/IWillMount
+      (will-mount [_]
+        (let [update-chan (om/get-state owner :ch)]
+          (go (loop []
+                (let [v (<! update-chan)]
+                  (e-func v)
+                  (om/set-state! owner :value v)
+                  (recur))))))
+
+      om/IRenderState
+      (render-state [_ {:keys [value ch]}]
+        (html
+          [:div 
+           {:class "bool"}
+           [:label  e-label ]
+           [:input {:type "checkbox" 
+                    :value value
+                    :on-change #(put! ch (.js/Number  (.. % -target -value)))}]
+           ])))))
+
+;; =============================================================================
 ;; Game System Stuff {{{
+(defonce game-view (atom { :scale 2
+                           :time-speed 1 }))
+
+(defn scale-swap! [f] (swap! game-view assoc :scale (f (:scale @game-view))))
+
+(defmethod handle-message! :zoom-in   [_ perc] (scale-swap! #(increase-by-perc % perc)))
+(defmethod handle-message! :zoom-out  [_ perc] (scale-swap! #(descrease-by-perc % perc)) )
+(defmethod handle-message! :set-scale [_ scale]  (scale-swap! (constantly scale)))
+(defmethod handle-message! :set-time-speed [_ time-speed]  (swap! game-view assoc :time-speed time-speed ))
+
+(defn om-slider [ label data kork range func]
+  (om/build slider data {:opts {:e-range range
+                                :e-key kork
+                                :e-label label 
+                                :e-func func}} ))
+
+
 
 (defn game-component [data owner]
   (reify
@@ -293,12 +400,25 @@
         (go-loop []
                  (let [dt (<! in-chan)]
                    (om/set-state! owner :dt dt))
-                 (recur)
-                 )))
+                 (recur))))
 
     om/IRenderState
-    (render-state [_ state]
-      (dom/p nil (str "ROGUEBOW ISLANDS : "(:dt state))))))
+    (render-state [_ {dt :dt}]
+      (let [msecs (format "%0.2f" dt)
+            fps   (format "%0.2f" (* (/ 3600 1000)  dt )) ]
+
+
+        (dom/div nil
+                (om-slider "scale" game-view :scale [1 10] #(msg! :set-scale %))
+                (om-slider "time" game-view :time-speed [0 5] #(msg! :set-time-speed %))
+                
+                )
+
+
+        #_(html
+          [:div
+           [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)]
+           ])))))
 
 ;; }}}
 
@@ -417,6 +537,8 @@
 
 ;; }}}
 
+
+
 ;; =============================================================================
 ;; {{{ Main
 
@@ -458,7 +580,7 @@
     (v2/mul (vec2  t-secs t-secs))
     (v2/add (vec2 0 0.5))
     (v2/applyv (vec2 cos-01 cos-01))
-    (v2/mul (vec2 10 10))
+    (v2/mul (vec2 20 20))
     ))
 
 (defn anim [t s frms]
@@ -471,6 +593,24 @@
 
 (def get-bub-frm
   (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
+
+
+
+(defmulti update-view! (fn [k v] k))
+
+(defmethod update-view! :dims [k v]
+  )
+
+(defmethod update-view! :zoom [k v]
+  )
+
+
+#_({:start-velocity 10
+  :target-velocity 0
+  :start-time 10
+  :target-time 100
+  })
+
 
 (defn main []
   (let [rm (get-resource-manager system)
@@ -495,18 +635,17 @@
         (let [sprs (<! spr-ch)
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
-              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 200) (rand-int 200) ) (vec2 (rand) (rand))] )
-              positions (vec (repeatedly 20 rand-spr))
-              level-spr (mk-level-spr sprs rm :level 160 160 tiledata/tile-data)
-              
+              rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 400) (rand-int 400) ) (vec2 (rand) (rand))] )
+              positions (vec (repeatedly 100 rand-spr))
+
+              level-spr  (mk-level-spr sprs rm :level 16 16 tiledata/tile-data)
+
               kb-handler (kb/default-kb-handler)
 
               mid-scr (-> (vec2 (rp/width rend) (rp/height rend) )
                           (v2/mul (vec2 0.5 0.5)))
-
-              scale (vec2 3 3)
-              
               ]
+
           (kb-attach! "game" kb-handler)
 
           (loop [pos (vec2 20 20)
@@ -514,9 +653,10 @@
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
-                  t @g-time
-                  t-secs (/ t 1000)
+                  t (* @g-time (:time-speed @game-view))
+                  t-secs (/ t 700)
                   c-t (* t 1.5)
+                  scale (vec2 (:scale @game-view) (:scale @game-view))
                   mid-scr (v2/div mid-scr scale)
                   ]
 
@@ -526,25 +666,25 @@
                 (rp/scale! scale) 
 
                 (rp/translate! (->
-                                   (v2/sub (vec2 0 0) cam-pos) 
-                                   (v2/add mid-scr)
+                                 (v2/sub (vec2 0 0) cam-pos) 
+                                 (v2/add mid-scr)
                                  ))
                 (rp/spr! level-spr (vec2 0 0)))
 
               (doseq [[img pos uniq] positions]
                 (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
                   (rp/spr! spr-printer img final-pos)))
-              
+
               (rp/spr! spr-printer (get-bub-frm t-secs) pos))
 
             (let [actions (my-decide kb-handler)
-                 mv (get combo-vec actions (vec2 0 0))]
+                  mv (get combo-vec actions (vec2 0 0))]
               (recur (v2/add mv pos)
                      (camera cam-pos pos)
                      ) )
             )))))
 
-  
+
 
 
 

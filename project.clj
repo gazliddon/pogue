@@ -24,6 +24,7 @@
                  [hipo "0.3.0"]
                  [om "0.8.0-rc1"]
                  [ff-om-draggable "0.0.18"]
+                 [sablono "0.3.4"]
                  [environ "1.0.0"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]

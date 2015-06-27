@@ -21,15 +21,33 @@
     display: block;
 }
 
+.slider {
+    padding: 10px;
+}
+
+.slider label {
+    vertical-align: middle;
+    padding-right: 20px;
+}
+
+.slider input {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.slider span {
+    padding-left: 20px;
+}
+
+
+
 
 div#app {
     /* display:    none    ; */
     position:absolute; bottom:0; left:0;
     background-color: rgb(1, 1, 255);
-    color: #eee;
-    padding: 10px;
-    opacity: 0.50;
+    color: rgba(255,255,255,255);
+    opacity: 0.70;
     font-size: 20px;
-    
     width: 100%;
 }

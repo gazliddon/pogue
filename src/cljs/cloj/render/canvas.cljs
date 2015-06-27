@@ -21,7 +21,8 @@
         (aset "imageSmoothingEnabled"        v)))
 
 (defn px [v]
-  (int (+ 0.5 v))
+  ; (int (+ 0.5 v))
+  v
   )
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]
