@@ -15,6 +15,9 @@
 (defn applyv [{fx :x fy :y} {x :x y :y}]
   (vec2 (fx x) (fy y)))
 
+(defn clamp [ {xlo :x ylo :y} {xhi :x yhi :y}{x :x y :y} ]
+  (vec2 (min xhi (max xlo x))
+        (min yhi (max ylo y))))
 
 (def left  (vec2 -1  0))
 (def right (vec2  1  0))
