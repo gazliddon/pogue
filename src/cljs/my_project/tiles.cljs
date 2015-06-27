@@ -23,6 +23,15 @@
     (get all-tile-data id duff-tile)
     (assoc :id id)))
 
+(defn mk-map-tile-cell [{:keys [gfx] :as tile} x y]
+ (let [pos (vec2 x y)
+       pos-px (v2/mul (vec2 16 16) pos)
+       offsets (for [x [0 16] y [0 16]] (v2/add pos-px (vec2 x y)))]
+   (assoc tile 
+          :pos pos
+          :pixel-pos pos-px
+          :print-info (map vector gfx offsets))))
+
 (defrecord TileMap [width height tiles all-tile-data]
   tmp/ITileMap
 
@@ -39,7 +48,10 @@
 
   (set-tile [this x y tile-id]
     (if (in-rect? [0 0 width height] x y)
-      (let [tile (tmp/get-tile-data this tile-id)  ]
+      (let [tile (->
+                   (tmp/get-tile-data this tile-id)
+                   (mk-map-tile-cell x y)) 
+            ]
         (->>
           (-> (nth tiles y) (assoc x tile))
           (assoc tiles y)
