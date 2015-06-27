@@ -11,13 +11,27 @@
             [dommy.core             :as dommy :include-macros true]    
             [hipo.core              :as hipo  :include-macros true]))
 
+;; =============================================================================
+;; {{{ Misc TODO move into utils file
 (defn put-close! [ch v]
   (do
     (async/put! ch v)
     (async/close! ch)))
 
+(defn cb->chan
+  "Convert a callback function "
+  [ cb-fn ]
+  (let [ret-chan (chan )]
+    (do
+      (->>
+        (fn [ret-val] (put-close! ret-chan ret-val))
+        (cb-fn))
+      ret-chan)))
+
+;; }}}
+
 ;; =============================================================================
-;; Multi method to turn a blob into an element
+;; {{{ Multi method to turn a blob into an element
 (defn img->iimage [img]
   (reify
     rp/IImage
@@ -39,9 +53,10 @@
     ret-chan))
 
 (defmethod blob->element :default [e] (println (str "unknown type " (.-type e))))
+;; }}}
 
 ;; =============================================================================
-;; Extend req to make it a little easier to deal with 
+;; {{{ Extend req to make it a little easier to deal with 
 (defprotocol IXHRReq
   (get-status [_])
   (u-okay-hun? [_])
@@ -63,19 +78,10 @@
                 (cb (.-response xhr)))))
       (.send))))
 
-(defn cb->chan
-  "Convert a callback function "
-  [ cb-fn ]
-  (let [ret-chan (chan )]
-    (do
-      (->>
-        (fn [ret-val] (put-close! ret-chan ret-val))
-        (cb-fn))
-      ret-chan))
-  )
+;; }}}
 
 ;; =============================================================================
-;; Crappy stab at seperating out loading into a channel
+;; {{{ Crappy stab at seperating out loading into a channel
 (defprotocol ILoader
   (load-blob! [_ file-name]))
 
@@ -93,6 +99,8 @@
           )
           ret-chan 
         ))))
+
+;; }}}
 
 ;; =============================================================================
 ;; todo
@@ -117,13 +125,8 @@
       [0 0 (rp/width this) (rp/height this)])
     (img [_] el)))
 
-(defn msg [v s]
-  (println (str s "(" (type v) ")"))
-  v)
-
 (defn mk-resource-manager []
   (let [store (atom empty-store)]
-    (println "TRYIN THIS!")
     (do
       (reify
         IResourceManagerInfo
@@ -152,6 +155,4 @@
             ret-chan)))  
       )
     ))
-
-
 
