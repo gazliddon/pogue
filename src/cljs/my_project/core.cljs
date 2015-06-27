@@ -89,36 +89,47 @@
         (shit-v-line wl (vec2 x  y) h)
         (shit-v-line wl (vec2 y1 x) h))))
 
-
-(def tile-offsets (for [x [0 1] y [0 1]] (vec2 x y)))
-
-(defn mk-print-one-tile-fn [rend {gfx :gfx}]
-  (fn [pos]
-    (doseq [i (count gfx)]
-      (->>
-        (nth tile-offsets i)       
-        (v2/add pos)
-        (v2/mul (vec2 32 32))
-        (rp/spr! rend (nth gfx i))))))
+(def tile-offsets
+  (doall
+    (let [mul 16
+        mul-vec (vec2 mul mul) ]
+    (->>
+      (for [x [0 1] y [0 1]] (vec2 x y))
+      (mapv #(v2/mul mul-vec %))
+      (into []))) 
+    )
+  )
 
 (defn mk-tile-printer [rend]
   (reify
     rp/IRenderBackend
-    (spr! [this tile pos]
-      (let [p-func (mk-print-one-tile-fn rend tile)]
-        (p-func pos)))))
+    (spr! [this {gfx :gfx} pos]
+      (doseq [ [tile offset ] (map vector gfx (map #(v2/add pos %) tile-offsets))]
+        (rp/spr! rend tile offset)))))
+
+(defn render-level! [render-target level sprs]
+  (let [spr-printer (sprs/mk-spr-printer render-target sprs)
+        tile-printer (mk-tile-printer spr-printer)
+        [w h] [(tmp/get-width level) (tmp/get-height level)]
+        spr! (partial rp/spr! tile-printer)
+        to-print (for [x (range w) y (range h)]
+                   {:pos  (vec2 x y)
+                    :pixel-pos (v2/mul (vec2 32 32) (vec2 x y))
+                    :tile (tmp/get-tile level x y)}) ]
+
+    (doseq [{pos :pixel-pos tile :tile} to-print ]
+      (rp/spr! tile-printer tile pos)))
+  )
 
 (defn mk-level-spr [sprs rman id w-b h-b all-tile-data]
   (let [[w h] [(* 16 w-b) (* 16 h-b)]
         render-target (create-render-target! rman (name id ) w h)
-        spr-printer (sprs/mk-spr-printer render-target sprs)
-        tile-printer (mk-tile-printer spr-printer)
         level (->
                 (tiles/mk-tile-map w-b h-b :blank all-tile-data)
                 (shit-room (vec2 3 3) (vec2 10 10 ))) ]
     (do
       (rp/clear! render-target [0 1 0])
-      ; (render-level! spr-printer level)
+      (render-level! render-target level sprs)
       render-target)))
 
 ;; }}}
@@ -295,7 +306,6 @@
 ;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn handle-key-event! [kb-handler event new-state]
   (do
     (kb/update-key! kb-handler (.-keyCode event) new-state)
