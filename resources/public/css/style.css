@@ -1,8 +1,8 @@
-body {
-    background-color: red;
-    color: #eee;
-    font: 15px/1.4 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-}
+/* body { */
+/*     background-color: red; */
+/*     color: #eee; */
+/*     font: 15px/1.4 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* } */
 
 
 #canvas-div {
@@ -25,7 +25,11 @@ body {
 div#app {
     /* display:    none    ; */
     position:absolute; bottom:0; left:0;
-    background-color: rgba(0, 0, 0, 1)
+    background-color: rgb(1, 1, 255);
+    color: #eee;
+    padding: 10px;
+    opacity: 0.50;
+    font-size: 20px;
     
     width: 100%;
 }
