@@ -390,7 +390,6 @@
                                 :e-func func}} ))
 
 
-
 (defn game-component [data owner]
   (reify
     om/IWillMount
@@ -408,17 +407,12 @@
             fps   (format "%0.2f" (* (/ 3600 1000)  dt )) ]
 
 
-        (dom/div nil
+        (html
+          [:div
                 (om-slider "scale" game-view :scale [1 10] #(msg! :set-scale %))
                 (om-slider "time" game-view :time-speed [0 5] #(msg! :set-time-speed %))
-                
-                )
 
-
-        #_(html
-          [:div
-           [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)]
-           ])))))
+           [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)] ])))))
 
 ;; }}}
 
@@ -557,17 +551,16 @@
     (v3/to-vec)
     (mapv cos-01)))
 
+(defn anim-func! [dt]
+  (do
+    (let [dt (* dt (:time-speed @game-view))]
+      (swap! g-time #(+ dt %))
+      (put! time-chan dt))))
+
 (when @first-time?
   (do
     (swap! first-time? not)
-    (->
-      (fn [dt]
-        (swap! g-time #(+ dt %))
-        (do
-          ; (rp/clear! rend (funny-col @g-time))
-          (put! time-chan dt)))
-      (animate))))
-
+    (animate anim-func!)))
 
 (defn dump->> [s v]
   (println (str s " : " v))
@@ -595,21 +588,11 @@
   (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
 
 
-
-(defmulti update-view! (fn [k v] k))
-
-(defmethod update-view! :dims [k v]
-  )
-
-(defmethod update-view! :zoom [k v]
-  )
-
-
 #_({:start-velocity 10
-  :target-velocity 0
-  :start-time 10
-  :target-time 100
-  })
+    :target-velocity 0
+    :start-time 10
+    :target-time 100
+    })
 
 
 (defn main []
@@ -653,7 +636,7 @@
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
-                  t (* @g-time (:time-speed @game-view))
+                  t @g-time 
                   t-secs (/ t 700)
                   c-t (* t 1.5)
                   scale (vec2 (:scale @game-view) (:scale @game-view))
