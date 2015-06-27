@@ -521,7 +521,8 @@
         diff (v2/sub desired-pos current-pos)
         add (v2/div diff scaler)
         new-pos (v2/add current-pos add) ]
-    new-pos))
+    new-pos
+    ))
 
 (defn camera [current-pos desired-pos]
   (->
@@ -532,10 +533,8 @@
 ;; }}}
 
 
-
 ;; =============================================================================
 ;; {{{ Main
-
 (def log-chan (chan))
 (defonce time-chan (chan (dropping-buffer 10)))
 (defonce time-chan-mult (mult time-chan))
@@ -614,20 +613,14 @@
       (clear-resources! rm)
 
       (go
-
         (let [sprs (<! spr-ch)
               spr-printer (sprs/mk-spr-printer rend sprs)
               in-chan (tap time-chan-mult (chan))
               rand-spr (fn [] [(rand-nth (keys sprs)) (vec2 (rand-int 400) (rand-int 400) ) (vec2 (rand) (rand))] )
               positions (vec (repeatedly 100 rand-spr))
-
               level-spr  (mk-level-spr sprs rm :level 16 16 tiledata/tile-data)
-
               kb-handler (kb/default-kb-handler)
-
-              mid-scr (-> (vec2 (rp/width rend) (rp/height rend) )
-                          (v2/mul (vec2 0.5 0.5)))
-              ]
+              mid-scr (-> (vec2 (rp/width rend) (rp/height rend) ) (v2/mul (vec2 0.5 0.5))) ]
 
           (kb-attach! "game" kb-handler)
 
@@ -641,30 +634,29 @@
                   c-t (* t 1.5)
                   scale (vec2 (:scale @game-view) (:scale @game-view))
                   mid-scr (v2/div mid-scr scale)
-                  ]
+                  desired-pos (v2/sub pos mid-scr)
+                  desired-pos (v2/clamp (vec2 0 0) (vec2 1000 1000) desired-pos) ]
 
               (doto rend
                 (rp/clear! [1 0 1])
                 (rp/identity! )
                 (rp/scale! scale) 
-
-                (rp/translate! (->
-                                 (v2/sub (vec2 0 0) cam-pos) 
-                                 (v2/add mid-scr)
-                                 ))
+                (rp/translate! (v2/sub (vec2 0 0) cam-pos))
                 (rp/spr! level-spr (vec2 0 0)))
 
               (doseq [[img pos uniq] positions]
                 (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
                   (rp/spr! spr-printer img final-pos)))
 
-              (rp/spr! spr-printer (get-bub-frm t-secs) pos))
+              (rp/spr! spr-printer (get-bub-frm t-secs) pos)
+              (let [actions (my-decide kb-handler)
+                    mv (get combo-vec actions (vec2 0 0))]
+                (recur (v2/add mv pos)
+                       (camera cam-pos desired-pos)
+                       ) )
+              )
 
-            (let [actions (my-decide kb-handler)
-                  mv (get combo-vec actions (vec2 0 0))]
-              (recur (v2/add mv pos)
-                     (camera cam-pos pos)
-                     ) )
+            
             )))))
 
 
