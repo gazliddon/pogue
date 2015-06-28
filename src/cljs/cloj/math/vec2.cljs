@@ -1,18 +1,8 @@
 (ns cloj.math.vec2
   (:refer-clojure :exclude [min max])
-  (:require [cloj.math.protocols :as math]
+  #_(:require [cloj.math.protocols :as math]
             )
   (:require-macros [cloj.macros :refer [mk-vec-op]]))
-
-(mk-vec-op add + :x :y)
-(mk-vec-op sub - :x :y)
-(mk-vec-op mul * :x :y)
-(mk-vec-op div / :x :y)
-(mk-vec-op min clojure.core/min :x :y)
-(mk-vec-op max clojure.core/max :x :y)
-
-(defn clamp [lo hi v]
-  (min hi (max lo v)))
 
 (defrecord Vec2 [x y])
 
@@ -23,6 +13,22 @@
   ([[x y]] {:x x :y y}))
 
 (defn vec2-s [s] (vec2 s s) )
+
+(mk-vec-op add + :x :y)
+(mk-vec-op sub - :x :y)
+(mk-vec-op mul * :x :y)
+(mk-vec-op div / :x :y)
+(mk-vec-op min clojure.core/min :x :y)
+(mk-vec-op max clojure.core/max :x :y)
+
+(def zero (vec2 0 0))
+
+(defn clamp [lo hi v]
+  (min hi (max lo v)))
+
+(defn neg [v]
+  (sub zero v))
+
 
 (defn applyv [{fx :x fy :y} {x :x y :y}]
   (vec2 (fx x) (fy y)))
@@ -41,3 +47,4 @@
 (def down-left  left-down)
 (def up-right   right-up)
 (def down-right right-down)
+

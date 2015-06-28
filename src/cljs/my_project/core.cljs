@@ -86,7 +86,9 @@
 
   (let [clamp-t #(max t (min t' %))
         dt (- t' t)
-        a (if (== 0 dt) (vec2-s 0) (v2/div (- 0 v) (vec2 dt)))
+        a (if (== 0 dt)
+            (v2/zero)
+            (v2/div (v2/neg v) (vec2-s dt)))
         e (->EaserV2 t p v a )]
 
     (reify
@@ -226,6 +228,8 @@
 ;; =============================================================================
 ;; {{{ Timer
 (defprotocol ITimer
+  (now [_])
+  (from-seconds [_ s])
   (tick! [_]))
 
 (defn is-valid? [{:keys [previous now] :as c}]
@@ -239,12 +243,17 @@
 (defn html-timer []
   (let [c (atom {:previous nil :now nil}) ]
     (reify ITimer
-      (tick! [_]
+
+      (from-seconds [this s] (+ (* 1000 s) ))
+
+      (now [_] (.now (aget js/window "performance")))
+
+      (tick! [this]
         (do
           (->>
             (assoc @c
                    :previous (:now @c)
-                   :now (.now (aget js/window "performance")))
+                   :now (now this))
             (reset! c)
             (time-passed))
           )))))
@@ -612,7 +621,8 @@
           (kb-attach! "game" kb-handler)
 
           (loop [pos (vec2 20 20)
-                 cam-pos (vec2 0 0)]
+                 cam-pos (vec2 0 0)
+                 player-intention (mk-easer 0 0 pos pos (vec2 0 0)) ]
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
@@ -636,10 +646,24 @@
                   (rp/spr! spr-printer img final-pos)))
 
               (rp/spr! spr-printer (get-bub-frm t-secs) pos)
+
+
               (let [actions (my-decide kb-handler)
-                    mv (get combo-vec actions (vec2 0 0))]
+                    mv (get combo-vec actions (vec2 0 0))
+                    dest-pos (v2/mul mv ())
+
+                    start-tm (now my-timer)
+                    dest-tm (+ start-tm (from-seconds my-timer 2))
+
+                    ; new-easer (mk-easer start-tm dest-tm pos pos (vec2 0 0))
+                    new-easer (mk-easer 0 1 pos pos (vec2 0 0))
+
+                    ]
+
+
                 (recur (v2/add mv pos)
                        (camera cam-pos desired-pos)
+                       new-easer
                        ) )
               )
 
