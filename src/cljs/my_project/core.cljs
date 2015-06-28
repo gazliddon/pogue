@@ -16,7 +16,7 @@
     [cloj.resources.html    :as rmhtml]
 
     [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
-    [cloj.math.vec2         :as v2 :refer [vec2]]
+    [cloj.math.vec2         :as v2 :refer [vec2 vec2-s]]
     [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
@@ -67,7 +67,12 @@
   (get-v [_ t'] (+ v (* a (- t' t))))
   (get-p [_ t'] (+ p (* t (+ v (* 0.5 a (- t' t)))))))
 
+(def halfv2 (vec2-s 0.5))
 
+(defrecord EaserV2 [t p v a]
+  IEasing
+  (get-v [_ t'] (v2/add v (v2/mul a (vec2-s (- t' t)) )))
+  (get-p [_ t'] (v2/add p (v2/mul t (v2/add v (v2/mul halfv2 a (vec2-s  (- t' t))))))))
 
 (defn mk-easer
   "
@@ -80,9 +85,10 @@
   [t t' p p' v]
 
   (let [clamp-t #(max t (min t' %))
-        e (->Easer
-            t p v
-            (/ (- 0 v) (- t' t)))]
+        dt (- t' t)
+        a (if (== 0 dt) (vec2-s 0) (v2/div (- 0 v) (vec2 dt)))
+        e (->EaserV2 t p v a )]
+
     (reify
       IEasing
       (get-v [_ this-t]
@@ -90,6 +96,9 @@
 
       (get-p [_ this-t] 
         (get-p e (clamp-t this-t))))))
+
+(defn mk-no-move-easer [t p]
+  (->Easer t p 0 0))
 
 ;; }}}
 
@@ -256,71 +265,6 @@
 ;;; }}}
 
 ;; =============================================================================
-;; {{{ Web Audio
-(defprotocol IAudio
-  (sq [_ ])
-  (tri [_ ])
-  (saw [_ ]))
-
-(defprotocol ISFX
-  (instrument [_])
-  (type! [_ t])
-  (freq! [_ v])
-  (start! [_])
-  (stop! [_])
-  (vol! [_ v]))
-
-(defn mk-ins
-  ([ctx osc-type]
-   (let [ins (mk-ins ctx)]
-     (do
-       (type! ins osc-type))
-     ins))
-
-  ([ctx]
-   (let [vco (.createOscillator ctx)
-         vca (.createGain ctx)
-         ret (reify
-               ISFX
-               (instrument [_] {:vco vco :vca vca})
-               (start! [_] (.start vco))
-               (stop!  [_] (.stop vco))
-               (type!  [_ osc-type] (set! (.-type vco) osc-type))
-               (vol!   [_ volume] (set! (.-value (.-gain vca)) volume))
-               (freq!  [_ freq] (set! (.-value  (.-frequency vco)) freq))) ]
-     (do
-       (.connect vco vca)
-       (.connect vca (.-destination ctx)))
-     ret))
-  )
-
-(defonce audio-html 
-  (let [constructor (or js/window.AudioContext
-                        js/window.webkitAudioContext)
-        ctx (constructor.) ]
-    (reify
-      IAudio
-      (sq [_]
-        (mk-ins ctx "square")))))
-
-(defonce sq-1 (sq audio-html))
-(defonce sq-2 (sq audio-html))
-
-#_(do
-    (freq! sq-1 30)
-    (freq! sq-2 30.13721)
-    (vol! sq-1 5)
-    (vol! sq-2 5)
-    (start! sq-1 )
-    (start! sq-2 )
-
-
-
-    )
-
-;; }}}
-
-;; =============================================================================
 ;; Game Messaging system {{{
 
 (defn increase-by-perc [perc v] (+ v (* perc v)))
@@ -381,7 +325,6 @@
                     :step (/ (- max min) e-steps )
                     :on-change #(put! ch (js/parseFloat (.. % -target -value)))}]
            [:span value]])))))
-;; }}} 
 
 (defn bool [view owner {:keys [e-key e-label e-func]}]
   (let [ e-label (or e-label "NO LABEL!")]
@@ -411,6 +354,7 @@
                     :on-change #(put! ch (.js/Number  (.. % -target -value)))}]
            ])))))
 
+;; }}}
 
 ;; =============================================================================
 ;; Game System Stuff {{{
