@@ -57,6 +57,43 @@
 ;; }}}
 
 ;; =============================================================================
+;; {{{ MATHS! :)
+(defprotocol IEasing
+  (get-v [_ t'])
+  (get-p [_ t']))
+
+(defrecord Easer [t p v a]
+  IEasing
+  (get-v [_ t'] (+ v (* a (- t' t))))
+  (get-p [_ t'] (+ p (* t (+ v (* 0.5 a (- t' t)))))))
+
+
+
+(defn mk-easer
+  "
+  t  is curent time
+  t' is when we want to stop moving
+  v  current velocity
+  p  current positon
+  p' target postion"
+
+  [t t' p p' v]
+
+  (let [clamp-t #(max t (min t' %))
+        e (->Easer
+            t p v
+            (/ (- 0 v) (- t' t)))]
+    (reify
+      IEasing
+      (get-v [_ this-t]
+        (get-v e (clamp-t this-t)))
+
+      (get-p [_ this-t] 
+        (get-p e (clamp-t this-t))))))
+
+;; }}}
+
+;; =============================================================================
 ;; {{{ tiles
 (defn shit-line [tmap block {:keys [x y] :as pos} add len]
   (let [v2-len (vec2 len len) ]
@@ -370,6 +407,7 @@
                     :value value
                     :on-change #(put! ch (.js/Number  (.. % -target -value)))}]
            ])))))
+
 
 ;; =============================================================================
 ;; Game System Stuff {{{
