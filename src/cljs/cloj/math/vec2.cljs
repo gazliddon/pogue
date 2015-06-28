@@ -22,6 +22,8 @@
   ([x y]   {:x x :y y})  
   ([[x y]] {:x x :y y}))
 
+(defn vec2-s [s] (vec2 s s) )
+
 (defn applyv [{fx :x fy :y} {x :x y :y}]
   (vec2 (fx x) (fy y)))
 
