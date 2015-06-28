@@ -27,7 +27,6 @@
 (defn applyv [{fx :x fy :y} {x :x y :y}]
   (vec2 (fx x) (fy y)))
 
-
 (def left  (vec2 -1  0))
 (def right (vec2  1  0))
 (def up    (vec2  0 -1))
