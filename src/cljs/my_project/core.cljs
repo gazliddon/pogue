@@ -348,9 +348,11 @@
  
 ;; =============================================================================
 ;; {{{ Some stuff for the game view
-(defn slider [view owner {:keys [e-range e-key e-label e-func]}]
+(defn slider [view owner {:keys [e-range e-key e-label e-func e-steps]}]
   (let [[min max] e-range
-        e-label (or e-label "NO LABEL!")]
+        e-label (or e-label "NO LABEL!")
+        e-steps (or e-steps 30)
+        ]
     (reify
       om/IInitState
       (init-state [_]
@@ -376,6 +378,7 @@
                     :style {:width "100px"}
                     :value value
                     :min min :max max
+                    :step (/ (- max min) e-steps )
                     :on-change #(put! ch (js/parseFloat (.. % -target -value)))}]
            [:span value]])))))
 ;; }}} 
@@ -421,11 +424,13 @@
 (defmethod handle-message! :set-scale [_ scale]  (scale-swap! (constantly scale)))
 (defmethod handle-message! :set-time-speed [_ time-speed]  (swap! game-view assoc :time-speed time-speed ))
 
-(defn om-slider [ label data kork range func]
+(defn om-slider [ label data kork range steps func]
   (om/build slider data {:opts {:e-range range
                                 :e-key kork
                                 :e-label label 
-                                :e-func func}} ))
+                                :e-func func
+                                :e-steps steps
+                                }} ))
 
 
 (defn game-component [data owner]
@@ -447,8 +452,8 @@
 
         (html
           [:div
-                (om-slider "scale" game-view :scale [1 10] #(msg! :set-scale %))
-                (om-slider "time" game-view :time-speed [0 5] #(msg! :set-time-speed %))
+                (om-slider "scale" game-view :scale [1 10] 1000 #(msg! :set-scale %))
+                (om-slider "time" game-view :time-speed [0 5] 100 #(msg! :set-time-speed %))
 
            [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)] ])))))
 
