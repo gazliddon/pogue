@@ -1,4 +1,5 @@
 (ns cloj.math.vec2
+  (:require [cloj.math.protocols :as math])
   (:require-macros [cloj.macros :refer [mk-vec-op]]))
 
 (mk-vec-op add + :x :y)
@@ -35,5 +36,3 @@
 (def down-left  left-down)
 (def up-right   right-up)
 (def down-right right-down)
-
-
