@@ -1,3 +1,4 @@
+
 (ns my-project.server
   (:require [clojure.java.io :as io]
             [clojure.walk :as walk]
@@ -77,4 +78,5 @@
     (mapv #(if % t f) (bits->bools v 4))
     (partition 2)
     (mapv vec)))
+
 

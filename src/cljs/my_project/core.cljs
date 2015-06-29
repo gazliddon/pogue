@@ -22,7 +22,9 @@
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
-    [cloj.utils             :refer [format]] 
+    [cloj.utils             :refer [format
+                                    map-difference
+                                    ]]
     (cloj.render.protocols  :as rp)
     (cloj.keyboard          :as kb)
 
@@ -604,6 +606,17 @@
   )
 
 
+; (def old-map {:proc-1 6502
+;               :proc-2 68040
+;               :proc-3 32016})
+
+(def old-map {:proc-1 6510
+              :proc-2 68040
+              :proc-3 32016})
+
+(def new-map {:proc-1 6502
+              :proc-2 68040
+              :proc-3 32016})
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
@@ -635,6 +648,11 @@
           (kb-attach! "game" kb-handler)
 
           (println "got here")
+
+          (println 
+            (map-difference old-map new-map )
+
+            )
 
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
@@ -679,7 +697,7 @@
                        ) )
               )
 
-            
+
             )))))
 
 
