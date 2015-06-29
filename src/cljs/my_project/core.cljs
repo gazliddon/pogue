@@ -303,28 +303,18 @@
  
 ;; =============================================================================
 ;; {{{ Some stuff for the game view
-(defn slider [view owner {:keys [e-range e-key e-label e-func e-steps]}]
-  (let [[min max] e-range
-        e-label (or e-label "NO LABEL!")
-        e-steps (or e-steps 30)
-        ]
+
+(defn ev->value [ev]
+  (.. ev -target -value))
+
+(defn ev->float [ev]
+  (js/parseFloat (.. ev -target -value)))
+
+(defn slider [view owner {:keys [e-range e-key e-label e-func e-steps min-v max-v]}]
+  (let [value (e-key @view) ]
     (reify
-      om/IInitState
-      (init-state [_]
-        {:value (e-key @view)
-         :ch    (chan) })
-
-      om/IWillMount
-      (will-mount [_]
-        (let [update-chan (om/get-state owner :ch)]
-          (go (loop []
-                (let [v (<! update-chan)]
-                  (e-func v)
-                  (om/set-state! owner :value v)
-                  (recur))))))
-
-      om/IRenderState
-      (render-state [_ {:keys [value ch]}]
+      om/IRender
+      (render [ _ ]
         (html
           [:div 
            {:class "slider"}
@@ -334,7 +324,9 @@
                     :value value
                     :min min :max max
                     :step (/ (- max min) e-steps )
-                    :on-change #(put! ch (js/parseFloat (.. % -target -value)))}]
+                    :on-change #(do
+                                  (e-func (ev->float %))
+                                  (om/refresh! owner))}]
            [:span value]])))))
 
 (defn bool [view owner {:keys [e-key e-label e-func]}]
@@ -379,13 +371,16 @@
 (defmethod handle-message! :set-scale [_ scale]  (scale-swap! (constantly scale)))
 (defmethod handle-message! :set-time-speed [_ time-speed]  (swap! game-view assoc :time-speed time-speed ))
 
-(defn om-slider [ label data kork range steps func]
-  (om/build slider data {:opts {:e-range range
+(defn om-slider [ label data kork [min-v max-v] steps func]
+  (om/build slider data {:opts {:e-min min-v
+                                :e-max max-v
                                 :e-key kork
                                 :e-label label 
                                 :e-func func
                                 :e-steps steps
                                 }} ))
+
+
 
 
 (defn game-component [data owner]
@@ -407,12 +402,14 @@
 
         (html
           [:div
-                (om-slider "scale" game-view :scale [1 10] 1000 #(msg! :set-scale %))
+                (om-slider "scale" game-view :scale [1 50] 1000 #(msg! :set-scale %))
                 (om-slider "time" game-view :time-speed [0 5] 100 #(msg! :set-time-speed %))
 
            [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)] ])))))
 
 ;; }}}
+
+
 
 ;; =============================================================================
 ;; HTML Keyboard handling {{{
@@ -584,39 +581,6 @@
 (def get-bub-frm
   (mk-anim-fn 0.1 [:bub0 :bub1 :bub2 :bub3] ))
 
-
-#_({:start-velocity 10
-    :target-velocity 0
-    :start-time 10
-    :target-time 100
-    })
-
-(defprotocol IPlayer
-  (get-pos [this t])
-  )
-
-(defrecord Player [intention]
-  IPlayer
-  (get-pos [ _ t]
-    )
-  )
-
-(defn mk-player [t p]
-  (->Player (->EaserV2 t p v2/zero v2/zero))
-  )
-
-
-; (def old-map {:proc-1 6502
-;               :proc-2 68040
-;               :proc-3 32016})
-
-(def old-map {:proc-1 6510
-              :proc-2 68040
-              :proc-3 32016})
-
-(def new-map {:proc-1 6502
-              :proc-2 68040
-              :proc-3 32016})
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
@@ -649,10 +613,6 @@
 
           (println "got here")
 
-          (println 
-            (map-difference old-map new-map )
-
-            )
 
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
