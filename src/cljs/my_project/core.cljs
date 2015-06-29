@@ -590,6 +590,16 @@
     })
 
 
+(defrecord Player [intention]
+  (get-pos [ _ t]
+    )
+  )
+
+(defn mk-player [t p]
+  (->Player (->EaserV2 t p v2/zero v2/zero))
+  )
+
+
 (defn main []
   (let [rm (get-resource-manager system)
         rend (get-render-engine system)
@@ -620,9 +630,11 @@
 
           (kb-attach! "game" kb-handler)
 
+          (println "got here")
+
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
-                 player-intention (mk-easer 0 0 pos pos (vec2 0 0)) ]
+                 ]
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
@@ -654,16 +666,12 @@
 
                     start-tm (now my-timer)
                     dest-tm (+ start-tm (from-seconds my-timer 2))
-
-                    ; new-easer (mk-easer start-tm dest-tm pos pos (vec2 0 0))
-                    new-easer (mk-easer 0 1 pos pos (vec2 0 0))
-
+                    new-easer player-intention
                     ]
 
 
                 (recur (v2/add mv pos)
                        (camera cam-pos desired-pos)
-                       new-easer
                        ) )
               )
 
