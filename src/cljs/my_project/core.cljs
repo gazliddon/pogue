@@ -589,8 +589,12 @@
     :target-time 100
     })
 
+(defprotocol IPlayer
+  (get-pos [this t])
+  )
 
 (defrecord Player [intention]
+  IPlayer
   (get-pos [ _ t]
     )
   )
