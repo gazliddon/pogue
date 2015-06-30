@@ -36,6 +36,8 @@
     [game.sprdata           :as sprdata]
     [game.tiledata          :as tiledata]
 
+    [game.player            :as player]
+
     [gaz.tiles              :as tiles]
 
     [gaz.tilemapprotocol    :as tmp]
@@ -616,7 +618,8 @@
 
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
-                 ]
+                 player (player/mk-player @g-time) ]
+
             (kb-update! kb-handler)
 
             (let [dt (<! in-chan)
@@ -626,7 +629,8 @@
                   scale (vec2 (:scale @game-view) (:scale @game-view))
                   mid-scr (v2/div mid-scr scale)
                   desired-pos (v2/sub pos mid-scr)
-                  desired-pos (v2/clamp (vec2 0 0) (vec2 1000 1000) desired-pos) ]
+                  desired-pos (v2/clamp (vec2 0 0) (vec2 1000 1000) desired-pos)
+                  ]
 
               (doto rend
                 (rp/clear! [1 0 1])
@@ -639,23 +643,19 @@
                 (let [final-pos (v2/add pos (funny-vec t-secs uniq))]
                   (rp/spr! spr-printer img final-pos)))
 
-              (rp/spr! spr-printer (get-bub-frm t-secs) pos)
-
+              (doto spr-printer
+                (player/draw-player player @g-time)
+                (rp/spr! (get-bub-frm t-secs) pos))
 
               (let [actions (my-decide kb-handler)
                     mv (get combo-vec actions (vec2 0 0))
                     dest-pos (v2/mul mv ())
-
-                    start-tm (now my-timer)
-                    dest-tm (+ start-tm (from-seconds my-timer 2))
-                    new-easer player-intention
-                    ]
-
+                    new-player (player/update-player player @g-time) ]
 
                 (recur (v2/add mv pos)
                        (camera cam-pos desired-pos)
-                       ) )
-              )
+                       new-player
+                       )))
 
 
             )))))
