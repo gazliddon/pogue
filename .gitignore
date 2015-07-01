@@ -10,6 +10,8 @@ pom.xml.asc
 /resources/public/js/out
 /resources/public/js/app.js
 /resources/public/js/*.map
+/resources/public/js/test
+/resources/public/js/app_test.js
 /out
 /.repl
 /.repl-*
