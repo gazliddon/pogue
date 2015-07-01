@@ -5,6 +5,7 @@
     [hipo.core              :as hipo  :include-macros true]  
     [cloj.render.protocols  :as rp]
     [cloj.resources.manager :as rman]
+    [cloj.html.utils :refer [set-elem-dims!]]
     ))
 
 
@@ -27,7 +28,9 @@
 
 (defn canvas [canvas-id {:keys [x y] :as dims}]
   (let [canvas-el (hipo/create [:canvas ^:attrs {:id canvas-id :width x :height y}])
-        ctx (.getContext canvas-el "2d")]
+        ctx (.getContext canvas-el "2d")
+        atom-dims (atom dims)
+        ]
     (do
       (set-smoothing ctx false)
       (reify
@@ -37,49 +40,48 @@
 
         rp/ITransformable
         (matrix! [this [a c e b d f]]
-          (do
-            (.setTransform ctx a b c d e f))
+          (.setTransform ctx a b c d e f)
           this)
 
         (identity! [this]
-          (do
-            (.resetTransform ctx))
+          (.resetTransform ctx)
           this)
 
         (translate! [this {:keys [x y]}]
-          (do
-            (.translate ctx x y))
+          (.translate ctx x y)
           this)
 
         (scale! [this {:keys [x y] }]
-          (do
-            (.scale ctx x y))
+          (.scale ctx x y)
           this)
 
         (rotate! [this v]
-          (do 
-            (.rotate ctx v))
+          (.rotate ctx v)
           this)
 
         rp/IImage
 
         (id     [_] canvas-id)
-        (dims   [_] [0 0 x y])
-        (width  [_] x)
-        (height [_] y)
+        (dims   [_] [0 0  (:x @atom-dims)(:y @atom-dims)])
+        (width  [_] (:x @atom-dims))
+        (height [_] (:y @atom-dims))
         (img    [_] canvas-el)
 
         rp/IRenderBackend
+        (resize! [_ {:keys [x y] :as new-dims}]
+          (do
+          (set-elem-dims! canvas-el new-dims)
+          (reset! atom-dims new-dims) 
+            )
+          )
 
         (save!    [_] (.save ctx))
         (restore! [_] (.restore ctx))
 
-
         (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
-          (do 
-            (let [[sx sy sw sh] (rp/dims spr)
-                  spr-img (rp/img spr) ]
-              (.drawImage ctx spr-img sx sy sw sh (px x ) (px y ) (px w ) (px h ))))
+          (let [[sx sy sw sh] (rp/dims spr)
+                spr-img (rp/img spr) ]
+            (.drawImage ctx spr-img sx sy sw sh (px x ) (px y ) (px w ) (px h )))
           this)
 
         (spr! [this spr pos]
@@ -90,13 +92,12 @@
           (doto this
             (rp/save!)
             (rp/identity! )
-            (rp/box! (v2 0 0) dims col)
+            (rp/box! (v2 0 0) @atom-dims col)
             (rp/restore!)))
 
         (box! [this {x :x y :y} {w :x h :y} col]
-          (do
-            (let [col-str (rgb-str col)]
-              (set! (.-fillStyle ctx) col-str)
-              (.fillRect ctx x y w h))))))  )
+          (let [col-str (rgb-str col)]
+            (set! (.-fillStyle ctx) col-str)
+            (.fillRect ctx x y w h)))))  )
 
   )

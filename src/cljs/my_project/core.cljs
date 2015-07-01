@@ -13,6 +13,7 @@
                                     clear-resources!  ]]
 
     [cloj.resources.html    :as rmhtml]
+    [cloj.html.utils        :refer [get-window-dims]]
 
     [cloj.math.misc         :refer [cos-01 ]]
     [cloj.math.vec2         :as v2 :refer [vec2 vec2-s]]
@@ -53,6 +54,8 @@
 (enable-console-print!)
 
 ;; }}}
+
+(def system (mk-system "game" "game-canvas"))
 
 ;; =============================================================================
 ;; {{{ MATHS! :)
@@ -243,9 +246,7 @@
     (reify ITimer
 
       (from-seconds [this s] (+ (* 1000 s) ))
-
       (now [_] (.now (aget js/window "performance")))
-
       (tick! [this]
         (do
           (->>
@@ -283,7 +284,9 @@
   (println (str "got command " command " with packet " packet)))
 
 (defmethod handle-message! :resize [command [w h]]
-  (println (str "need to resize to " w " " h)))
+  ( ->
+    (rp/resize! (get-render-engine system) (vec2 w h)) ))
+ 
 
 (defn message-center []
   (let [ret-chan (chan) ]
@@ -479,7 +482,6 @@
 
 ;; =============================================================================
 ;; {{{ Game obect
-(def system (mk-system "game" "game-canvas"))
 
 (def pogue-game
   (game/make-game
@@ -533,17 +535,7 @@
 
 (defonce first-time? (atom true))
 
-
-
-(aset js/window "onresize" #(do
-                              (println "got a resize")
-                              (log-js %)
-                              (log-js (.-width js/window))
-                              (log-js (.-height js/window))
-                              (msg! :resize [10 10])
-                                ))
-
-
+(aset js/window "onresize" #(msg! :resize (get-window-dims)))
 
 (defn anim-func! [dt]
   (do
@@ -626,8 +618,7 @@
                   scale (vec2 (:scale @game-view) (:scale @game-view))
                   mid-scr (v2/div mid-scr scale)
                   desired-pos (v2/sub pos mid-scr)
-                  desired-pos (v2/clamp (vec2 0 0) (vec2 1000 1000) desired-pos)
-                  ]
+                  desired-pos (v2/clamp (vec2 0 0) (vec2 1000 1000) desired-pos) ]
 
               (doto rend
                 (rp/clear! [1 0 1])

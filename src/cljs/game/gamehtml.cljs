@@ -1,5 +1,6 @@
 (ns game.html
   (:require
+    [cloj.html.utils              :as htmlu]
     [cloj.resources.html    :refer [mk-resource-manager]]
     [cloj.system            :refer [ISystem]]
     [cloj.render.canvas     :as canvas]
@@ -9,11 +10,9 @@
     [cloj.resources.manager :as rman]))
 
 
-(def w (.-innerWidth js/window))
-(def h (.-innerHeight js/window))
-
 (defn mk-system [main-div-id canvas-id]
   (let [main-div-el (by-id main-div-id)
+        [w h] (htmlu/get-window-dims)
         rm   (mk-resource-manager)
         rend (rman/create-render-target! rm canvas-id w h )]
     (do

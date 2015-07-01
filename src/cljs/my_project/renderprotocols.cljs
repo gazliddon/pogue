@@ -9,6 +9,7 @@
   (rotate! [this v]))
 
 (defprotocol IRenderBackend
+  (viewport! [this info])
   (clear! [this info])
   (box! [this info])
   (spr! [this info])

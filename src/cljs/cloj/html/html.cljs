@@ -6,7 +6,9 @@
     [cloj.html.render]
     [cloj.html.resource]
     [cloj.html.timer] 
-    [cloj.html.system])
+    [cloj.html.system]
+    [cloj.html.utils]
+    )
   (:require-macros [cloj.macros :refer [import-vars]]))
 
 (import-vars 'cloj.html.keyboard)
@@ -16,4 +18,5 @@
 (import-vars 'cloj.html.resource)
 (import-vars 'cloj.html.timer) 
 (import-vars 'cloj.html.system)
+(import-vars 'cloj.html.utils)
 
