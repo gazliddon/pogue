@@ -7,8 +7,6 @@
     (cloj.render.protocols  :as rp)
     ))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defprotocol IOscillator
   (get-p [this t]))
@@ -66,7 +64,8 @@
   player)
 
 (defn draw-player [spr-rend {:keys [movement frame] :as player} t]
-  (rp/spr! spr-rend frame (get-p-at-t movement t)))
+
+  (comment rp/spr! spr-rend frame (get-p-at-t player t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -80,24 +79,3 @@
     )
   )
 
-; (defn mk-player [t p]
-;   (->Player (->EaserV2 t p v2/zero v2/zero)))
-
-
-; (def old-map {:proc-1 6502
-;               :proc-2 68040
-;               :proc-3 32016})
-
-(def old-map {:proc-1 6510
-              :proc-2 68040
-              :proc-3 32016})
-
-(def new-map {:proc-1 6502
-              :proc-2 68040
-              :proc-3 32016})
-
-
-(println 
-  (map-difference old-map new-map )
-
-  )

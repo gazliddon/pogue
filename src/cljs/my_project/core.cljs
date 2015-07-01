@@ -10,21 +10,18 @@
 
     [cloj.resources.manager :as rman
                             :refer [create-render-target!
-                                    load-img!
                                     clear-resources!  ]]
 
     [cloj.resources.html    :as rmhtml]
 
-    [cloj.math.misc         :refer [cos-01 log-base-n ceil floor num-digits]]
+    [cloj.math.misc         :refer [cos-01 ]]
     [cloj.math.vec2         :as v2 :refer [vec2 vec2-s]]
-    [cloj.math.vec3         :as v3 :refer [vec3]]
 
     [cloj.system            :refer [get-resource-manager
                                     get-render-engine]]
 
-    [cloj.utils             :refer [format
-                                    map-difference
-                                    ]]
+    [cloj.utils             :refer [format map-difference ]]
+
     (cloj.render.protocols  :as rp)
     (cloj.keyboard          :as kb)
 
@@ -45,9 +42,6 @@
     [cljs.core.async        :as async
                             :refer [put! >! chan <! close! dropping-buffer mult tap]]
 
-    [ff-om-draggable.core   :refer [draggable-item]]
-
-    [hipo.core              :as hipo  :include-macros true]  
     [dommy.core             :as dommy :include-macros true]    
 
     [sablono.core :as html :refer-macros [html]]
@@ -288,6 +282,8 @@
 (defmethod handle-message! :default [command packet]
   (println (str "got command " command " with packet " packet)))
 
+(defmethod handle-message! :resize [command [w h]]
+  (println (str "need to resize to " w " " h)))
 
 (defn message-center []
   (let [ret-chan (chan) ]
@@ -410,8 +406,6 @@
            [:p (str "ROGUEBOW ISLANDS : " msecs " " fps)] ])))))
 
 ;; }}}
-
-
 
 ;; =============================================================================
 ;; HTML Keyboard handling {{{
@@ -539,13 +533,17 @@
 
 (defonce first-time? (atom true))
 
-(defn funny-col [tm]
-  (->>
-    (v3/div
-      (vec3 tm tm tm)  
-      (vec3 1000 500 100))
-    (v3/to-vec)
-    (mapv cos-01)))
+
+
+(aset js/window "onresize" #(do
+                              (println "got a resize")
+                              (log-js %)
+                              (log-js (.-width js/window))
+                              (log-js (.-height js/window))
+                              (msg! :resize [10 10])
+                                ))
+
+
 
 (defn anim-func! [dt]
   (do
@@ -615,7 +613,6 @@
 
           (println "got here")
 
-
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
                  player (player/mk-player @g-time) ]
@@ -655,16 +652,7 @@
                 (recur (v2/add mv pos)
                        (camera cam-pos desired-pos)
                        new-player
-                       )))
-
-
-            )))))
-
-
-
-
-
-
+                       ))))))))
   ) 
 
 ;; }}}
