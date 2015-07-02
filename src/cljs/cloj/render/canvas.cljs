@@ -9,6 +9,9 @@
     ))
 
 
+(defn log-js [x]
+  (.log js/console x))
+
 (defprotocol IHTMLCanvas
   (get-element [_])
   (get-ctx-2d [_]))
@@ -68,12 +71,10 @@
         (img    [_] canvas-el)
 
         rp/IRenderBackend
-        (resize! [_ {:keys [x y] :as new-dims}]
+        (resize! [this {:keys [x y] :as new-dims}]
           (do
-          (set-elem-dims! canvas-el new-dims)
-          (reset! atom-dims new-dims) 
-            )
-          )
+            (set-elem-dims! (rp/img this) new-dims)
+            (reset! atom-dims new-dims) ))
 
         (save!    [_] (.save ctx))
         (restore! [_] (.restore ctx))
