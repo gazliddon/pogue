@@ -603,8 +603,6 @@
 
           (kb-attach! "game" kb-handler)
 
-          (println "got here")
-
           (loop [pos (vec2 20 20)
                  cam-pos (vec2 0 0)
                  player (player/mk-player @g-time) ]

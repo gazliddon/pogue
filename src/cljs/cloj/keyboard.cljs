@@ -1,5 +1,41 @@
 (ns cloj.keyboard)
 
+
+(defrecord Key [name])
+
+;; Virtual key defs, up to the host to tie these
+;; to physical keys
+
+(def K-A     (->Key "a" ))
+
+(def K-0     (->Key "0" ))
+(def K-1     (->Key "1" ))
+(def K-2     (->Key "2" ))
+(def K-3     (->Key "3" ))
+(def K-4     (->Key "4" ))
+(def K-5     (->Key "5" ))
+(def K-6     (->Key "6" ))
+(def K-7     (->Key "7" ))
+(def K-8     (->Key "8" ))
+(def K-9     (->Key "9" ))
+
+(def FK-1     (->Key "function key 1" ))
+(def FK-2     (->Key "function key 2" ))
+(def FK-3     (->Key "function key 3" ))
+(def FK-4     (->Key "function key 4" ))
+(def FK-5     (->Key "function key 5" ))
+(def FK-6     (->Key "function key 6" ))
+(def FK-7     (->Key "function key 7" ))
+(def FK-8     (->Key "function key 8" ))
+(def FK-9     (->Key "function key 9" ))
+
+(def K-UP    (->Key "cursor up" ))
+(def K-DOWN  (->Key "cursor down" ))
+(def K-LEFT  (->Key "cursor left" ))
+(def K-RIGHT (->Key "cursor right" ))
+(def K-SPACE (->Key "space" ))
+(def K-CR    (->Key "carriage return" ))
+
 (defprotocol IKeyboard
   (init! [_])
   (update-key! [_ k state])
