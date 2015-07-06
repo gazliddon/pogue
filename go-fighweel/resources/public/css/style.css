@@ -1,2 +1,53 @@
-/* some style */
+/* body { */
+/*     background-color: red; */
+/*     color: #eee; */
+/*     font: 15px/1.4 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* } */
 
+
+#canvas-div {
+    /* background-color: blue; */
+    /* width: 100px; */
+    /* height: 100px; */
+}
+
+#canvas {
+    /* background-color: black; */
+    /* width: 100%; */
+    /* height: 100%; */
+}
+
+#game-canvas {
+    display: block;
+}
+
+.slider {
+    padding: 10px;
+}
+
+.slider label {
+    vertical-align: middle;
+    padding-right: 20px;
+}
+
+.slider input {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.slider span {
+    padding-left: 20px;
+}
+
+
+
+
+div#app {
+    /* display:    none    ; */
+    position:absolute; bottom:0; left:0;
+    background-color: rgb(1, 1, 255);
+    color: rgba(255,255,255,255);
+    opacity: 0.70;
+    font-size: 20px;
+    width: 100%;
+}
