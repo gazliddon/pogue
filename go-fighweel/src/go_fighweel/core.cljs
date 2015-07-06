@@ -2,15 +2,10 @@
     (:require
       [cloj.utils :as utils]
       [om.core :as om :include-macros true]
-      [om.dom :as dom :include-macros true]))
+      [sablono.core :as html :refer-macros [html]]
+      ))
 
 (enable-console-print!)
-
-(println "Edits to this text should show up in your developer console.")
-
-(println "gaz test here")
-
-;; define your app data so that it doesn't get over-written on reload
 
 (defonce app-state (atom {:text "Hello world!"}))
 
@@ -18,7 +13,14 @@
   (fn [data owner]
     (reify om/IRender
       (render [_]
-        (dom/h1 nil (:text data)))))
+        (html
+          [:div
+           [:h1 (:text data)]
+           [:p "A paragraph!"]
+           [:p "Another paragraph!"]
+           ]
+          )
+        )))
   app-state
   {:target (. js/document (getElementById "app"))})
 
