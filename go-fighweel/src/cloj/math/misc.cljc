@@ -41,12 +41,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn fract "doc-string" [v] (- v (floor v)))
 
-(defn clamp [l h v] (min h (max v l)))
+(defn clamp [l h v] (if (< l h)
+                      (min h (max v l)) 
+                      (min l (max v h)) ))
 
 (defn sin-01 [^double v] (/ (+ 1 (sin v)) 2))
 (defn cos-01 [^double v] (/ (+ 1 (cos v)) 2))
 
 (defn in-range? [lo hi v] (= v (clamp lo hi v)))
+
 (defn clamp01 [^double v] (min 1 (max v 0)))
 (defn to-255 [^double v] (nm/round (* 255 (clamp01 v)))  )
 

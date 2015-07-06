@@ -14,25 +14,37 @@
     (should= 4.0 (ceil 3.21212)))
 
   (it "should clamp things"
+
+      (should
+        (float= 0.6502 (clamp 0.6502 1000 0.6052)))
+
       (should
         (float= 0 (clamp01 -1)))
+
       (should
         (float= 1 (clamp01 199)))
-      (should
-        (float= 0.6502 (clamp01 0.6502)))
-      )
 
-  (it "should do this right"
-      (should= 4 (num-digits 1000 10))
-      )
-  (it "should count digits"
-      (should=
-        [1 2 3 4 5 6]
-        (mapv #(num-digits % 10)  [1 10 100 1000 10000 100000])
-        
-        )
-      )
+      (should
+        (float= 0.6502 (clamp01 0.6502))))
+
+  (it "should do this num digits right"
+      (should= 4 (num-digits 1000 10)))
+
+  (it "be able to tell if things are in a range"
+      (should (in-range? 0.6502 10 0.6502))
+      (should (in-range? 10 0.6502 10))
+      (should (in-range? 0.6502 10 10))
+      (should (in-range? 0.6502 10 5))
+      (should-not (in-range? 0.6502 10 -5))
+      (should-not (in-range? 0.6502 10 10.00000001)))
+
+  (it "should be able to compare floating point things for equality"
+      (should (float= 10 10.00000000000000000000000001)))
+
+  (it "should be able to compare floating point things for equality"
+      (should-not (float= 10 10.001)))
   )
+
 
 (run-specs)
 
