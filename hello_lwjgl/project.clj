@@ -21,4 +21,5 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [hello_lwjgl/lwjgl "2.9.1"]]
+  :repl-options {:port 6502}
   :main hello-lwjgl.core)
