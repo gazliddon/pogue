@@ -10,6 +10,7 @@
                  [sablono "0.3.4"]
                  [speclj "3.3.1"]
                  [org.clojure/math.numeric-tower "0.0.4"]
+                 [hello_lwjgl/lwjgl   "2.9.1"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]

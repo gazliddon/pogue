@@ -1,6 +1,7 @@
 (ns cloj.core-spec
   (:require [speclj.core :refer :all]
             [cloj.core :refer :all]
+            [cloj.keyboard :as kb]
             [cloj.math.misc :refer :all]))
 
 (describe "Math Tests"
