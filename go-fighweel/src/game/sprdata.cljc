@@ -10,7 +10,6 @@
 (defn spr32
   ([x y] (mapv #(* 32 %) [x y 1 1])))
 
-
 (def spr-data
   {:blocks {:b-wood-0       (spr16 0)
             :b-wood-1       (spr16 1)

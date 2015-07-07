@@ -11,6 +11,7 @@
                  [speclj "3.3.1"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [hello_lwjgl/lwjgl   "2.9.1"]
+                 [digest "1.4.4"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]
@@ -40,6 +41,8 @@
                          :main go-fighweel.core
                          :optimizations :advanced
                          :pretty-print false}}]}
+
+  :repl-options { :port 6502}
 
   :figwheel {
              ;; :http-server-root "public" ;; default and assumes "resources" 
