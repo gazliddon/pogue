@@ -55,7 +55,6 @@
           (try
             (let [buffered-image (load-image file-name)
                   texture-in-gl (atom nil)]
-
               (reify
                 rp/IImage
                 (id [_] id)
