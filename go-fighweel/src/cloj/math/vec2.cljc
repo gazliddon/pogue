@@ -1,8 +1,10 @@
 (ns cloj.math.vec2
   (:refer-clojure :exclude [min max])
-  #_(:require [cloj.math.protocols :as math]
-            )
-  (:require-macros [cloj.macros :refer [mk-vec-op]]))
+  (:require
+    #?(:clj [cloj.macros :refer [mk-vec-op]])
+    )
+  #?(:cljs ( :require-macros [cloj.macros :refer [mk-vec-op]]))
+  )
 
 (defrecord Vec2 [x y])
 

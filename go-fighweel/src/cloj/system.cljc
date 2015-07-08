@@ -16,7 +16,7 @@
   (update!                [_])
   (destroy!               [_]))
 
-(defrecord System
+(defrecord ClojSystem
   [logger
    keyboard
    loader

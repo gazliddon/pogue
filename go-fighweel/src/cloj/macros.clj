@@ -3,6 +3,7 @@
     [clojure.walk :as walk]))
 
 (def op-template `(:op (:elem :arg0) (:elem :arg1)) ) 
+
 (def fn-template `(defn :func
                     ([:arg0 :arg1]
                      (let :let-map
@@ -12,11 +13,9 @@
                      (let :let-map
                        (if :argn
                          (apply :func :ret-val :argn)
-                         :ret-val))))
+                         :ret-val)))) )
 
-  )
 (def ret-template `(if :argn (:func :ret-val (first :argn)) :ret-val ))
-
 
 (defn mk-elem-op [op arg0-sym arg1-sym elem]
   (walk/prewalk-replace {:op op :elem elem :arg0 arg0-sym :arg1 arg1-sym } op-template))
@@ -57,13 +56,15 @@
   (->
     (apply mk-replacements nm op (gensym "arg0-") (gensym "arg1-") (gensym "argn-") elems)
     (walk/prewalk-replace fn-template)))
+#?(:cljs 
+    (defmacro import-vars [[_quote ns]]
+      `(do
+         ~@(->>
+             (cljs.analyzer.api/ns-interns ns)
+             (remove (comp :macro second))
+             (map (fn [[k# _]]
+                    `(def ~(symbol k#) ~(symbol (name ns) (name k#))))))))
+     )
 
-(defmacro import-vars [[_quote ns]]
-  `(do
-     ~@(->>
-         (cljs.analyzer.api/ns-interns ns)
-         (remove (comp :macro second))
-         (map (fn [[k# _]]
-                `(def ~(symbol k#) ~(symbol (name ns) (name k#))))))))
 
-(macroexpand-1 '(mk-vec-op add + :x :y :z))
+

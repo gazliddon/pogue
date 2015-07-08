@@ -3,7 +3,8 @@
             [cloj.core :refer :all]
             [digest :as digest]
             [cloj.keyboard :as kb]
-            [async.core :as ac]
+            [cloj.lwjgl.resources :as ac]
+            [cloj.lwjgl.system :as sys]
             [clojure.core.async :as async :refer [timeout chan >! <!! <! go]]
             [cloj.math.misc :refer :all]))
 
@@ -12,7 +13,7 @@
   (let [loader (ac/load-async (timeout 1000) file-name) ]
     (or (<!! loader) "timed out loading")))
 
-(def test-file-name "test-data/blocks.png")
+(def test-file-name   "test-data/blocks.png")
 (def test-file-digest "284fe63d77a4398957a30a658a0f439a7ca20395e4b63a01122b37c7ab74eed2")
 
 (describe "Blocking load tests"
@@ -93,7 +94,6 @@
           (it "should be able to compare floating point things for equality"
               (should-not (float= 10 10.001)))
           )
-
 
 (run-specs)
 
