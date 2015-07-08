@@ -7,8 +7,7 @@
   (:import (java.nio ByteBuffer FloatBuffer)
            (org.lwjgl BufferUtils)
            (org.lwjgl.opengl ContextAttribs Display DisplayMode GL11 GL15 GL20 GL30 PixelFormat)
-           (org.lwjgl.util.glu GLU))
-  )
+           (org.lwjgl.util.glu GLU)))
 
 (defn- init-window
   [width height title]
@@ -43,11 +42,6 @@
     (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))
     (GL11/glClearColor 0.0 0.0 0.0 0.0)
     (GL11/glViewport 0 0 width height)
-    ; (init-buffers)
-    ; (init-shaders)
-    (print "@globals")
-    (print @globals)
-    ;;(println "")
     ))
 
 (defn mk-system []
@@ -66,7 +60,6 @@
         (get-render-engine [_]
           (do
             {:all-done "yeah!"}))))))
-
 
 (defprotocol IWindow
   (create [_ w h title])
@@ -103,7 +96,6 @@
 
 (comment
   (mk-system )
-  (create the-window 100 100 "poo")
   (updater the-window)
   (destroy the-window))
 
