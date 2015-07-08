@@ -1,26 +1,19 @@
 (ns cloj.lwjgl.resources
-  (:require [cloj.resources.manager :as rman ]
-            [cloj.render.protocols :as rp]
-            [cloj.math.vec2 :refer [v2]]
-            [clojure-gl.texture :as cljgl-text]
-            [digest :as digest]
-            [clojure.core.async :as async :refer [chan >! <! put! go]]
-            [clojure.java.io :refer [file output-stream input-stream]]
-            [mikera.image.core :as imgz]))
+  (:require
+    [cloj.resources.manager :as rman ]
+    [cloj.render.protocols :as rp]
+    [cloj.math.vec2 :refer [v2]]
+    [clojure-gl.texture :as cljgl-text :refer [make-texture-low]]
+    [digest :as digest]
+    [clojure.core.async :as async :refer [chan >! <! put! go]]
+    [clojure.java.io :refer [file output-stream input-stream]]
+    [mikera.image.core :as imgz :refer [load-image]] ))
 
 ;; =============================================================================
 (defn put-close! [ch v]
   (do
     (async/put! ch v)
     (async/close! ch)))
-
-(defn texture->img [gl-tex id]
-  (reify rp/IImage
-    (id [_] id)
-    (dims [_] [(:width gl-tex) (:height gl-tex)])
-    (width [_] (:width gl-tex))
-    (height [_] (:width gl-tex))
-    (img [_] gl-tex)))
 
 ;; =============================================================================
 ;; Async loading
@@ -45,28 +38,40 @@
   ([file-name] (load-async (chan) file-name)))
 
 (defn mk-resource-manager []
-  (let [store (atom {})]
-    (do
-      (reify
-        rman/IResourceManagerInfo
-        (find-img [_ id]           (println "not implemented"))
-        (find-render-target [_ id] (println "not implemented"))
-        (list-render-targets [_]   (println "not implemented"))
-        (list-imgs [_]             (println "not implemented"))
+  (let [store (atom {}) ]
+    (reify
+      rman/IResourceManagerInfo
+      (find-img [_ id]           (println "not implemented"))
+      (find-render-target [_ id] (println "not implemented"))
+      (list-render-targets [_]   (println "not implemented"))
+      (list-imgs [_]             (println "not implemented"))
 
-        rman/IResourceManager
-        (clear-resources! [_] (reset! store {}))
+      rman/IResourceManager
+      (clear-resources! [_] (reset! store {}))
+      (create-render-target! [this id w h] (throw (Exception. "not implemented")))
 
-        (create-render-target! [this id w h] (throw (Exception. "not implemented")))
+      (load-img! [this id file-name]
+        (go
+          (try
+            (let [buffered-image (load-image file-name)
+                  texture-in-gl (atom nil)]
 
-        (load-img! [this id file-name]
-          (let [ret-chan (chan)]
-            (future
-              (put! ret-chan
-                    (-> file-name
-                        (imgz/load-image)
-                        (cljgl-text/make-texture-low)
-                        (texture->img id))))
-            ret-chan)
-          )))))
+              (reify
+                rp/IImage
+                (id [_] id)
+
+                (dims [this] [(rp/width this) (rp/height this)])
+
+                (width [_] (.getWidth buffered-image))
+
+                (height [_](.getHeight buffered-image) )
+
+                (img [ this ]
+                  (when (nil? @texture-in-gl)
+                    (reset! texture-in-gl (make-texture-low buffered-image)))
+                  @texture-in-gl
+                  )))
+
+            (catch Exception e
+              e))))))) 
 

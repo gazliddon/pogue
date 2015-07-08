@@ -77,8 +77,7 @@
     {:tex-id texid
      :width  (.getWidth image)
      :height (.getHeight image)
-     :has-alpha (has-alpha image)
-     }))
+     :has-alpha (has-alpha image) }))
 
 (defn make-texture [^BufferedImage image ]
   (:tex-id (make-texture-low image)))

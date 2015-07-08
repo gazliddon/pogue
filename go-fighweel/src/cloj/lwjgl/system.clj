@@ -66,6 +66,7 @@
   (destroy [_])
   (updater [_]))
 
+
 (defn mk-lwjgl-window []
   (let [exists? (atom false)
         dims (atom {}) ]
@@ -75,11 +76,10 @@
 
       (create [this w h title]
         (do
-          (when @exists?
-            (destroy this))
-          (init-window w h title)
-          (reset! dims {:x w :h h})
-          (swap! exists? not)))
+          (when (not @exists? ) 
+            (init-window w h title)
+            (reset! dims {:x w :h h})
+            (swap! exists? not))))
 
       (destroy [_]
         (if @exists?
@@ -91,11 +91,4 @@
         (when @exists?
           (Display/update)))))
   )
-
-(def the-window (mk-lwjgl-window))
-
-(comment
-  (mk-system )
-  (updater the-window)
-  (destroy the-window))
 
