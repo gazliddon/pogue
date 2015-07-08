@@ -8,13 +8,24 @@
             [clojure.core.async :as async :refer [timeout chan >! <!! <! go]]
             [cloj.math.misc :refer :all]))
 
+(defn- async-op-as-sync [op & args ]
+  (let [loader (apply op (timeout 1000)  args) ]
+    (or (<!! loader) "timed out doing async shit")))
 
 (defn- load-async-sync [file-name]
-  (let [loader (ac/load-async (timeout 1000) file-name) ]
-    (or (<!! loader) "timed out loading")))
+  (async-op-as-sync ac/load-async file-name))
 
 (def test-file-name   "test-data/blocks.png")
 (def test-file-digest "284fe63d77a4398957a30a658a0f439a7ca20395e4b63a01122b37c7ab74eed2")
+
+(describe "async image loading tests"
+          (with-all the-img (async-op-as-sync ac/load-async-img test-file-name))
+
+          (it "should be the right width"
+              (should= 320 (.getWidth @the-img)))
+
+          (it "should be the right height"
+              (should= 240 (.getHeight @the-img))))
 
 (describe "Blocking load tests"
           (with-all the-file (ac/load-blocking test-file-name))

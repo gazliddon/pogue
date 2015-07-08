@@ -4,7 +4,8 @@
             [cloj.math.vec2 :refer [v2]]
             [digest :as digest]
             [clojure.core.async :as async :refer [chan >! <! put! go]]
-            [clojure.java.io :refer [file output-stream input-stream]]))
+            [clojure.java.io :refer [file output-stream input-stream]]
+            [mikera.image.core :as imgz]))
 
 ;; =============================================================================
 (defn put-close! [ch v]
@@ -22,8 +23,7 @@
     (with-open [in (input-stream f)]
       (let [buf (byte-array size)
             arr (.read in buf)]
-        (->LoadedFile buf size file-name (digest/sha-256 f))
-        ))))
+        (->LoadedFile buf size file-name (digest/sha-256 f))))))
 
 (defn load-async
   ([ret-chan file-name]
@@ -33,6 +33,24 @@
    ret-chan )
   ([file-name]
    (load-async (chan) file-name)))
+
+(defn do-something-async
+  ([ret-chan func]
+   (future (put! ret-chan (func)))
+   ret-chan)
+  ([func] (do-something-async (chan) func)))
+
+(defn load-async
+  ([ret-chan file-name]
+   (do-something-async ret-chan #(load-blocking file-name)))
+  ([file-name]
+   (load-async (chan) file-name)))
+
+(defn load-async-img
+  ([ret-chan file-name]
+   (do-something-async ret-chan #(imgz/load-image file-name)))
+  ([file-name]
+   (do-something-async (chan) file-name)))
 
 (defn mk-resource-manager []
   (let [store (atom {})]

@@ -12,6 +12,7 @@
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [hello_lwjgl/lwjgl   "2.9.1"]
                  [digest "1.4.4"]
+                 [net.mikera/imagez "0.6.0"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]
@@ -25,22 +26,22 @@
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
   :cljsbuild {
-    :builds [{:id "dev"
-              :source-paths ["src"]
+              :builds [{:id "dev"
+                        :source-paths ["src"]
 
-              :figwheel { :on-jsload "go-fighweel.core/on-js-reload" }
+                        :figwheel { :on-jsload "go-fighweel.core/on-js-reload" }
 
-              :compiler {:main go-fighweel.core
-                         :asset-path "js/compiled/out"
-                         :output-to "resources/public/js/compiled/go_fighweel.js"
-                         :output-dir "resources/public/js/compiled/out"
-                         :source-map-timestamp true }}
-             {:id "min"
-              :source-paths ["src"]
-              :compiler {:output-to "resources/public/js/compiled/go_fighweel.js"
-                         :main go-fighweel.core
-                         :optimizations :advanced
-                         :pretty-print false}}]}
+                        :compiler {:main go-fighweel.core
+                                   :asset-path "js/compiled/out"
+                                   :output-to "resources/public/js/compiled/go_fighweel.js"
+                                   :output-dir "resources/public/js/compiled/out"
+                                   :source-map-timestamp true }}
+                       {:id "min"
+                        :source-paths ["src"]
+                        :compiler {:output-to "resources/public/js/compiled/go_fighweel.js"
+                                   :main go-fighweel.core
+                                   :optimizations :advanced
+                                   :pretty-print false}}]}
 
   :repl-options { :port 6502}
 

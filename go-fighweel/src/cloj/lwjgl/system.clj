@@ -50,7 +50,7 @@
     ;;(println "")
     ))
 
-(defn mk-system [width height]
+(defn mk-system []
   (let [rm   (res/mk-resource-manager)
         rend nil]
     (do
@@ -67,10 +67,43 @@
           (do
             {:all-done "yeah!"}))))))
 
-(do
-  (mk-system 100 100)
-  (Display/update) 
-  (Display/destroy))
 
+(defprotocol IWindow
+  (create [_ w h title])
+  (destroy [_])
+  (updater [_]))
 
+(defn mk-lwjgl-window []
+  (let [exists? (atom false)
+        dims (atom {}) ]
+
+    (reify
+      IWindow
+
+      (create [this w h title]
+        (do
+          (when @exists?
+            (destroy this))
+          (init-window w h title)
+          (reset! dims {:x w :h h})
+          (swap! exists? not)))
+
+      (destroy [_]
+        (if @exists?
+          (do
+            (Display/destroy)
+            (swap! exists? not))))
+
+      (updater [_]
+        (when @exists?
+          (Display/update)))))
+  )
+
+(def the-window (mk-lwjgl-window))
+
+(comment
+  (mk-system )
+  (create the-window 100 100 "poo")
+  (updater the-window)
+  (destroy the-window))
 
