@@ -2,6 +2,7 @@
   (:require [cloj.resources.manager :as rman ]
             [cloj.render.protocols :as rp]
             [cloj.math.vec2 :refer [v2]]
+            [clojure-gl.texture :as cljgl-text]
             [digest :as digest]
             [clojure.core.async :as async :refer [chan >! <! put! go]]
             [clojure.java.io :refer [file output-stream input-stream]]
@@ -12,6 +13,14 @@
   (do
     (async/put! ch v)
     (async/close! ch)))
+
+(defn texture->img [gl-tex id]
+  (reify rp/IImage
+    (id [_] id)
+    (dims [_] [(:width gl-tex) (:height gl-tex)])
+    (width [_] (:width gl-tex))
+    (height [_] (:width gl-tex))
+    (img [_] gl-tex)))
 
 ;; =============================================================================
 ;; Async loading
@@ -25,15 +34,6 @@
             arr (.read in buf)]
         (->LoadedFile buf size file-name (digest/sha-256 f))))))
 
-(defn load-async
-  ([ret-chan file-name]
-   (future
-     (let [file (load-blocking file-name)]
-       (put! ret-chan file)))
-   ret-chan )
-  ([file-name]
-   (load-async (chan) file-name)))
-
 (defn do-something-async
   ([ret-chan func]
    (future (put! ret-chan (func)))
@@ -41,16 +41,8 @@
   ([func] (do-something-async (chan) func)))
 
 (defn load-async
-  ([ret-chan file-name]
-   (do-something-async ret-chan #(load-blocking file-name)))
-  ([file-name]
-   (load-async (chan) file-name)))
-
-(defn load-async-img
-  ([ret-chan file-name]
-   (do-something-async ret-chan #(imgz/load-image file-name)))
-  ([file-name]
-   (do-something-async (chan) file-name)))
+  ([ret-chan file-name] (do-something-async ret-chan #(load-blocking file-name)))
+  ([file-name] (load-async (chan) file-name)))
 
 (defn mk-resource-manager []
   (let [store (atom {})]
@@ -63,16 +55,18 @@
         (list-imgs [_]             (println "not implemented"))
 
         rman/IResourceManager
-        (clear-resources! [_]
-          (reset! store {}))
+        (clear-resources! [_] (reset! store {}))
 
-        (create-render-target! [this id w h]
-          (throw (Exception. "not implemented")))
+        (create-render-target! [this id w h] (throw (Exception. "not implemented")))
 
         (load-img! [this id file-name]
           (let [ret-chan (chan)]
-            (go
-              (let [img (<! (load-async file-name))]
-                (put-close! ret-chan img)))
-            ret-chan))))))
+            (future
+              (put! ret-chan
+                    (-> file-name
+                        (imgz/load-image)
+                        (cljgl-text/make-texture-low)
+                        (texture->img id))))
+            ret-chan)
+          )))))
 

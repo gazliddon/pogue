@@ -5,6 +5,7 @@
             [cloj.keyboard :as kb]
             [cloj.lwjgl.resources :as ac]
             [cloj.lwjgl.system :as sys]
+            [clojure-gl.texture :as cgltex]
             [clojure.core.async :as async :refer [timeout chan >! <!! <! go]]
             [cloj.math.misc :refer :all]))
 
