@@ -204,7 +204,7 @@
     ;;(println "draw errors?" (GL11/glGetError))
     ))
 
-(defn update
+(defn do-update
   []
   (let [{:keys [width height angle last-time]} @globals
         cur-time (System/currentTimeMillis)
@@ -260,7 +260,7 @@
   (init-window 800 600 "beta")
   (init-gl)
   (while (not (Display/isCloseRequested))
-    (update)
+    (do-update)
     (Display/update)
     (Display/sync 60))
   (destroy-gl)
