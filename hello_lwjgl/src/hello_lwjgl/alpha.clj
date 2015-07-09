@@ -46,7 +46,7 @@
       )
     (GL11/glEnd)))
 
-(defn update
+(defn do-update
   []
   (let [{:keys [width height angle last-time]} @globals
         cur-time (System/currentTimeMillis)
@@ -66,7 +66,7 @@
   (init-window 800 600 "alpha")
   (init-gl)
   (while (not (Display/isCloseRequested))
-    (update)
+    (do-update)
     (Display/update)
     (Display/sync 60))
   (Display/destroy))

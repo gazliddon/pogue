@@ -226,7 +226,7 @@
     (except-gl-errors "glUseProgram 0")
     ))
 
-(defn update
+(defn do-update
   []
   (let [{:keys [width height angle last-time]} @globals
         cur-time (System/currentTimeMillis)
