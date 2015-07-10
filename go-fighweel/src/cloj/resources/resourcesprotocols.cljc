@@ -1,4 +1,4 @@
-(ns cloj.resources.manager)
+(ns cloj.resources.protocols)
 
 
 (defprotocol IReourceLoader
