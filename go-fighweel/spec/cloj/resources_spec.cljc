@@ -3,12 +3,14 @@
             [digest :as digest]
 
             [cloj.keyboard :as kb]
+
             [cloj.lwjgl.resources :as ac]
+            [cloj.lwjgl.system :as sys]
+            [cloj.lwjgl.render :as rend]
 
             [cloj.protocols.resources :as res-p]
             [cloj.protocols.render :as rend-p]
 
-            [cloj.lwjgl.system :as sys]
             [clojure.core.async :as async :refer [timeout chan >! <!! <! go alts!!]]))
 
 (def the-window (sys/mk-lwjgl-window))

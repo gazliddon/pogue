@@ -1,6 +1,6 @@
 (ns cloj.lwjgl.resources
   (:require
-    [cloj.protocols.render :as rend-p]
+    [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p]
 
     [cloj.math.vec2 :refer [v2]]
