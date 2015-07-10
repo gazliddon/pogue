@@ -4,6 +4,7 @@
             [digest :as digest]
             [cloj.keyboard :as kb]
             [cloj.lwjgl.resources :as ac]
+            [cloj.lwjgl.renderer :as rend]
             [cloj.resources.manager :as rman]
             [cloj.lwjgl.system :as sys]
             [clojure-gl.texture :as cgltex]
@@ -16,6 +17,17 @@
                                                   put!
                                                   ]]
             [cloj.math.misc :refer :all]))
+
+
+(do
+(defn diff-2 [^long n]
+  (*
+   (/ 1 12)
+   (- n 1)
+   n
+   (+ n 1)
+   (+ (* 3 n) 2)))  )
+
 
 (comment
   ;; Mess around with pub / sub
@@ -35,3 +47,7 @@
 
     (println (<!! shoes-chan))
     ))
+
+
+
+

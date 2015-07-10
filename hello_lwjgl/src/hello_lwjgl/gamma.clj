@@ -82,13 +82,13 @@
       (dosync (ref-set globals (assoc @globals :active false)))   )
 
 
-    (println my-key)
-    
+    (if (not= my-key 0)
+      (println my-key))
 
     (if make-inactive ;; note Cmd-Q on Mac also works
       (dosync (ref-set globals (assoc @globals :active false))))))
 
-(defn update
+(defn do-update
   []
   (let [{:keys [width height tri-x tri-y]} @globals
         cur-time (System/currentTimeMillis)
@@ -108,7 +108,7 @@
   (init-gl)
   (while (:active @globals
               )
-    (update)
+    (do-update)
     (Display/update)
     (Display/sync 60))
   (Display/destroy))
