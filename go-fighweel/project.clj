@@ -12,12 +12,14 @@
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [hello_lwjgl/lwjgl   "2.9.1"]
                  [digest "1.4.4"]
+                 [cider/cider-nrepl "0.9.1"]
                  [net.mikera/imagez "0.6.0"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]
             [lein-figwheel "0.3.5"]
-            [speclj "3.3.0"] ]
+            [speclj "3.3.0"]
+            [cider/cider-nrepl "0.9.1"] ]
 
   :source-paths ["src"]
 
@@ -43,7 +45,7 @@
                                    :optimizations :advanced
                                    :pretty-print false}}]}
 
-  :repl-options { :port 6502}
+  :repl-options { :port 6502 }
 
   :figwheel {
              ;; :http-server-root "public" ;; default and assumes "resources" 

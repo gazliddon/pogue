@@ -51,14 +51,12 @@
 (defn dirty? [this] (:dirty? this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn mk-lwjgl-renderer [canvas-id dims]
   (let [data (atom {:dims    dims })
         shader (atom (mk-shader))
         matrix (create-matrix!)]
 
     (reify
-
       rend-p/ITransformable
       (matrix! [this mat]
         (swap! matrix set-matrix! mat)
@@ -109,12 +107,15 @@
         (if (dirty? @matrix)
           (swap! shader set-matrix-unifom! 0 (get-matrix @matrix))
           (swap! matrix clean!))
+        (println "Should have printed a sprite")
         this)
 
       (box! [this {x :x y :y} {w :x h :y} col]
         (if (dirty? @matrix)
           (swap! shader set-matrix-unifom! 0 (get-matrix @matrix))
-          (swap! matrix clean!))
+          (swap! matrix clean!)
+          )
+        (println "Should have printed a sprite")
         )))
 
   )

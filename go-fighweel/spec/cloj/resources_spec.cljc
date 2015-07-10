@@ -41,67 +41,66 @@
   (async-op-as-sync (ac/load-async file-name)))
 
 (describe "async image loading tests"
-          (with-all
-            the-img ( ->>
-                      test-file-name
-                      (res-p/load-img! resman :poo)
-                      (async-op-as-sync)))
-          
-          (before-all (open-window))
-          (after-all (close-window))
+  (with-all
+    the-img (->>
+              test-file-name
+              (res-p/load-img! resman :poo)
+              (async-op-as-sync)))
 
-          (it "should satisfie the IImage protocol"
-              (should (satisfies? rend-p/IImage @the-img)))
+  (before-all (open-window))
+  (after-all (close-window))
 
-          (it "should be the right width"
-              (should= 320 (rend-p/width @the-img)))
+  (it "should satisfie the IImage protocol"
+    (should (satisfies? rend-p/IImage @the-img)))
 
-          (it "should be the right height"
-              (should= 240 (rend-p/height @the-img)))
+  (it "should be the right width"
+    (should= 320 (rend-p/width @the-img)))
 
-          (it "should have an opengl texture id"
-              (should (pos? (:tex-id (rend-p/img @the-img)))))
+  (it "should be the right height"
+    (should= 240 (rend-p/height @the-img)))
 
-          (it "should have have these keys"
-              (let [mp (rend-p/img @the-img)]
-                (should (every? #(contains? mp %) [:tex-id :width :height])))))
+  (it "should have an opengl texture id"
+    (should (pos? (:tex-id (rend-p/img @the-img)))))
+
+  (it "should have have these keys"
+    (let [mp (rend-p/img @the-img)]
+      (should (every? #(contains? mp %) [:tex-id :width :height])))))
 
 (describe "Blocking load tests"
-          (with-all the-file (ac/load-blocking test-file-name))
+  (with-all the-file (ac/load-blocking test-file-name))
 
-          (it "should return a byte buffer"
-              (should= (Class/forName "[B") (type (:data @the-file))))
+  (it "should return a byte buffer"
+    (should= (Class/forName "[B") (type (:data @the-file))))
 
-          (it "should be the same size as the size field"
-              (should= (:size @the-file) (count (:data @the-file))))
+  (it "should be the same size as the size field"
+    (should= (:size @the-file) (count (:data @the-file))))
 
-          (it "should have the right file name"
-              (should= test-file-name (:file-name @the-file)))
+  (it "should have the right file name"
+    (should= test-file-name (:file-name @the-file)))
 
-          (it "should have the right file size"
-              (should= 9705 (:size @the-file)))
+  (it "should have the right file size"
+    (should= 9705 (:size @the-file)))
 
-          (it "should match the digest"
-              (should= test-file-digest (:digest @the-file))))
+  (it "should match the digest"
+    (should= test-file-digest (:digest @the-file))))
 
 (describe "Async loading tests"
-          (with-all the-file (load-async-sync test-file-name))
+  (with-all the-file (load-async-sync test-file-name))
 
-          (it "should return a byte buffer"
-              (should= (Class/forName "[B") (type (:data @the-file))))
+  (it "should return a byte buffer"
+    (should= (Class/forName "[B") (type (:data @the-file))))
 
-          (it "should be the same size as the size field"
-              (should= (:size @the-file) (count (:data @the-file))))
+  (it "should be the same size as the size field"
+    (should= (:size @the-file) (count (:data @the-file))))
 
-          (it "should have the right file name"
-              (should= test-file-name (:file-name @the-file)))
+  (it "should have the right file name"
+    (should= test-file-name (:file-name @the-file)))
 
-          (it "should have the right file size"
-              (should= 9705 (:size @the-file)))
+  (it "should have the right file size"
+    (should= 9705 (:size @the-file)))
 
-          (it "should match the digest"
-              (should= test-file-digest (:digest @the-file)))
-          )
-
+  (it "should match the digest"
+    (should= test-file-digest (:digest @the-file)))
+  )
 
 (run-specs)
