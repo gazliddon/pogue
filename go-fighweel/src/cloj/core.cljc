@@ -1,6 +1,5 @@
 (ns cloj.core
   (:require [speclj.core :refer :all]
-            [cloj.core :refer :all]
             [digest :as digest]
             [cloj.keyboard :as kb]
             [cloj.lwjgl.resources :as ac]

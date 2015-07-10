@@ -4,22 +4,22 @@
                               translation
                               rotation
                               scale]]
-    [cloj.math.vec2         :refer [ vec2 ]]
+    [cloj.math.vec2         :refer [ v2 ]]
     [cloj.render.protocols  :as rp]
     [cloj.resources.manager :as rman])
 
   (:import (org.lwjgl.util.vector Matrix Matrix2f Matrix3f Matrix4f)
            (org.lwjgl.util.vector Vector2f Vector3f Vector4f)
-           (org.lwjgl.opengl GL20)  
-           )
-
+           (org.lwjgl.opengl GL20))
   )
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn px [v]
   ; (int (+ 0.5 v))
   v)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defprotocol
   IShader
   (set-matrix-unifom! [this id mat])
@@ -31,7 +31,7 @@
     (set-matrix-unifom! [this id mat])
     (load-shader! [this shader-init]) ))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defrecord MatrixSaver [current saved dirty?])
 
 (defn create-matrix! [] (atom (->MatrixSaver (Matrix4f.) (Matrix4f.) true)))
@@ -49,6 +49,7 @@
 (defn get-matrix [this] (:current this))
 (defn dirty? [this] (:dirty? this))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn mk-lwjgl-renderer [canvas-id dims]
   (let [data (atom {:dims    dims })
@@ -79,7 +80,7 @@
 
       rp/IImage
       (id     [_] canvas-id)
-      (dims   [this] [(vec2 0 0) (:dims @data)])
+      (dims   [this] [(v2 0 0) (:dims @data)])
       (width  [_] (-> @data :dims :x))
       (height [_] (-> @data :dims :y))
       (img    [_] nil )
@@ -94,7 +95,7 @@
       (restore! [this] (swap! matrix restore-matrix!))
 
       (spr! [this spr pos]
-        (rp/spr-scaled! this spr pos (vec2 (rp/width spr) (rp/height spr))))
+        (rp/spr-scaled! this spr pos (v2 (rp/width spr) (rp/height spr))))
 
       (clear! [this col]
         (doto this
