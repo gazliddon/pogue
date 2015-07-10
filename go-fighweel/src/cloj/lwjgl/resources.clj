@@ -1,7 +1,8 @@
 (ns cloj.lwjgl.resources
   (:require
-    [cloj.resources.manager :as rman ]
-    [cloj.render.protocols :as rp]
+    [cloj.protocols.render :as rend-p]
+    [cloj.protocols.resources :as res-p]
+
     [cloj.math.vec2 :refer [v2]]
     [clojure-gl.texture :as cljgl-text :refer [make-texture-low]]
     [digest :as digest]
@@ -40,13 +41,13 @@
 (defn mk-resource-manager []
   (let [store (atom {}) ]
     (reify
-      rman/IResourceManagerInfo
+      res-p/IResourceManagerInfo
       (find-img [_ id]           (println "not implemented"))
       (find-render-target [_ id] (println "not implemented"))
       (list-render-targets [_]   (println "not implemented"))
       (list-imgs [_]             (println "not implemented"))
 
-      rman/IResourceManager
+      res-p/IResourceManager
       (clear-resources! [_] (reset! store {}))
       (create-render-target! [this id w h] (throw (Exception. "not implemented")))
 
@@ -56,10 +57,10 @@
             (let [buffered-image (load-image file-name)
                   texture-in-gl (atom nil)]
               (reify
-                rp/IImage
+                rend-p/IImage
                 (id [_] id)
 
-                (dims [this] [(rp/width this) (rp/height this)])
+                (dims [this] [(rend-p/width this) (rend-p/height this)])
 
                 (width [_] (.getWidth buffered-image))
 

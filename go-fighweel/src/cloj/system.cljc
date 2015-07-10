@@ -1,4 +1,4 @@
-(ns cloj.system)
+(ns cloj.protocols.system)
 
 (defprotocol ITime
   (get-time [_]))

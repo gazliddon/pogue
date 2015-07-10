@@ -1,11 +1,13 @@
 (ns cloj.resources-spec
   (:require [speclj.core :refer :all]
-            [cloj.core :refer :all]
             [digest :as digest]
+
             [cloj.keyboard :as kb]
             [cloj.lwjgl.resources :as ac]
-            [cloj.resources.manager :as rman]
-            [cloj.render.protocols :as rp]
+
+            [cloj.protocols.resources :as res-p]
+            [cloj.protocols.render :as rend-p]
+
             [cloj.lwjgl.system :as sys]
             [clojure.core.async :as async :refer [timeout chan >! <!! <! go alts!!]]))
 
@@ -40,26 +42,26 @@
           (with-all
             the-img ( ->>
                       test-file-name
-                      (rman/load-img! resman :poo)
+                      (res-p/load-img! resman :poo)
                       (async-op-as-sync)))
           
           (before-all (open-window))
           (after-all (close-window))
 
           (it "should satisfie the IImage protocol"
-              (should (satisfies? rp/IImage @the-img)))
+              (should (satisfies? rend-p/IImage @the-img)))
 
           (it "should be the right width"
-              (should= 320 (rp/width @the-img)))
+              (should= 320 (rend-p/width @the-img)))
 
           (it "should be the right height"
-              (should= 240 (rp/height @the-img)))
+              (should= 240 (rend-p/height @the-img)))
 
           (it "should have an opengl texture id"
-              (should (pos? (:tex-id (rp/img @the-img)))))
+              (should (pos? (:tex-id (rend-p/img @the-img)))))
 
           (it "should have have these keys"
-              (let [mp (rp/img @the-img)]
+              (let [mp (rend-p/img @the-img)]
                 (should (every? #(contains? mp %) [:tex-id :width :height])))))
 
 (describe "Blocking load tests"

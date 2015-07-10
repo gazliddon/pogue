@@ -1,4 +1,4 @@
-(ns cloj.render.protocols)
+(ns cloj.protocols.render)
 
 (defprotocol IImage
   (id [_])

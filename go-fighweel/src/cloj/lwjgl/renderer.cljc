@@ -1,12 +1,13 @@
-(ns cloj.lwjgl.renderer 
+(ns cloj.lwjgl.render
   (:require 
     [clojure-gl.math  :refer [mul
                               translation
                               rotation
                               scale]]
     [cloj.math.vec2         :refer [ v2 ]]
-    [cloj.render.protocols  :as rp]
-    [cloj.resources.manager :as rman])
+
+    [cloj.protocols.render  :as rend-p]
+    [cloj.protocols.resources :as res-p])
 
   (:import (org.lwjgl.util.vector Matrix Matrix2f Matrix3f Matrix4f)
            (org.lwjgl.util.vector Vector2f Vector3f Vector4f)
@@ -58,34 +59,34 @@
 
     (reify
 
-      rp/ITransformable
+      rend-p/ITransformable
       (matrix! [this mat]
         (swap! matrix set-matrix! mat)
         this)
 
       (mul! [this mat]
-        (rp/matrix! this #(mul % mat)))
+        (rend-p/matrix! this #(mul % mat)))
 
       (identity! [this]
-        (rp/matrix! this ( Matrix4f. )))
+        (rend-p/matrix! this ( Matrix4f. )))
 
       (translate! [this {:keys [x y]}]
-        (rp/mul! this (translation x y 0)))
+        (rend-p/mul! this (translation x y 0)))
 
       (scale! [this {:keys [x y] }]
-        (rp/mul! this (scale x y 1)))
+        (rend-p/mul! this (scale x y 1)))
 
       (rotate! [this v]
-        (rp/mul! this (rotation v 0 0 1)))
+        (rend-p/mul! this (rotation v 0 0 1)))
 
-      rp/IImage
+      rend-p/IImage
       (id     [_] canvas-id)
       (dims   [this] [(v2 0 0) (:dims @data)])
       (width  [_] (-> @data :dims :x))
       (height [_] (-> @data :dims :y))
       (img    [_] nil )
 
-      rp/IRenderBackend
+      rend-p/IRenderBackend
       (resize! [this {:keys [x y] :as new-dims}]
         (do
           (reset! data :dims new-dims)
@@ -95,14 +96,14 @@
       (restore! [this] (swap! matrix restore-matrix!))
 
       (spr! [this spr pos]
-        (rp/spr-scaled! this spr pos (v2 (rp/width spr) (rp/height spr))))
+        (rend-p/spr-scaled! this spr pos (v2 (rend-p/width spr) (rend-p/height spr))))
 
       (clear! [this col]
         (doto this
-          (rp/save!)
-          (rp/identity! )
-          (rp/box! (v2 0 0) (:dims @data) col)
-          (rp/restore!)))
+          (rend-p/save!)
+          (rend-p/identity! )
+          (rend-p/box! (v2 0 0) (:dims @data) col)
+          (rend-p/restore!)))
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (if (dirty? @matrix)

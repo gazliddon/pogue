@@ -1,8 +1,9 @@
 (ns cloj.lwjgl.system
   (:require
-    [cloj.lwjgl.resources :as res]
-    [cloj.system            :refer [ISystem]]
-    [cloj.resources.manager :as rman])
+    [cloj.lwjgl.resources     :as res]
+    [cloj.protocols.render    :as rend-p]
+    [cloj.protocols.system    :refer [ISystem]]
+    [cloj.protocols.resources :as res-p])
 
   (:import (java.nio ByteBuffer FloatBuffer)
            (org.lwjgl BufferUtils)
@@ -48,7 +49,7 @@
   (let [rm   (res/mk-resource-manager)
         rend nil]
     (do
-      (rman/clear-resources! rm)
+      (res-p/clear-resources! rm)
 
       (reify
         ISystem

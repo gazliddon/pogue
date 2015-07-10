@@ -1,8 +1,8 @@
-(ns cloj.resources.protocols)
-
+(ns cloj.protocols.resources)
 
 (defprotocol IReourceLoader
-  (load! [_ uri]))
+  (load! [_ uri])
+  )
 
 (defprotocol IResourceStore
   )
