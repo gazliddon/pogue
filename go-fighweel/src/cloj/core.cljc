@@ -4,6 +4,7 @@
             [digest :as digest]
             [cloj.keyboard :as kb]
             [cloj.lwjgl.resources :as ac]
+            [cloj.lwjgl.renderer :as rend]
             [cloj.resources.manager :as rman]
             [cloj.lwjgl.system :as sys]
             [clojure-gl.texture :as cgltex]

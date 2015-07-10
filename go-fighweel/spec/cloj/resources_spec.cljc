@@ -98,3 +98,6 @@
           (it "should match the digest"
               (should= test-file-digest (:digest @the-file)))
           )
+
+
+(run-specs)

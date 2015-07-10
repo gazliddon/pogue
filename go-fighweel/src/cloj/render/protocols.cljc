@@ -10,6 +10,7 @@
 (defprotocol ITransformable
   (matrix! [this v])
   (identity! [this])
+  (mul! [this v])
   (translate! [this v])
   (scale! [this v])
   (rotate! [this v]))
