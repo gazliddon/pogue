@@ -58,6 +58,7 @@
 
     (reify
       rend-p/ITransformable
+
       (matrix! [this mat]
         (swap! matrix set-matrix! mat)
         this)
