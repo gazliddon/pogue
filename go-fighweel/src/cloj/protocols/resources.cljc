@@ -1,11 +1,6 @@
 (ns cloj.protocols.resources)
 
-(defprotocol IReourceLoader
-  (load! [_ uri])
-  )
-
-(defprotocol IResourceStore
-  )
+(defprotocol IResourceStore)
 
 (defprotocol IResourceManagerInfo
   (find-img [_ id])

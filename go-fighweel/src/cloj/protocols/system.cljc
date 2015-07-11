@@ -5,6 +5,7 @@
 
 (defprotocol ISystem
   (log                  [_ txt])
+  (get-window           [_])
   (get-keyboard         [_])
   (get-loader           [_])
   (get-timer            [_])

@@ -1,25 +1,17 @@
 (ns cloj.resources-spec
   (:require [speclj.core :refer :all]
-            [digest :as digest]
 
-            [cloj.keyboard :as kb]
-
-            [cloj.lwjgl.resources :as ac]
             [cloj.lwjgl.system :as sys]
-            [cloj.lwjgl.render :as rend]
 
             [cloj.protocols.resources :as res-p]
-            [cloj.protocols.render :as rend-p]
+            [cloj.protocols.system    :as sys-p]
+            [cloj.protocols.render    :as rend-p]
 
-            [clojure.core.async :as async :refer [timeout chan >! <!! <! go alts!!]]))
+            [clojure.core.async :as async :refer [timeout >! <!! <! go alts!!]]))
 
-(def the-window (sys/mk-lwjgl-window))
-(defn open-window [] (sys/create the-window 200 200 "testt"))
-(defn close-window[] (sys/destroy the-window))
 (def test-file-name   "test-data/blocks.png")
-(def test-file-digest "284fe63d77a4398957a30a658a0f439a7ca20395e4b63a01122b37c7ab74eed2")
-
-(def resman (ac/mk-resource-manager))
+(def my-sys (sys/mk-system))
+(def res-manager (sys-p/get-resource-manager my-sys))
 
 (defmacro <? [ch]
   `(throw-err (async/<! ~ch)))
@@ -37,18 +29,12 @@
       "Timed out"
       r)))
 
-(defn- load-async-sync [file-name]
-  (async-op-as-sync (ac/load-async file-name)))
-
 (describe "async image loading tests"
   (with-all
     the-img (->>
               test-file-name
-              (res-p/load-img! resman :poo)
+              (res-p/load-img! res-manager :poo)
               (async-op-as-sync)))
-
-  (before-all (open-window))
-  (after-all (close-window))
 
   (it "should satisfie the IImage protocol"
     (should (satisfies? rend-p/IImage @the-img)))
@@ -59,48 +45,14 @@
   (it "should be the right height"
     (should= 240 (rend-p/height @the-img)))
 
-  (it "should have an opengl texture id"
-    (should (pos? (:tex-id (rend-p/img @the-img)))))
+  ; (it "should have an opengl texture id"
+  ;   (should (pos? (:tex-id (rend-p/img @the-img)))))
 
-  (it "should have have these keys"
-    (let [mp (rend-p/img @the-img)]
-      (should (every? #(contains? mp %) [:tex-id :width :height])))))
-
-(describe "Blocking load tests"
-  (with-all the-file (ac/load-blocking test-file-name))
-
-  (it "should return a byte buffer"
-    (should= (Class/forName "[B") (type (:data @the-file))))
-
-  (it "should be the same size as the size field"
-    (should= (:size @the-file) (count (:data @the-file))))
-
-  (it "should have the right file name"
-    (should= test-file-name (:file-name @the-file)))
-
-  (it "should have the right file size"
-    (should= 9705 (:size @the-file)))
-
-  (it "should match the digest"
-    (should= test-file-digest (:digest @the-file))))
-
-(describe "Async loading tests"
-  (with-all the-file (load-async-sync test-file-name))
-
-  (it "should return a byte buffer"
-    (should= (Class/forName "[B") (type (:data @the-file))))
-
-  (it "should be the same size as the size field"
-    (should= (:size @the-file) (count (:data @the-file))))
-
-  (it "should have the right file name"
-    (should= test-file-name (:file-name @the-file)))
-
-  (it "should have the right file size"
-    (should= 9705 (:size @the-file)))
-
-  (it "should match the digest"
-    (should= test-file-digest (:digest @the-file)))
+  ; (it "should have have these keys"
+  ;   (let [mp (rend-p/img @the-img)]
+  ;     (should (every? #(contains? mp %) [:tex-id :width :height])))
+  ;   )
   )
+
 
 (run-specs)

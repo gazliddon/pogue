@@ -4,6 +4,8 @@
 
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p]
+    [cloj.protocols.loader    :as loader-p]
+
     [clojure.core.async :as async :refer [chan >! <! put! go]]
     [clojure.java.io :refer [file output-stream input-stream]]
     [mikera.image.core :as imgz :refer [load-image]] ))
@@ -16,28 +18,12 @@
 
 ;; =============================================================================
 ;; Async loading
-(defrecord LoadedFile [data size file-name digest])
 
-(defn load-blocking [file-name]
-  (let [f (file file-name)
-        size (.length f) ]
-    (with-open [in (input-stream f)]
-      (let [buf (byte-array size)
-            arr (.read in buf)]
-        (->LoadedFile buf size file-name (digest/sha-256 f))))))
+(defn mk-resource-manager [loader]
+  (let [store (atom {})
+        load-async! (fn [fname] (loader-p/load-async! loader fname))
+        load-blocking! (fn [fname] (loader-p/load-blocking! loader fname)) ]
 
-(defn do-something-async
-  ([ret-chan func]
-   (future (put! ret-chan (func)))
-   ret-chan)
-  ([func] (do-something-async (chan) func)))
-
-(defn load-async
-  ([ret-chan file-name] (do-something-async ret-chan #(load-blocking file-name)))
-  ([file-name] (load-async (chan) file-name)))
-
-(defn mk-resource-manager []
-  (let [store (atom {}) ]
     (reify
       res-p/IResourceManagerInfo
       (find-img [_ id]           (println "not implemented"))
