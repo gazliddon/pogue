@@ -1,6 +1,6 @@
 (ns cloj.lwjgl.system
   (:require
-    [cloj.lwjgl.resources     :as res]
+    [cloj.jvm.resources     :as res]
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.system    :refer [ISystem]]
     [cloj.protocols.resources :as res-p])

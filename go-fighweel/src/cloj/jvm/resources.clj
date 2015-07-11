@@ -1,11 +1,9 @@
-(ns cloj.lwjgl.resources
+(ns cloj.jvm.resources
   (:require
+    [digest :as digest]
+
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p]
-
-    [cloj.math.vec2 :refer [v2]]
-    [clojure-gl.texture :as cljgl-text :refer [make-texture-low]]
-    [digest :as digest]
     [clojure.core.async :as async :refer [chan >! <! put! go]]
     [clojure.java.io :refer [file output-stream input-stream]]
     [mikera.image.core :as imgz :refer [load-image]] ))
@@ -67,9 +65,7 @@
                 (height [_](.getHeight buffered-image) )
 
                 (img [ this ]
-                  (when (nil? @texture-in-gl)
-                    (reset! texture-in-gl (make-texture-low buffered-image)))
-                  @texture-in-gl
+                  buffered-image
                   )))
 
             (catch Exception e
