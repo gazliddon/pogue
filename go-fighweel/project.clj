@@ -45,7 +45,12 @@
                                    :optimizations :advanced
                                    :pretty-print false}}]}
 
-  :repl-options { :port 6502 }
+  :repl-options { :port 6502
+                  :init-ns cloj.lwjgl.main
+                  :nrepl-middleware [cider.nrepl.middleware.stacktrace/wrap-stacktrace
+                                     ]
+                 
+                 }
 
   :figwheel {
              ;; :http-server-root "public" ;; default and assumes "resources" 
