@@ -68,4 +68,7 @@
 
       (updater [_]
         (when @exists?
-          (Display/update))))))
+          (do
+            (Display/update)
+            (Display/sync 60))
+          )))))

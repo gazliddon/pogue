@@ -4,35 +4,25 @@
   (get-time [_]))
 
 (defprotocol ISystem
-  (log                  [_ txt])
   (get-window           [_])
-  (get-keyboard         [_])
   (get-loader           [_])
-  (get-timer            [_])
   (get-resource-manager [_])
-  (get-render-engine    [_]))
-
-(defprotocol ISystem!
-  (init!                  [_])
-  (update!                [_])
-  (destroy!               [_]))
+  (get-render-engine    [_])
+  (get-msg-chan         [_]))
 
 (defrecord ClojSystem
-  [logger
-   keyboard
+  [window
    loader
-   timer
-   resource-mananager
-   render-engine]
+   resource-manager
+   render-engine
+   msg-chan ]
 
   ISystem
-  (log                  [_ txt] (logger txt))
-  (get-keyboard         [_] keyboard)
+  (get-window           [_] window)
+  (get-msg-chan         [_] msg-chan)
   (get-loader           [_] loader)
-  (get-timer            [_] timer)
-  (get-resource-manager [_] resource-mananager)
-  (get-render-engine    [_] render-engine) 
-  )
+  (get-resource-manager [_] resource-manager)
+  (get-render-engine    [_] render-engine) )
 
 
 
