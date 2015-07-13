@@ -1,12 +1,15 @@
 (ns cloj.lwjgl.system
   (:require
     [cloj.jvm.resources       :refer [mk-resource-manager]]
+
     [cloj.protocols.system    :refer [ISystem ->ClojSystem]]
     [cloj.protocols.resources :as res-p]
 
-    [cloj.lwjgl.window        :refer [mk-lwjgl-window]]
+    [cloj.lwjgl.keyboard :as keyb]
+
+    [cloj.lwjgl.window            :refer [mk-lwjgl-window]]
     [clojure.core.async :as async :refer [chan put! <! go-loop]]  
-    [cloj.jvm.loader          :refer [mk-loader]])
+    [cloj.jvm.loader              :refer [mk-loader]])
 
   (:import (java.nio ByteBuffer FloatBuffer)
            (org.lwjgl BufferUtils)
@@ -29,6 +32,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def game-state (atom {:please-quit  false
                        }))
 
@@ -38,6 +43,7 @@
                         (reset! game-state :please-quit true))
                 })
 
+
 (defn mk-system []
   (let [loader   (mk-loader)
         msg-chan (mk-msg-center msg->func)
@@ -46,8 +52,8 @@
                    loader
                    (mk-resource-manager loader)
                    nil
+                   (keyb/mk-keyboard)
                    (chan))]
-
     (do
       (res-p/clear-resources! (:resource-manager sys))
       (go-loop []

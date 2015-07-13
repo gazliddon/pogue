@@ -8,6 +8,7 @@
   (get-loader           [_])
   (get-resource-manager [_])
   (get-render-engine    [_])
+  (get-keyboard         [_])
   (get-msg-chan         [_]))
 
 (defrecord ClojSystem
@@ -15,14 +16,16 @@
    loader
    resource-manager
    render-engine
+   keyboard
    msg-chan ]
 
   ISystem
   (get-window           [_] window)
-  (get-msg-chan         [_] msg-chan)
   (get-loader           [_] loader)
   (get-resource-manager [_] resource-manager)
-  (get-render-engine    [_] render-engine) )
+  (get-render-engine    [_] render-engine)  
+  (get-keyboard         [_] render-engine)  
+  (get-msg-chan         [_] msg-chan))
 
 
 
