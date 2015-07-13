@@ -51,6 +51,24 @@
 (defn dirty? [this] (:dirty? this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn draw-quad [x y w h r g b a]
+  (let [w 1000
+        h 1000
+        r 0
+        g 0
+        b 0
+        a 1]
+    (GL11/glColor4f r g b a)
+    (GL11/glBegin GL11/GL_QUADS)
+    (GL11/glVertex2f x y)
+    (GL11/glVertex2f x (+ y h))
+    (GL11/glVertex2f (+ x w) (+ y h))
+    (GL11/glVertex2f (+ x w) y)
+    (GL11/glEnd)
+    )
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id dims]
   (let [data (atom {:dims    dims })
         shader (atom (mk-shader))
@@ -108,12 +126,10 @@
         (println "Should have printed a sprite")
         this)
 
-      (box! [this {x :x y :y} {w :x h :y} col]
-        (if (dirty? @matrix)
-          (swap! shader set-matrix-unifom! 0 (get-matrix @matrix))
-          (swap! matrix clean!)
-          )
-        (println "Should have printed a sprite")
-        )))
+      (box! [this {x :x y :y} {w :x h :y} [r g b a]]
+        ; (if (dirty? @matrix)
+        ;   (swap! shader set-matrix-unifom! 0 (get-matrix @matrix))
+        ;   (swap! matrix clean!))
+        (draw-quad x y w h r g b a))))
 
   )

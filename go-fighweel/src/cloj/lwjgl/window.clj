@@ -14,31 +14,20 @@
            (org.lwjgl.util.glu GLU)))
 
 (defn- init-window
-  [width height title]
+  [{width :x height :y} title]
   (let [pixel-format (PixelFormat.)
         context-attributes (-> (ContextAttribs. 3 2)
                                (.withForwardCompatible true)
-                               (.withProfileCore true))
+                               (.withProfileCore false))
         current-time-millis 0]
     (def globals (ref {:width width
                        :height height
-                       :title title
-                       :angle 0.0
-                       :last-time current-time-millis
-                       ;; geom ids
-                       :vao-id 0
-                       :vbo-id 0
-                       :vboc-id 0
-                       :vboi-id 0
-                       :indices-count 0
-                       ;; shader program ids
-                       :vs-id 0
-                       :fs-id 0
-                       :p-id 0
-                       ::angle-loc 0}))
+                       :title title }))
     (Display/setDisplayMode (DisplayMode. width height))
     (Display/setTitle title)
-    (Display/create pixel-format context-attributes)))
+    ; (Display/create pixel-format context-attributes)
+    (Display/create)
+    ))
 
 (defn- init-gl
   []
@@ -48,17 +37,18 @@
     (GL11/glViewport 0 0 width height)
     ))
 
+
 (defn mk-lwjgl-window []
   (let [exists? (atom false)
         dims (atom {}) ]
     (reify
       window-p/IWindow
 
-      (create! [this {w :x h :y} title]
+      (create! [this dims-in title]
         (do
           (when (not @exists? ) 
-            (init-window w h title)
-            (reset! dims (v2 w h))
+            (init-window dims-in title)
+            (reset! dims dims-in)
             (swap! exists? not))))
 
       (destroy! [_]

@@ -10,6 +10,7 @@
 (defn mk-loader []
   (reify
     loader-p/ILoader
+
     (load-blocking! [_ file-name]
       (let [f (file file-name)
             size (.length f) ]
