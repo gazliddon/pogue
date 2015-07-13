@@ -24,7 +24,7 @@
   (get-loader           [_] loader)
   (get-resource-manager [_] resource-manager)
   (get-render-engine    [_] render-engine)  
-  (get-keyboard         [_] render-engine)  
+  (get-keyboard         [_] keyboard)  
   (get-msg-chan         [_] msg-chan))
 
 
