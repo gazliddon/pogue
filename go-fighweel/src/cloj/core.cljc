@@ -27,12 +27,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defprotocol IGameKeys
   (update! [_])
-  (quit? [_])
-  (up? [_])
-  (down? [_])
-  (left? [_])
-  (right? [_])
-  (fire? [_]))
+  (quit?   [_])
+  (up?     [_])
+  (down?   [_])
+  (left?   [_])
+  (right?  [_])
+  (fire?   [_]))
 
 (defn any-keys-pressed? [keypfn ks]
   (->
