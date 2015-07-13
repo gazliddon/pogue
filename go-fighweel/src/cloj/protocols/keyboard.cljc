@@ -1,38 +1,39 @@
 (ns cloj.protocols.keyboard)
 
-(defrecord Key [name])
+(defrecord Key [name id])
 
 ;; Virtual key defs, up to the host to tie these
 ;; to physical keys
 
-(def K-A     (->Key "a" ))
-(def K-0     (->Key "0" ))
-(def K-1     (->Key "1" ))
-(def K-2     (->Key "2" ))
-(def K-3     (->Key "3" ))
-(def K-4     (->Key "4" ))
-(def K-5     (->Key "5" ))
-(def K-6     (->Key "6" ))
-(def K-7     (->Key "7" ))
-(def K-8     (->Key "8" ))
-(def K-9     (->Key "9" ))
+(def key-map
+  {:key-a      {:string "a"}
+   :key-0      {:string "0"}
+   :key-1      {:string "1"}
+   :key-2      {:string "2"}
+   :key-3      {:string "3"}
+   :key-4      {:string "4"}
+   :key-5      {:string "5"}
+   :key-6      {:string "6"}
+   :key-7      {:string "7"}
+   :key-8      {:string "8"}
+   :key-9      {:string "9"}
 
-(def FK-1     (->Key "function key 1" ))
-(def FK-2     (->Key "function key 2" ))
-(def FK-3     (->Key "function key 3" ))
-(def FK-4     (->Key "function key 4" ))
-(def FK-5     (->Key "function key 5" ))
-(def FK-6     (->Key "function key 6" ))
-(def FK-7     (->Key "function key 7" ))
-(def FK-8     (->Key "function key 8" ))
-(def FK-9     (->Key "function key 9" ))
+   :key-f1      {:string "function key 1"}
+   :key-f2      {:string "function key 2"}
+   :key-f3      {:string "function key 3"}
+   :key-f4      {:string "function key 4"}
+   :key-f5      {:string "function key 5"}
+   :key-f6      {:string "function key 6"}
+   :key-f7      {:string "function key 7"}
+   :key-f8      {:string "function key 8"}
+   :key-f9      {:string "function key 9"}
 
-(def K-UP    (->Key "cursor up" ))
-(def K-DOWN  (->Key "cursor down" ))
-(def K-LEFT  (->Key "cursor left" ))
-(def K-RIGHT (->Key "cursor right" ))
-(def K-SPACE (->Key "space" ))
-(def K-CR    (->Key "carriage return" ))
+   :key-up     {:string "cursor up"}
+   :key-down   {:string "cursor down"}
+   :key-left   {:string "cursor left"}
+   :key-right  {:string "cursor right"}
+   :key-space  {:string "space"}
+   :key-cr     {:string "carriage return"} } )
 
 (defprotocol IKeyboardSystem
   (init! [_])

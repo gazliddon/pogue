@@ -1,0 +1,105 @@
+(ns cloj.lwjgl.kbdata
+  (:import (org.lwjgl.input Keyboard)))
+
+(def cloj->lwjgl
+  {:key-0           Keyboard/KEY_0 
+   :key-1           Keyboard/KEY_1 
+   :key-2           Keyboard/KEY_2 
+   :key-3           Keyboard/KEY_3 
+   :key-4           Keyboard/KEY_4 
+   :key-5           Keyboard/KEY_5 
+   :key-6           Keyboard/KEY_6 
+   :key-7           Keyboard/KEY_7 
+   :key-8           Keyboard/KEY_8 
+   :key-9           Keyboard/KEY_9 
+   :key-a           Keyboard/KEY_A 
+   :key-b           Keyboard/KEY_B 
+   :key-c           Keyboard/KEY_C 
+   :key-d           Keyboard/KEY_D 
+   :key-e           Keyboard/KEY_E 
+   :key-f           Keyboard/KEY_F 
+   :key-g           Keyboard/KEY_G 
+   :key-h           Keyboard/KEY_H 
+   :key-i           Keyboard/KEY_I 
+   :key-j           Keyboard/KEY_J 
+   :key-k           Keyboard/KEY_K 
+   :key-l           Keyboard/KEY_L 
+   :key-m           Keyboard/KEY_M 
+   :key-n           Keyboard/KEY_N 
+   :key-o           Keyboard/KEY_O 
+   :key-p           Keyboard/KEY_P 
+   :key-q           Keyboard/KEY_Q 
+   :key-r           Keyboard/KEY_R 
+   :key-s           Keyboard/KEY_S 
+   :key-t           Keyboard/KEY_T 
+   :key-u           Keyboard/KEY_U 
+   :key-v           Keyboard/KEY_V 
+   :key-w           Keyboard/KEY_W 
+   :key-x           Keyboard/KEY_X 
+   :key-y           Keyboard/KEY_Y 
+   :key-z           Keyboard/KEY_Z 
+   :key-at          Keyboard/KEY_AT 
+   :key-f1          Keyboard/KEY_F1 
+   :key-f2          Keyboard/KEY_F2 
+   :key-f3          Keyboard/KEY_F3 
+   :key-f4          Keyboard/KEY_F4 
+   :key-f5          Keyboard/KEY_F5 
+   :key-f6          Keyboard/KEY_F6 
+   :key-f7          Keyboard/KEY_F7 
+   :key-f8          Keyboard/KEY_F8 
+   :key-f9          Keyboard/KEY_F9 
+   :key-up          Keyboard/KEY_UP 
+   :key-add         Keyboard/KEY_ADD 
+   :key-end         Keyboard/KEY_END 
+   :key-f10         Keyboard/KEY_F10 
+   :key-f11         Keyboard/KEY_F11 
+   :key-f12         Keyboard/KEY_F12 
+   :key-f13         Keyboard/KEY_F13 
+   :key-f14         Keyboard/KEY_F14 
+   :key-f15         Keyboard/KEY_F15 
+   :key-f16         Keyboard/KEY_F16 
+   :key-f17         Keyboard/KEY_F17 
+   :key-f18         Keyboard/KEY_F18 
+   :key-f19         Keyboard/KEY_F19 
+   :key-tab         Keyboard/KEY_TAB 
+   :key-back        Keyboard/KEY_BACK 
+   :key-down        Keyboard/KEY_DOWN 
+   :key-home        Keyboard/KEY_HOME 
+   :key-left        Keyboard/KEY_LEFT 
+   :key-next        Keyboard/KEY_NEXT 
+   :key-stop        Keyboard/KEY_STOP 
+   :key-clear       Keyboard/KEY_CLEAR 
+   :key-colon       Keyboard/KEY_COLON 
+   :key-comma       Keyboard/KEY_COMMA 
+   :key-grave       Keyboard/KEY_GRAVE 
+   :key-minus       Keyboard/KEY_MINUS 
+   :key-right       Keyboard/KEY_RIGHT 
+   :key-slash       Keyboard/KEY_SLASH 
+   :key-space       Keyboard/KEY_SPACE 
+   :key-delete      Keyboard/KEY_DELETE 
+   :key-divide      Keyboard/KEY_DIVIDE 
+   :key-equals      Keyboard/KEY_EQUALS 
+   :key-escape      Keyboard/KEY_ESCAPE 
+   :key-insert      Keyboard/KEY_INSERT 
+   :key-lshift      Keyboard/KEY_LSHIFT 
+   :key-period      Keyboard/KEY_PERIOD 
+   :key-return      Keyboard/KEY_RETURN 
+   :key-rshift      Keyboard/KEY_RSHIFT 
+   :key-scroll      Keyboard/KEY_SCROLL 
+   :key-decimal     Keyboard/KEY_DECIMAL 
+   :key-lbracket    Keyboard/KEY_LBRACKET 
+   :key-multiply    Keyboard/KEY_MULTIPLY 
+   :key-subtract    Keyboard/KEY_SUBTRACT 
+   :key-backslash   Keyboard/KEY_BACKSLASH 
+   :key-semicolon   Keyboard/KEY_SEMICOLON 
+   :key-underline   Keyboard/KEY_UNDERLINE 
+   :key-apostrophe  Keyboard/KEY_APOSTROPHE 
+   :key-circumflex  Keyboard/KEY_CIRCUMFLEX })
+
+(def lwjgl->cloj
+  (->>
+    cloj->lwjgl
+    (map reverse)
+    (mapv vec)
+    (vec)
+    (into {})))
