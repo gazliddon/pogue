@@ -34,6 +34,7 @@
       res-p/IResourceManager
       (clear-resources! [_] (reset! store {}))
       (create-render-target! [this id w h] (throw (Exception. "not implemented")))
+      (get-loader [_] loader)
 
       (load-img! [this id file-name]
         (go

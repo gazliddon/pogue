@@ -2,6 +2,6 @@
   )
 
 (defprotocol IWindow
-  (create [_ w h title])
-  (destroy [_])
-  (updater [_]))
+  (create! [_ dims title])
+  (destroy! [_])
+  (update! [_]))

@@ -11,7 +11,7 @@
 
   (:import (org.lwjgl.util.vector Matrix Matrix2f Matrix3f Matrix4f)
            (org.lwjgl.util.vector Vector2f Vector3f Vector4f)
-           (org.lwjgl.opengl GL20))
+           (org.lwjgl.opengl GL20 GL11))
   )
 
 
@@ -97,12 +97,9 @@
       (spr! [this spr pos]
         (rend-p/spr-scaled! this spr pos (v2 (rend-p/width spr) (rend-p/height spr))))
 
-      (clear! [this col]
-        (doto this
-          (rend-p/save!)
-          (rend-p/identity! )
-          (rend-p/box! (v2 0 0) (:dims @data) col)
-          (rend-p/restore!)))
+      (clear! [this [r g b a]]
+        (GL11/glClearColor r g b a)
+        (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (if (dirty? @matrix)

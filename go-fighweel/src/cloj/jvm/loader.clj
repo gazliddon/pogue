@@ -2,7 +2,7 @@
   (:require
     [digest :as digest]
     [cloj.protocols.loader :as loader-p]
-    [clojure.core.async :as async :refer [chan >! <! put! go]]
+    [clojure.core.async :as async :refer [go]]
     [clojure.java.io :refer [file output-stream input-stream]]))
 
 (defrecord LoadedFile [data size file-name digest])

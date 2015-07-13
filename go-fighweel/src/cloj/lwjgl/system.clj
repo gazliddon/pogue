@@ -2,10 +2,13 @@
   (:require
     [cloj.jvm.resources       :refer [mk-resource-manager]]
 
+    [cloj.math.vec2 :as vec2 :refer [v2]]
+
     [cloj.protocols.system    :refer [ISystem ->ClojSystem]]
     [cloj.protocols.resources :as res-p]
 
     [cloj.lwjgl.keyboard :as keyb]
+    [cloj.lwjgl.render :as render]
 
     [cloj.lwjgl.window            :refer [mk-lwjgl-window]]
     [clojure.core.async :as async :refer [chan put! <! go-loop]]  
@@ -38,20 +41,16 @@
                        }))
 
 (def msg->func {:quit (fn [sys]
-                        (println "YEAH")
-    
                         (reset! game-state :please-quit true))
                 })
 
 
 (defn mk-system []
-  (let [loader   (mk-loader)
-        msg-chan (mk-msg-center msg->func)
+  (let [msg-chan (mk-msg-center msg->func)
         sys      (->ClojSystem
                    (mk-lwjgl-window)
-                   loader
-                   (mk-resource-manager loader)
-                   nil
+                   (mk-resource-manager (mk-loader))
+                   (render/mk-lwjgl-renderer :poo (v2 100 100) )
                    (keyb/mk-keyboard)
                    (chan))]
     (do

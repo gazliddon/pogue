@@ -1,5 +1,6 @@
 (ns cloj.lwjgl.window
   (:require
+    [cloj.math.vec2 :refer [v2]]
     [cloj.jvm.resources       :as res]
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.system    :refer [ISystem]]
@@ -53,20 +54,20 @@
     (reify
       window-p/IWindow
 
-      (create [this w h title]
+      (create! [this {w :x h :y} title]
         (do
           (when (not @exists? ) 
             (init-window w h title)
-            (reset! dims {:x w :h h})
+            (reset! dims (v2 w h))
             (swap! exists? not))))
 
-      (destroy [_]
+      (destroy! [_]
         (if @exists?
           (do
             (Display/destroy)
             (swap! exists? not))))
 
-      (updater [_]
+      (update! [_]
         (when @exists?
           (do
             (Display/update)

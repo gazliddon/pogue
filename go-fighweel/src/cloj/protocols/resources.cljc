@@ -9,6 +9,7 @@
   (list-imgs [_]))
 
 (defprotocol IResourceManager
+  (get-loader [_])
   (clear-resources! [_])
   (create-render-target! [_ id w h])
   (load-img! [_ id source]))

@@ -10,5 +10,10 @@
 
 (defn tmain []
   (future
-    (main sys)))
+    (try
+      (main sys) 
+      (catch Exception e
+        (println "Error: " (.getMessage e)))))
+
+  "launched")
 
