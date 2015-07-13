@@ -23,23 +23,18 @@
 
 (def quit-keys [:key-escape :key-q])
 
-(defn any-keys-pressed? [ks keypfn]
-  (reduce (fn [r v]
-            (or r 
-                (keypfn v)))
-          false
-          ks)
-  )
+(defn any-keys-pressed? [keypfn ks]
+  (->
+    (fn [r v]
+      (or r (keypfn v)))
+    (reduce false ks)))
 
-(defn any-quit-keys-pressed? [keypfn]
-  (any-keys-pressed? quit-keys keypfn))
+(defn any-quit-keys-pressed? [keypfn] (any-keys-pressed? keypfn quit-keys))
 
 (defn draw-frame [r t]
   (do
     (clear! r (funny-col t))
-    (box! r (v2 10 10) (v2 100 100) [0 0 0 1])
-    )
-  )
+    (box! r (v2 10 10) (v2 100 100) [0 0 0 1])))
 
 (defn main [sys]
   (let [window (sys-p/get-window sys)
