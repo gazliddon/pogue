@@ -7,21 +7,32 @@
     [cloj.protocols.system    :as sys-p]
     [cloj.protocols.window    :as win-p]
     [cloj.protocols.resources :as res-p]
+
     [cloj.protocols.render    :as rend-p :refer [clear!
                                                  box!]]
     [cloj.protocols.keyboard  :as key-p]))
 
-(def quit? (atom false))
-
-(def tm (atom 0.0))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn funny-col [t]
   [(cos-01 t)
    (cos-01 (* t 3.1))
    (cos-01 (* t (cos-01 (* t 2))))
    1.0 ])
 
-(def quit-keys [:key-escape :key-q])
+(defn draw-frame [r t]
+  (do
+    (clear! r (funny-col t))
+    (box! r (v2 10 10) (v2 100 100) [0 0 0 1])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defprotocol IGameKeys
+  (update! [_])
+  (quit? [_])
+  (up? [_])
+  (down? [_])
+  (left? [_])
+  (right? [_])
+  (fire? [_]))
 
 (defn any-keys-pressed? [keypfn ks]
   (->
@@ -29,17 +40,41 @@
       (or r (keypfn v)))
     (reduce false ks)))
 
-(defn any-quit-keys-pressed? [keypfn] (any-keys-pressed? keypfn quit-keys))
+(defn mk-game-keys [keyb key-defs]
+  (let [any-pressed? (fn [kk]
+                       (any-keys-pressed?
+                         (:state #(key-p/get-key-state keyb %))
+                         (kk key-defs)))]
 
-(defn draw-frame [r t]
-  (do
-    (clear! r (funny-col t))
-    (box! r (v2 10 10) (v2 100 100) [0 0 0 1])))
+    (reify
+      IGameKeys
+      (update![_] (key-p/update! keyb))
+      (quit?  [_] (any-pressed? :quit))
+      (up?    [_] (any-pressed? :up))
+      (down?  [_] (any-pressed? :down))
+      (left?  [_] (any-pressed? :left))
+      (right? [_] (any-pressed? :right))
+      (fire?  [_] (any-pressed? :fire))
+      ))
+  )
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def key-defs
+  {:quit  [:key-esc :key-q]
+   :up    [:key-up :key-k] 
+   :down  [:key-down :key-j] 
+   :left  [:key-left :key-h] 
+   :right [:key-right :key-l]
+   :fire  [:key-space] })
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
   (let [window (sys-p/get-window sys)
-        keyb   (sys-p/get-keyboard sys)
-        key-pressed? #(:state (key-p/get-key-state keyb %))
+
+        gkeys (->
+                (sys-p/get-keyboard sys)
+                (mk-game-keys key-defs))
+
         r (sys-p/get-render-engine sys)]
 
     (do
@@ -48,10 +83,13 @@
       (try
         (loop [t 0]
           (do
-            (key-p/update! keyb)
+            (update! gkeys)
+
             (win-p/update! window)
+
             (draw-frame r t)
-            (when-not (any-quit-keys-pressed? key-pressed?) 
+
+            (when-not (quit? gkeys) 
               (recur (+ t (/ 1 60))))))
 
         (catch Exception e
