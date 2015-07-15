@@ -54,12 +54,12 @@
 (defn draw-quad [x y w h r g b a]
   (let [w 1000
         h 1000
-        r 0
-        g 0
-        b 0
+        r r
+        g g
+        b b
         a 1]
-    (GL11/glColor4f r g b a)
     (GL11/glBegin GL11/GL_QUADS)
+    (GL11/glColor4f r g b a)
     (GL11/glVertex2f x y)
     (GL11/glVertex2f x (+ y h))
     (GL11/glVertex2f (+ x w) (+ y h))
