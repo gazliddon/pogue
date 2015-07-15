@@ -22,7 +22,7 @@
 (defn draw-frame [r t]
   (do
     (clear! r (funny-col t))
-    (box! r (v2 10 10) (v2 100 100) [0 0 0 1])))
+    (box! r (v2 0 0) (v2 0.000001 0.1) (funny-col (+ 3 t)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,7 +56,8 @@
               (recur (+ t (/ 1 60))))))
 
         (catch Exception e
-          (println "[Error in main] " (.getMessage e))))
+          (println "[Error in main] " (.getMessage e)))
 
-      (win-p/destroy! window ))))
+        (finally
+          (win-p/destroy! window ))))))
 
