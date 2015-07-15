@@ -50,7 +50,7 @@
         sys      (->ClojSystem
                    (mk-lwjgl-window)
                    (mk-resource-manager (mk-loader))
-                   (render/mk-lwjgl-renderer :poo (v2 100 100) )
+                   (render/mk-lwjgl-renderer :poo  )
                    (keyb/mk-keyboard)
                    (chan))]
     (do

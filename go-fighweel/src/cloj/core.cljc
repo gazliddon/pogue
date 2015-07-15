@@ -9,7 +9,8 @@
     [cloj.protocols.window    :as win-p]
     [cloj.protocols.resources :as res-p]
     [cloj.protocols.render    :as rend-p :refer [clear!
-                                                 box!]]
+                                                 box!
+                                                 ortho!]]
     [cloj.protocols.keyboard  :as key-p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -19,11 +20,11 @@
    (cos-01 (* t (cos-01 (* t 2))))
    1.0 ])
 
-(defn draw-frame [r t]
+(defn draw-frame [win-w win-h r t]
   (do
+    (ortho! r (v2 win-h win-h) (v2 16 9))
     (clear! r (funny-col t))
-    (box! r (v2 0 0) (v2 0.000001 0.1) (funny-col (+ 3 t)))))
-
+    (box! r (v2 0 0) (v2 0.1 0.1) (funny-col (+ 3 t)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -50,7 +51,7 @@
 
             (win-p/update! window)
 
-            (draw-frame r t)
+            (draw-frame 640 480 r t)
 
             (when-not (gamekeys/quit? gkeys) 
               (recur (+ t (/ 1 60))))))

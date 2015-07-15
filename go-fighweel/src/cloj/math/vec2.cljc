@@ -10,6 +10,9 @@
 
 (defn v2 [x y] (->Vec2 x y))
 
+(defn as-vector [v]
+  (map v [:x :y]))
+
 (defn vec2 
   ([x y]   {:x x :y y})  
   ([[x y]] {:x x :y y}))
@@ -24,6 +27,8 @@
 (mk-vec-op max clojure.core/max :x :y)
 
 (def zero (vec2 0 0))
+(def half (vec2 0.5 0.5))
+(def one (vec2 1 1))
 
 (defn clamp [lo hi v]
   (min hi (max lo v)))

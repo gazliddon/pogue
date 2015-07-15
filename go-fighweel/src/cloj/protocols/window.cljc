@@ -4,4 +4,5 @@
 (defprotocol IWindow
   (create! [_ dims title])
   (destroy! [_])
-  (update! [_]))
+  (update! [_])
+  (get-dims [_]))

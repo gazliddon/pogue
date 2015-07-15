@@ -15,8 +15,12 @@
   (scale! [this v])
   (rotate! [this v]))
 
+(defprotocol IRenderViewport
+  (set-window-size! [this dims]))
+
 (defprotocol IRenderBackend
-  (resize! [this dims])
+  (ortho! [this window-dims canvas-dims])
+
   (save! [this])
   (restore! [this])
   (clear! [this col])
