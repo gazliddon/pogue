@@ -10,7 +10,8 @@
     [cloj.protocols.resources :as res-p]
     [cloj.protocols.render    :as rend-p :refer [clear!
                                                  box!
-                                                 ortho!]]
+                                                 ortho!
+                                                 init! ]]
     [cloj.protocols.keyboard  :as key-p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,7 +25,7 @@
   (do
     (ortho! r (v2 win-h win-h) (v2 16 9))
     (clear! r (funny-col t))
-    (box! r (v2 0 0) (v2 0.1 0.1) (funny-col (+ 3 t)))))
+    (box! r (v2 0 0) (v2 30 30) (funny-col (+ 3 t)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -43,7 +44,7 @@
         r (sys-p/get-render-engine sys) ]
     (do
       (win-p/create! window (v2 640 480) "rogue bow")
-
+      (init! r)
       (try
         (loop [t 0]
           (do

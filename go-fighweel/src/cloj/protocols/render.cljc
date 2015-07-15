@@ -20,7 +20,7 @@
 
 (defprotocol IRenderBackend
   (ortho! [this window-dims canvas-dims])
-
+  (init! [this])
   (save! [this])
   (restore! [this])
   (clear! [this col])

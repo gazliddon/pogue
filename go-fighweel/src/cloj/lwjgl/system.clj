@@ -53,6 +53,8 @@
                    (render/mk-lwjgl-renderer :poo  )
                    (keyb/mk-keyboard)
                    (chan))]
+
+    (println "got here")
     (do
       (res-p/clear-resources! (:resource-manager sys))
       (go-loop []
@@ -64,5 +66,7 @@
         (recur))
       sys
       )))
+
+(mk-system)
 
 
