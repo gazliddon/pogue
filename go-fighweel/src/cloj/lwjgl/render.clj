@@ -108,7 +108,6 @@
         (let [{:keys [scale viewport]} (get-vp win-dims canv-dims)
               [a b c d] viewport ]
           (do
-            (println viewport)
             (GL11/glViewport a b c d)
             (GL11/glScissor a b c d)
             (GL11/glMatrixMode GL11/GL_PROJECTION)
@@ -116,7 +115,7 @@
             (GLU/gluOrtho2D 0 (:x canv-dims) 0 (:y canv-dims))
             (GL11/glMatrixMode GL11/GL_MODELVIEW)
             (GL11/glLoadIdentity) 
-            (GL11/glScalef  (:x scale) (:y scale) 1)
+            (GL11/glScalef  scale scale 1)
             )))
 
       (save!    [this] (GL11/glPushMatrix))
