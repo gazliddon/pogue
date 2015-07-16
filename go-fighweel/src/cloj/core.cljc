@@ -21,11 +21,11 @@
    (cos-01 (* t (cos-01 (* t 2))))
    1.0 ])
 
-(defn draw-frame [win-w win-h r t]
+(defn draw-frame [dims r t]
   (do
-    (ortho! r (v2 win-h win-h) (v2 16 9))
+    (ortho! r dims (v2 16 9))
     (clear! r (funny-col t))
-    (box! r (v2 0 0) (v2 30 30) (funny-col (+ 3 t)))))
+    (box! r (v2 0 0) (v2 10 10) [(cos-01 t) 1 0 1])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -41,18 +41,18 @@
 (defn main [sys]
   (let [window (sys-p/get-window sys)
         gkeys (mk-game-keys (sys-p/get-keyboard sys) key-defs)
-        r (sys-p/get-render-engine sys) ]
+        r (sys-p/get-render-engine sys)
+        dims (v2 640 480) ]
     (do
-      (win-p/create! window (v2 640 480) "rogue bow")
+      (win-p/create! window dims "rogue bow")
       (init! r)
       (try
         (loop [t 0]
           (do
             (gamekeys/update! gkeys)
-
             (win-p/update! window)
 
-            (draw-frame 640 480 r t)
+            (draw-frame dims r t)
 
             (when-not (gamekeys/quit? gkeys) 
               (recur (+ t (/ 1 60))))))

@@ -4,7 +4,7 @@
                               translation
                               rotation
                               scale]]
-    [cloj.math.vec2         :as v2 :refer [ v2 ]]
+    [cloj.math.vec2         :as v2 :refer [ v2 v2f ]]
 
     [cloj.protocols.render  :as rend-p]
     [cloj.protocols.resources :as res-p])
@@ -22,40 +22,28 @@
   v)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn get-vp [ {winW :x winH :y} dest-ar ]
-  (let [vp-w  (* winW dest-ar)
-        vp-h  (/ winH dest-ar) ]
-    (v2 vp-w vp-h))
-  )
+(defn get-ar [{w :x h :y}] (/ w h))
 
-(defn get-ar [{w :x h :y}]
-  (/ w h))
+(defn get-vp [win-dims canv-dims]
+  (let [canv-ar (get-ar canv-dims)
+        win-ar (get-ar win-dims)
+        dom-axis (if (> canv-ar win-ar) :x :y)
+        scale (/ (dom-axis win-dims) (dom-axis canv-dims))
+        vp-dims (v2/mul
+                  (v2 scale scale)
+                  canv-dims)
+        tl  (v2/mul v2/half (v2/sub win-dims vp-dims)) ]
 
-(defn get-vp [ win-dims canv-dims ]
-
-  (let [dest-ar (get-ar canv-dims)
-
-        vp-dims         (v2/mul
-                          canv-dims
-                          (v2 dest-ar dest-ar))
-
-        vp-left-top     (v2/mul
-                          (v2/sub win-dims vp-dims)
-                          v2/half
-                          win-dims)
-
-        vp-bottom-right (v2/mul
-                          win-dims   
-                          (v2/add
-                            vp-left-top
-                            vp-dims))
-
-        {left :x top :y}  vp-left-top
-        {right :x bottom :y} vp-bottom-right ]
-
-    [left top right bottom])) 
-
-(get-vp (v2 1 1) (v2 1 2))
+    {:canv-ar (float canv-ar )
+     :win-ar (float win-ar )
+     :dom-axis dom-axis
+     :vp-dims (v2/apply float vp-dims)
+     :scale scale
+     :viewport (mapv int [(:x tl)
+                (:y tl)
+                (:x vp-dims)
+                (:y vp-dims) ] )
+     }))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
@@ -69,7 +57,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id]
-  (let [dims (atom (v2 100 100))]
+  (let [dims (atom (v2 100 100))
+        clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT) ]
     (reify
       rend-p/ITransformable
       (matrix! [this mat]
@@ -104,31 +93,38 @@
       (img    [_] nil )
 
       rend-p/IRenderBackend
+
       (init! [_]
         (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))
         (GL11/glClearColor 0.0 0.0 0.0 0.0)
-        (GL11/glViewport 0 0 1 1)
+        (GL11/glClear clear-mask) 
         (GL11/glDisable GL11/GL_TEXTURE_2D)
         (GL11/glDisable GL11/GL_DEPTH_TEST)
         (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
+        (GL11/glEnable GL11/GL_SCISSOR_TEST)
         (GL11/glDisable GL11/GL_BLEND)  )
 
       (ortho! [this win-dims canv-dims]
-        (let [[a b c d] (get-vp win-dims canv-dims)]
+        (let [{:keys [scale viewport]} (get-vp win-dims canv-dims)
+              [a b c d] viewport ]
           (do
+            (println viewport)
+            (GL11/glViewport a b c d)
+            (GL11/glScissor a b c d)
             (GL11/glMatrixMode GL11/GL_PROJECTION)
-            (GLU/gluOrtho2D a b c d)
+            (GL11/glLoadIdentity) 
+            (GLU/gluOrtho2D 0 (:x canv-dims) 0 (:y canv-dims))
             (GL11/glMatrixMode GL11/GL_MODELVIEW)
             (GL11/glLoadIdentity) 
-            (GL11/glScalef (:x canv-dims) (:y canv-dims) 1))))
+            (GL11/glScalef  (:x scale) (:y scale) 1)
+            )))
 
       (save!    [this] (GL11/glPushMatrix))
-
       (restore! [this] (GL11/glPopMatrix))
 
       (clear! [this [r g b a]]
         (GL11/glClearColor r g b a)
-        (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)))
+        (GL11/glClear clear-mask))
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (println "Should have printed a sprite")

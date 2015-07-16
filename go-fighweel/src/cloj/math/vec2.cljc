@@ -1,5 +1,5 @@
 (ns cloj.math.vec2
-  (:refer-clojure :exclude [min max])
+  (:refer-clojure :exclude [min max apply])
   (:require
     #?(:clj [cloj.macros :refer [mk-vec-op]])
     )
@@ -9,6 +9,7 @@
 (defrecord Vec2 [x y])
 
 (defn v2 [x y] (->Vec2 x y))
+(defn v2f [x y] (->Vec2 (float x) (float y)))
 
 (defn as-vector [v]
   (map v [:x :y]))
@@ -35,6 +36,9 @@
 
 (defn neg [v]
   (sub zero v))
+
+(defn apply [f {x :x y :y}]
+  (vec2 (f x) (f y)))
 
 
 (defn applyv [{fx :x fy :y} {x :x y :y}]
