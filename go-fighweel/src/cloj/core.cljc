@@ -3,8 +3,8 @@
 
     [game.gamekeys :as gamekeys :refer [mk-game-keys ]]
 
-    [cloj.math.misc :refer [cos-01]]
-    [cloj.math.vec2 :refer [v2]]
+    [cloj.math.misc :refer [cos-01 cos sin]]
+    [cloj.math.vec2 :as v2 :refer [v2 v2f]]
     [cloj.protocols.system    :as sys-p]
     [cloj.protocols.window    :as win-p]
     [cloj.protocols.resources :as res-p]
@@ -15,17 +15,52 @@
     [cloj.protocols.keyboard  :as key-p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn funny-col [t]
   [(cos-01 t)
    (cos-01 (* t 3.1))
    (cos-01 (* t (cos-01 (* t 2))))
    1.0 ])
 
+(defn f-pos [t]
+
+  (let [scale-base (v2f 0.93 0.822)
+        scale-t (/ t 1000)
+        scale (v2/add
+                scale-base
+                (v2/mul
+                  scale-base
+                  (v2f (cos scale-t) (sin (+ 1 scale-t )))
+                  v2/half
+                  )         )
+
+        ]
+
+    (->>
+      (v2/mul
+        (v2f t t)
+        scale)
+      (v2/apply cos-01)
+      (v2/mul (v2f 16 9)))))
+
 (defn draw-frame [dims r t]
   (do
-    (ortho! r dims (v2 16 9))
-    (clear! r (funny-col t))
-    (box! r (v2 0 0) (v2 1 1) [(cos-01 t) 1 0 1])))
+    (let [cos-01-t (cos-01 t)
+          cos-t (cos t)
+          amount 100
+          ]
+      (ortho! r dims (v2 16 9))
+      (clear! r (funny-col (/ t 10)))
+      (doseq [v (range amount)]
+        (let [v-norm (/ v amount)
+              v-scaled (* cos-t  (*  v-norm 8))
+              v-t (+ t v cos-t)
+              pos (f-pos (+ t v-scaled (cos t)))
+              col [(cos-01 (+ (* t 20) (/ v 100))) (cos-01 (* v 0.10)) (cos-01 (+ t v)) 1]
+              ]
+          (box! r pos (v2 (+ 0.5  (cos-01 (* 2 v-t))) (+ 0.5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
+        ))
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
