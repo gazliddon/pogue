@@ -45,6 +45,8 @@
                 (:y vp-dims) ] )
      }))
 
+(get-vp (v2f 640 480) (v2f 16 9) )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
   (GL11/glBegin GL11/GL_QUADS)
@@ -115,7 +117,7 @@
             (GLU/gluOrtho2D 0 (:x canv-dims) 0 (:y canv-dims))
             (GL11/glMatrixMode GL11/GL_MODELVIEW)
             (GL11/glLoadIdentity) 
-            (GL11/glScalef  scale scale 1)
+            ; (GL11/glScalef  scale scale 1)
             )))
 
       (save!    [this] (GL11/glPushMatrix))
