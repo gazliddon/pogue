@@ -15,7 +15,6 @@
     [cloj.protocols.keyboard  :as key-p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn funny-col [t]
   [(cos-01 t)
    (cos-01 (* t 3.1))
@@ -23,7 +22,6 @@
    1.0 ])
 
 (defn f-pos [t]
-
   (let [scale-base (v2f 0.93 0.822)
         scale-t (/ t 1000)
         scale (v2/add
@@ -31,11 +29,7 @@
                 (v2/mul
                   scale-base
                   (v2f (cos scale-t) (sin (+ 1 scale-t )))
-                  v2/half
-                  )         )
-
-        ]
-
+                  v2/half))]
     (->>
       (v2/mul
         (v2f t t)

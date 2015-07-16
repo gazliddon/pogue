@@ -8,24 +8,17 @@
     [cloj.protocols.window    :as window-p]
     [cloj.jvm.loader          :as loader])
 
-  (:import (java.nio ByteBuffer FloatBuffer)
-           (org.lwjgl BufferUtils)
-           (org.lwjgl.opengl ContextAttribs Display DisplayMode GL11 GL15 GL20 GL30 PixelFormat)
-           (org.lwjgl.util.glu GLU)))
+  (:import (org.lwjgl.opengl Display DisplayMode)))
+
 
 (defn- init-window
   [{width :x height :y} title]
-  (let [pixel-format (PixelFormat.)
-        context-attributes (-> (ContextAttribs. 3 2)
-                               (.withForwardCompatible true)
-                               (.withProfileCore false))
-        current-time-millis 0]
+  (let [current-time-millis 0]
     (def globals (ref {:width width
                        :height height
                        :title title }))
     (Display/setDisplayMode (DisplayMode. width height))
     (Display/setTitle title)
-    ; (Display/create pixel-format context-attributes)
     (Display/create)
     ))
 

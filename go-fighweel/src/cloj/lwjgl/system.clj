@@ -12,12 +12,7 @@
 
     [cloj.lwjgl.window            :refer [mk-lwjgl-window]]
     [clojure.core.async :as async :refer [chan put! <! go-loop]]  
-    [cloj.jvm.loader              :refer [mk-loader]])
-
-  (:import (java.nio ByteBuffer FloatBuffer)
-           (org.lwjgl BufferUtils)
-           (org.lwjgl.opengl ContextAttribs Display DisplayMode GL11 GL15 GL20 GL30 PixelFormat)
-           (org.lwjgl.util.glu GLU)))
+    [cloj.jvm.loader              :refer [mk-loader]]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -53,8 +48,6 @@
                    (render/mk-lwjgl-renderer :poo  )
                    (keyb/mk-keyboard)
                    (chan))]
-
-    (println "got here")
     (do
       (res-p/clear-resources! (:resource-manager sys))
       (go-loop []
@@ -66,7 +59,5 @@
         (recur))
       sys
       )))
-
-(mk-system)
 
 

@@ -1,51 +1,19 @@
 (ns cloj.lwjgl.render
   (:require 
-    [clojure-gl.math  :refer [mul
-                              translation
-                              rotation
-                              scale]]
-    [cloj.math.vec2         :as v2 :refer [ v2 v2f ]]
+    [cloj.renderutils :refer [get-viewport]]
 
-    [cloj.protocols.render  :as rend-p]
+    [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
+
+    [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p])
 
-  (:import (org.lwjgl.util.vector Matrix Matrix2f Matrix3f Matrix4f)
-           (org.lwjgl.util.vector Vector2f Vector3f Vector4f)
-           (org.lwjgl.util.glu GLU)
-           (org.lwjgl.opengl GL20 GL11))
-  )
-
+  (:import (org.lwjgl.util.vector Matrix Matrix4f)
+           (org.lwjgl.opengl GL11)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn px [v]
   ; (int (+ 0.5 v))
   v)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn get-ar [{w :x h :y}] (/ w h))
-
-(defn get-vp [win-dims canv-dims]
-  (let [canv-ar (get-ar canv-dims)
-        win-ar (get-ar win-dims)
-        dom-axis (if (> canv-ar win-ar) :x :y)
-        scale (/ (dom-axis win-dims) (dom-axis canv-dims))
-        vp-dims (v2/mul
-                  (v2 scale scale)
-                  canv-dims)
-        tl  (v2/mul v2/half (v2/sub win-dims vp-dims)) ]
-
-    {:canv-ar (float canv-ar )
-     :win-ar (float win-ar )
-     :dom-axis dom-axis
-     :vp-dims (v2/apply float vp-dims)
-     :scale scale
-     :viewport (mapv int [(:x tl)
-                (:y tl)
-                (:x vp-dims)
-                (:y vp-dims) ] )
-     }))
-
-(get-vp (v2f 640 480) (v2f 16 9) )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
@@ -57,10 +25,28 @@
   (GL11/glVertex2f (+ x w) y)
   (GL11/glEnd))
 
+(defn draw-t-quad [x y w h r g b a]
+  (GL11/glBegin GL11/GL_QUADS)
+  (GL11/glColor4f r g b a)
+
+  (GL11/glTexCoord2f 0 0)
+  (GL11/glVertex2f x y)
+
+  (GL11/glVertex2f x (+ y h))
+  (GL11/glTexCoord2f 0 1)
+
+  (GL11/glVertex2f (+ x w) (+ y h))
+  (GL11/glTexCoord2f 1 1)
+
+  (GL11/glVertex2f (+ x w) y)
+  (GL11/glTexCoord2f 1 0)
+  (GL11/glEnd))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id]
   (let [dims (atom (v2 100 100))
         clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT) ]
+
     (reify
       rend-p/ITransformable
       (matrix! [this mat]
@@ -107,18 +93,15 @@
         (GL11/glDisable GL11/GL_BLEND)  )
 
       (ortho! [this win-dims canv-dims]
-        (let [{:keys [scale viewport]} (get-vp win-dims canv-dims)
-              [a b c d] viewport ]
+        (let [[a b c d] (get-viewport win-dims canv-dims) ]
           (do
             (GL11/glViewport a b c d)
             (GL11/glScissor a b c d)
             (GL11/glMatrixMode GL11/GL_PROJECTION)
             (GL11/glLoadIdentity) 
-            (GLU/gluOrtho2D 0 (:x canv-dims) 0 (:y canv-dims))
+            (GL11/glOrtho 0 (:x canv-dims) 0 (:y canv-dims) -1 1)
             (GL11/glMatrixMode GL11/GL_MODELVIEW)
-            (GL11/glLoadIdentity) 
-            ; (GL11/glScalef  scale scale 1)
-            )))
+            (GL11/glLoadIdentity) )))
 
       (save!    [this] (GL11/glPushMatrix))
       (restore! [this] (GL11/glPopMatrix))
@@ -128,12 +111,15 @@
         (GL11/glClear clear-mask))
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
-        (println "Should have printed a sprite")
+        (GL11/glEnable GL11/GL_TEXTURE_2D)
+        (GL11/glBindTexture GL11/GL_TEXTURE_2D (:tex-id spr))
+        (draw-t-quad x y w h 1 1 1 1)  
         this)
 
       (box! [this {x :x y :y} {w :x h :y} [r g b a]]
-        (draw-quad x y w h r g b a)) 
+        (GL11/glDisable GL11/GL_TEXTURE_2D)
+        (draw-quad x y w h r g b a)
+        this) 
 
       (spr! [this spr pos]
-        (rend-p/spr-scaled! this spr pos (v2 (rend-p/width spr) (rend-p/height spr))))
-      )))
+        (rend-p/spr-scaled! this spr pos (v2 (rend-p/width spr) (rend-p/height spr)))))))
