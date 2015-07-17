@@ -1,7 +1,12 @@
 (ns cloj.core
   (:require 
 
-    [game.gamekeys :as gamekeys :refer [mk-game-keys ]]
+    [game.sprs          :as sprs]
+    [game.sprdata       :as sprdata]
+    [clojure.core.async :as async    :refer [go <!! ]]
+    [game.gamekeys      :as gamekeys :refer [mk-game-keys ]]
+
+    [cloj.utils :as utils :refer [<? <??]]
 
     [cloj.math.misc :refer [cos-01 cos sin]]
     [cloj.math.vec2 :as v2 :refer [v2 v2f]]
@@ -11,7 +16,8 @@
     [cloj.protocols.render    :as rend-p :refer [clear!
                                                  box!
                                                  ortho!
-                                                 init! ]]
+                                                 init!
+                                                 clear-all!]]
     [cloj.protocols.keyboard  :as key-p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,14 +43,12 @@
       (v2/apply cos-01)
       (v2/mul (v2f 16 9)))))
 
-(defn draw-frame [dims r t]
+
+(defn draw-snake [r t]
   (do
     (let [cos-01-t (cos-01 t)
           cos-t (cos t)
-          amount 100
-          ]
-      (ortho! r dims (v2 16 9))
-      (clear! r (funny-col (/ t 10)))
+          amount 100]
       (doseq [v (range amount)]
         (let [v-norm (/ v amount)
               v-scaled (* cos-t  (*  v-norm 8))
@@ -54,6 +58,23 @@
               ]
           (box! r pos (v2 (+ 0.5  (cos-01 (* 2 v-t))) (+ 0.5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
         ))
+    ))
+
+(defn draw-frame [dims r t]
+  (do
+    (let [ ]
+      (clear-all! r [0.1 0 0.1 0])
+      (ortho! r dims (v2 16 9))
+      (clear! r (funny-col (/ t 10)))
+      (draw-snake r t)
+      )))
+
+(defn draw-spr [r t tex]
+  (let [scale 0.10
+        pos (v2 (* 20 (cos-01 (* 3 t))) 10)]
+    (do
+      (rend-p/scale! r (v2 scale scale))
+      (rend-p/spr! r tex pos))
     ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,25 +87,40 @@
    :right [:key-right :key-l]
    :fire  [:key-space] })
 
+(defn mk-game-sprs [res r]
+  (let [sprs-chan (sprs/load-sprs res sprdata/spr-data)
+        sprs (<?? sprs-chan) ]
+    (println sprs)
+    (sprs/mk-spr-printer r sprs)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
   (let [window (sys-p/get-window sys)
         gkeys (mk-game-keys (sys-p/get-keyboard sys) key-defs)
         r (sys-p/get-render-engine sys)
+        res-man (sys-p/get-resource-manager sys)
         dims (v2 640 480) ]
     (do
       (win-p/create! window dims "rogue bow")
       (init! r)
       (try
-        (loop [t 0]
-          (do
-            (gamekeys/update! gkeys)
-            (win-p/update! window)
+        (let [tex-ch (res-p/load-img! res-man :poo "test-data/blocks.png")
+              tex (<?? tex-ch)
+              spr-printer (mk-game-sprs res-man r) ]
 
-            (draw-frame dims r t)
+          (println (rend-p/img tex) )
+          (loop [t 0]
+            (do
+              (win-p/update! window)
+              (gamekeys/update! gkeys)
 
-            (when-not (gamekeys/quit? gkeys) 
-              (recur (+ t (/ 1 60))))))
+              (draw-frame dims r t)
+              (draw-spr r t tex)
+
+              ; (rend-p/spr! spr-printer :b-floor (v2 3 3))
+
+              (when-not (gamekeys/quit? gkeys) 
+                (recur (+ t (/ 1 60)))))))
 
         (catch Exception e
           (println "[Error in main] " (.getMessage e)))

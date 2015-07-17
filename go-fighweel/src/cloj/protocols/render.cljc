@@ -24,6 +24,9 @@
   (save! [this])
   (restore! [this])
   (clear! [this col])
+
+  (clear-all! [this col])
+
   (box! [this pos dims col])
   (spr! [this img pos])
   (spr-scaled! [this img pos dims]))

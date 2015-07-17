@@ -1,40 +1,32 @@
 (ns cloj.lwjgl.resources
   (:require
-    [digest :as digest]
 
-    [cloj.protocols.render    :as rend-p]
-    [cloj.protocols.resources :as res-p]
+    [cloj.protocols.render    :as rend-p :refer [IImage]]
+    [cloj.protocols.resources :as res-p  :refer [IResourceManager
+                                                 IResourceManagerInfo]]
     [cloj.protocols.loader    :as loader-p]
-    [cloj.lwjgl.protocols     :refer [IOGLTexture bind-texture!]]
 
-    [clojure-gl.texture  :refer [make-texture-low]]
+    [cloj.lwjgl.protocols     :refer [IOGLTexture]]
+    [clojure-gl.texture       :refer [make-texture-low]]
+    [clojure.core.async       :refer [chan >! <! put! go]]
+    [clojure.java.io          :refer [file output-stream input-stream]]
+    [mikera.image.core        :refer [load-image]])
 
-    [clojure.core.async :as async :refer [chan >! <! put! go]]
-    [clojure.java.io :refer [file output-stream input-stream]]
-    [mikera.image.core :as imgz :refer [load-image]] )
-  
-  (:import 
-           (org.lwjgl.opengl GL11))
-  )
-
-;; =============================================================================
-; (defn put-close! [ch v]
-;   (do
-;     (async/put! ch v)
-;     (async/close! ch)))
+  (:import (org.lwjgl.opengl GL11)))
 
 ;; =============================================================================
 ;; Async loading
 (defn mk-resource-manager [loader]
   (let [store (atom {}) ]
     (reify
-      res-p/IResourceManagerInfo
+
+      IResourceManagerInfo
       (find-img [_ id]           (println "not implemented"))
       (find-render-target [_ id] (println "not implemented"))
       (list-render-targets [_]   (println "not implemented"))
       (list-imgs [_]             (println "not implemented"))
 
-      res-p/IResourceManager
+      IResourceManager
       (clear-resources! [_] (reset! store {}))
       (create-render-target! [this id w h] (throw (Exception. "not implemented")))
       (get-loader [_] loader)
@@ -55,20 +47,27 @@
                   get-gl-texture (memoize make-texture-low)
                   width (.getWidth buffered-image)
                   height (.getHeight buffered-image)]
+
               (reify
-
                 IOGLTexture
-                (bind-texture! [this]
-                  (GL11/glBindTexture GL11/GL_TEXTURE_2D (rend-p/img this)))
 
-                rend-p/IImage
+                (bind-texture! [this]
+                  (->>
+                    (get-gl-texture buffered-image)
+                    (:tex-id)
+                    (GL11/glBindTexture GL11/GL_TEXTURE_2D)))
+
+                IImage
                 (id [_] id)
                 (dims [this] [(rend-p/width this) (rend-p/height this)])
                 (width [_] width)
                 (height [_] height )
-                (img [ this ]
-                  (get-gl-texture buffered-image))))
+                (img [ this ] buffered-image)))
 
             (catch Exception e
-              e))))))) 
+              (do
+                (println "[Error loading ] " file-name (.getMessage e)) 
+                (println  (.getMessage e)) 
+                e        )
+              )))))))
 

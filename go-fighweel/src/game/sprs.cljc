@@ -1,18 +1,20 @@
 ;; Reqs {{{
 (ns game.sprs
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require 
+    [cloj.utils          :as utils :refer [<?]]
+    [clojure.core.async  :as async :refer [go <!]])
 
   (:require
-    [cloj.resources.manager :as rman ]
-    (cloj.render.protocols  :as rp)
-    [cljs.core.async        :as async]
+    [cloj.protocols.resources :as res-p ]
+    [cloj.protocols.render :as rend-p  :refer [IRenderBackend
+                                               IImage]]
     ))
 ;; }}}
 
 (defn mk-spr
-  "Makes an IImage from  spr"
+  "Makes an IImage from an img"
   ([img id [x y w h]]
-   (reify rp/IImage
+   (reify IImage
      (id [_] id)
      (dims [_]
        [x y w h])
@@ -23,43 +25,38 @@
   ([img id x y w h]
    (mk-spr img id [x y w h])))
 
-(defn- k->file-name [k] (str "data/" (name k) ".png"))
+(defn- k->file-name [k] (str "resources/public/data/" (name k) ".png"))
 
-(defn- img-map->load-chan  [rman img-map]
-  (->> img-map
-       (map (fn [k f] (rman/load-img! rman k f)))
-       (async/merge)
-       (async/into ())))
+(defn load-sprs
 
-(defn- get-load-info [spr-keys]
-  (reduce (fn [m v]
-            (assoc m v (k->file-name v))) {} spr-keys))
+  "Takes the spr defs in sprdata.cljc
+   hoists out the image files
+   and then starts them loading asynchronously
+   and returns a chan"
+  
+  [resource-manager sprs]
 
-(defn load-sprs [resource-manager sprs]
-  (let [load-img! (partial rman/load-img! resource-manager)
+  (let [load-img! (partial res-p/load-img! resource-manager)
         spr-chan (->> (map #(load-img! % (k->file-name  %)) (keys sprs) )
                       (async/merge)
-                      (async/into ()))
-        ret-chan (async/chan) ]
-
+                      (async/into ())) ]
     (go
-      (async/put! ret-chan 
-            (->>
-              (<! spr-chan)
-              (mapcat  (fn [i]
-                         (->
-                           (fn [[sprite-id dims]]
-                             [sprite-id (mk-spr (rp/img i) sprite-id dims)])
-                           (map ((rp/id i) sprs)))))
-              (into {}))))
-    ret-chan))
+      (->>
+        (<? spr-chan)
+        (mapcat  (fn [i]
+                   (->
+                     (fn [[sprite-id dims]]
+                       [sprite-id (mk-spr (rend-p/img i) sprite-id dims)])
+                     (map ((rend-p/id i) sprs)))))
+        (into {})))))
 
 (defn mk-spr-printer [rend sprs]
+  (println sprs)
   (reify
-    rp/IRenderBackend
+    IRenderBackend
     (spr! [this img-key pos]
       (let [i-img (img-key sprs)]
-        (rp/spr! rend i-img pos)))))
+        (rend-p/spr! rend i-img pos)))))
 
 ;;; }}}
 

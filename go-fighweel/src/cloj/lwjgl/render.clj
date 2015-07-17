@@ -3,6 +3,7 @@
     [cloj.renderutils :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
+    [cloj.lwjgl.protocols     :refer [bind-texture!]]
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p])
 
@@ -31,17 +32,16 @@
   (GL11/glTexCoord2f 0 0)
   (GL11/glVertex2f x y)
 
-  (GL11/glVertex2f x (+ y h))
-  (GL11/glTexCoord2f 0 1)
-
-  (GL11/glVertex2f (+ x w) (+ y h))
-  (GL11/glTexCoord2f 1 1)
-
-  (GL11/glVertex2f (+ x w) y)
   (GL11/glTexCoord2f 1 0)
+  (GL11/glVertex2f (+ x w) y)
+
+  (GL11/glTexCoord2f 1 1)
+  (GL11/glVertex2f (+ x w) (+ y h))
+
+  (GL11/glTexCoord2f 0 1)
+  (GL11/glVertex2f x (+ y h))
+
   (GL11/glEnd))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id]
@@ -99,20 +99,28 @@
             (GL11/glScissor a b c d)
             (GL11/glMatrixMode GL11/GL_PROJECTION)
             (GL11/glLoadIdentity) 
-            (GL11/glOrtho 0 (:x canv-dims) 0 (:y canv-dims) -1 1)
+            (GL11/glOrtho 0 (:x canv-dims) (:y canv-dims) 0 -1 1)
             (GL11/glMatrixMode GL11/GL_MODELVIEW)
             (GL11/glLoadIdentity) )))
 
       (save!    [this] (GL11/glPushMatrix))
       (restore! [this] (GL11/glPopMatrix))
 
+      (clear-all! [this rgba]
+        (do
+          (GL11/glDisable GL11/GL_SCISSOR_TEST)
+          (rend-p/clear! this rgba)
+          (GL11/glEnable GL11/GL_SCISSOR_TEST)
+          this))
+
       (clear! [this [r g b a]]
         (GL11/glClearColor r g b a)
-        (GL11/glClear clear-mask))
+        (GL11/glClear clear-mask)
+        this)
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
         (GL11/glEnable GL11/GL_TEXTURE_2D)
-        (GL11/glBindTexture GL11/GL_TEXTURE_2D (:tex-id spr))
+        (bind-texture! spr)
         (draw-t-quad x y w h 1 1 1 1)  
         this)
 
@@ -121,5 +129,5 @@
         (draw-quad x y w h r g b a)
         this) 
 
-      (spr! [this spr pos]
-        (rend-p/spr-scaled! this spr pos (v2 (rend-p/width spr) (rend-p/height spr)))))))
+      (spr! [this img pos]
+        (rend-p/spr-scaled! this img pos (v2 (rend-p/width img) (rend-p/height img)))))))
