@@ -1,10 +1,7 @@
 (ns cloj.lwjgl.window
   (:require
     [cloj.math.vec2 :refer [v2]]
-    [cloj.jvm.resources       :as res]
-    [cloj.protocols.render    :as rend-p]
     [cloj.protocols.system    :refer [ISystem]]
-    [cloj.protocols.resources :as res-p]
     [cloj.protocols.window    :as window-p]
     [cloj.jvm.loader          :as loader])
 

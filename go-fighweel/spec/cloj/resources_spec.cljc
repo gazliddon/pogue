@@ -4,13 +4,17 @@
             [cloj.lwjgl.system :as sys]
 
             [cloj.protocols.resources :as res-p]
+            [cloj.protocols.window    :as win-p]
             [cloj.protocols.system    :as sys-p]
             [cloj.protocols.render    :as rend-p]
+
+            [cloj.math.vec2 :refer [v2f]]
 
             [clojure.core.async :as async :refer [timeout >! <!! <! go alts!!]]))
 
 (def test-file-name   "test-data/blocks.png")
 (def my-sys (sys/mk-system))
+(def my-window (sys-p/get-window my-sys))
 (def res-manager (sys-p/get-resource-manager my-sys))
 
 (defmacro <? [ch]
@@ -29,7 +33,17 @@
       "Timed out"
       r)))
 
+
+(def the-img (atom nil))
+
 (describe "async image loading tests"
+
+  (before-all
+    (win-p/create! my-window (v2f 100 100) "test window"))
+
+  (after-all
+    (win-p/destroy! my-window))
+
   (with-all
     the-img (->>
               test-file-name

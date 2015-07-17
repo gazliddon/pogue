@@ -1,24 +1,31 @@
-(ns cloj.jvm.resources
+(ns cloj.lwjgl.resources
   (:require
     [digest :as digest]
 
     [cloj.protocols.render    :as rend-p]
     [cloj.protocols.resources :as res-p]
     [cloj.protocols.loader    :as loader-p]
+    [cloj.lwjgl.protocols     :refer [IOGLTexture bind-texture!]]
+
+    [clojure-gl.texture  :refer [make-texture-low]]
 
     [clojure.core.async :as async :refer [chan >! <! put! go]]
     [clojure.java.io :refer [file output-stream input-stream]]
-    [mikera.image.core :as imgz :refer [load-image]] ))
+    [mikera.image.core :as imgz :refer [load-image]] )
+  
+  (:import 
+           (org.lwjgl.opengl GL11))
+  )
 
 ;; =============================================================================
 (defn put-close! [ch v]
   (do
     (async/put! ch v)
     (async/close! ch)))
+ 
 
 ;; =============================================================================
 ;; Async loading
-
 (defn mk-resource-manager [loader]
   (let [store (atom {})
         load-async! (fn [fname] (loader-p/load-async! loader fname))
@@ -40,20 +47,22 @@
         (go
           (try
             (let [buffered-image (load-image file-name)
-                  texture-in-gl (atom nil)]
+                  get-gl-texture (memoize make-texture-low)
+                  width (.getWidth buffered-image)
+                  height (.getHeight buffered-image)]
               (reify
+
+                IOGLTexture
+                (bind-texture! [this]
+                  (GL11/glBindTexture GL11/GL_TEXTURE_2D (rend-p/img this)))
+
                 rend-p/IImage
                 (id [_] id)
-
                 (dims [this] [(rend-p/width this) (rend-p/height this)])
-
-                (width [_] (.getWidth buffered-image))
-
-                (height [_](.getHeight buffered-image) )
-
+                (width [_] width)
+                (height [_] height )
                 (img [ this ]
-                  buffered-image
-                  )))
+                  (get-gl-texture buffered-image))))
 
             (catch Exception e
               e))))))) 

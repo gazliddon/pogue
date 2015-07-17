@@ -1,7 +1,6 @@
 (ns cloj.lwjgl.render
   (:require 
     [cloj.renderutils :refer [get-viewport]]
-
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
     [cloj.protocols.render    :as rend-p]
@@ -42,6 +41,8 @@
   (GL11/glTexCoord2f 1 0)
   (GL11/glEnd))
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id]
   (let [dims (atom (v2 100 100))
@@ -81,7 +82,6 @@
       (img    [_] nil )
 
       rend-p/IRenderBackend
-
       (init! [_]
         (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))
         (GL11/glClearColor 0.0 0.0 0.0 0.0)

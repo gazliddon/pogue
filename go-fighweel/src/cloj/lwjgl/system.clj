@@ -1,6 +1,6 @@
 (ns cloj.lwjgl.system
   (:require
-    [cloj.jvm.resources       :refer [mk-resource-manager]]
+    [cloj.lwjgl.resources       :refer [mk-resource-manager]]
 
     [cloj.math.vec2 :as vec2 :refer [v2]]
 
