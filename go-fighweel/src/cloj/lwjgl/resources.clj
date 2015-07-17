@@ -18,19 +18,15 @@
   )
 
 ;; =============================================================================
-(defn put-close! [ch v]
-  (do
-    (async/put! ch v)
-    (async/close! ch)))
- 
+; (defn put-close! [ch v]
+;   (do
+;     (async/put! ch v)
+;     (async/close! ch)))
 
 ;; =============================================================================
 ;; Async loading
 (defn mk-resource-manager [loader]
-  (let [store (atom {})
-        load-async! (fn [fname] (loader-p/load-async! loader fname))
-        load-blocking! (fn [fname] (loader-p/load-blocking! loader fname)) ]
-
+  (let [store (atom {}) ]
     (reify
       res-p/IResourceManagerInfo
       (find-img [_ id]           (println "not implemented"))
@@ -45,6 +41,15 @@
 
       (load-img! [this id file-name]
         (go
+          (comment
+            "Async loads img file but converts to OGL texture
+             non async (uses memoize) to prevent errors with
+             creating a gl texture on a thread not bound to an
+             opengl context.
+             
+             Should be fine but if stuttery I can fiddle around
+             with lwjgl to get a context for the loader thread")
+
           (try
             (let [buffered-image (load-image file-name)
                   get-gl-texture (memoize make-texture-low)
