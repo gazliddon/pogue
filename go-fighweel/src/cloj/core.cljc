@@ -105,24 +105,25 @@
       (<??)
       (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
 
-(defn draw-sprs [r spr-printer t]
-  (rend-p/scale! r (v2 0.1 0.1))
-  (rend-p/spr! spr-printer :b-floor (v2 1 1)))
+(defn draw-sprs [r spr-printer pos t]
+  (rend-p/scale! r (v2 0.2 0.2))
+  (rend-p/spr! spr-printer :b-floor pos))
 
 ;; Some stuff to control things on screen
 (def func->vel
-  [[right? (v2  1  0)]
-   [left?  (v2 -1  0)]
-   [up?    (v2  0 -1)]
-   [down?  (v2  0  1)] ])
+  [[right?  (v2  1  0)]
+   [left?   (v2 -1  0)]
+   [up?     (v2  0 -1)]
+   [down?   (v2  0  1)] ])
 
-(defn new-pos [keyb pos]
+
+(defn new-pos [keyb pos scale]
   (->>
     ;; filter only pressed keys
     (filter (fn [[func _]]
               (func keyb)) func->vel)
     ;; strip out the func and leave the vel
-    (map (fn [_ v] v))
+    (map (fn [[_ v]] (v2/mul scale v)))
     ;; reduce add them all together
     (reduce v2/add pos)))
 
@@ -150,11 +151,11 @@
               (gamekeys/update! gkeys)
 
               (draw-frame dims r t)
-              (draw-sprs r spr-printer t)
+              (draw-sprs r spr-printer pos t)
 
               (when-not (quit? gkeys)
                 (recur (+ t (/ 1 60))
-                       (new-pos gkeys pos))))))
+                       (new-pos gkeys pos (v2 0.5 0.5)))))))
 
         (catch Exception e
           (println "[Error in main] " (.getMessage e)))
