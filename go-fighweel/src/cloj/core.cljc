@@ -90,8 +90,15 @@
 (defn mk-game-sprs [res r]
   (let [sprs-chan (sprs/load-sprs res sprdata/spr-data)
         sprs (<?? sprs-chan) ]
-    (println sprs)
     (sprs/mk-spr-printer r sprs)))
+
+(defn spr-maker [res-man r]
+  (fn [file-name]
+    (->>
+      file-name
+      (res-p/load-img! res-man "test-data/blocks.png") 
+      (<??)
+      (#(rend-p/make-spr! r % (rend-p/dims %))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
@@ -104,8 +111,8 @@
       (win-p/create! window dims "rogue bow")
       (init! r)
       (try
-        (let [tex-ch (res-p/load-img! res-man :poo "test-data/blocks.png")
-              tex (<?? tex-ch)
+        (let [tex-ch (res-p/load-img! res-man "test-data/blocks.png")
+              tex (rend-p/make ) (<?? tex-ch)
               spr-printer (mk-game-sprs res-man r) ]
 
           (println (rend-p/img tex) )

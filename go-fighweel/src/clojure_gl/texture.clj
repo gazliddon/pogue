@@ -58,7 +58,7 @@
   (if-let [resource (resource-as-stream ref)]
     (ImageIO/read (BufferedInputStream. resource))))
 
-(defn make-texture-low [^BufferedImage image ]
+(defn make-texture-low! [^BufferedImage image ]
   (let [texid (create-texture-id)
         width (greater-power-of-two (.getWidth image))
         height (greater-power-of-two (.getHeight image))
@@ -80,7 +80,7 @@
      :has-alpha (has-alpha image) }))
 
 (defn make-texture [^BufferedImage image ]
-  (:tex-id (make-texture-low image)))
+  (:tex-id (make-texture-low! image)))
 
 (defn load-texture [resource]
   (if-let [^BufferedImage image (load-image resource)]

@@ -1,6 +1,7 @@
 ;; Reqs {{{
 (ns game.sprs
   (:require 
+    [clojure.reflect :refer [reflect]]
     [cloj.utils          :as utils :refer [<?]]
     [clojure.core.async  :as async :refer [go <!]])
 
@@ -46,17 +47,16 @@
         (mapcat  (fn [i]
                    (->
                      (fn [[sprite-id dims]]
-                       [sprite-id (mk-spr (rend-p/img i) sprite-id dims)])
+                       [sprite-id (mk-spr i sprite-id dims)])
                      (map ((rend-p/id i) sprs)))))
         (into {})))))
 
 (defn mk-spr-printer [rend sprs]
-  (println sprs)
   (reify
     IRenderBackend
     (spr! [this img-key pos]
-      (let [i-img (img-key sprs)]
-        (rend-p/spr! rend i-img pos)))))
+      (let [img (img-key sprs)]
+        (rend-p/spr! rend img pos)))))
 
 ;;; }}}
 

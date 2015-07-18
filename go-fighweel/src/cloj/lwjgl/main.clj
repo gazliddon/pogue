@@ -1,5 +1,4 @@
 (ns cloj.lwjgl.main
-
   (:require
     [cloj.lwjgl.system :as lwjgl-sys]
     [cloj.protocols.system :as sys]
@@ -16,4 +15,8 @@
         (println "Error: " (.getMessage e)))))
 
   "launched")
+
+(defn reload []
+  (require 'cloj.lwjgl.main :reload-all)
+  (tmain))
 

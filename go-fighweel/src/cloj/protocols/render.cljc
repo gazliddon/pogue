@@ -19,6 +19,9 @@
   (set-window-size! [this dims]))
 
 (defprotocol IRenderBackend
+
+  (make-spr! [this id img [x y w h]])
+
   (ortho! [this window-dims canvas-dims])
   (init! [this])
   (save! [this])
