@@ -47,7 +47,7 @@
   (with-all
     the-img (->>
               test-file-name
-              (res-p/load-img! res-manager :poo)
+              (res-p/load-img! res-manager)
               (async-op-as-sync)))
 
   (it "should satisfie the IImage protocol"

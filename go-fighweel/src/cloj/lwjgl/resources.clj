@@ -10,14 +10,14 @@
     [mikera.image.core        :refer [load-image]]))
 
 (defn- bufffer-img->iimage [buffered-img id]
-  (let [ [w h] [(.getWidth img) (.getHeight img)] ]
+  (let [ [w h] [(.getWidth buffered-img) (.getHeight buffered-img)] ]
     (reify
       IImage
       (id [_] id)
       (dims [_] [0 0 w h])
       (width [_] w)
       (height [_] h)
-      (img [_] buffered-image))))
+      (img [_] buffered-img))))
 
 ;; =============================================================================
 (defn mk-resource-manager [loader]
@@ -31,17 +31,10 @@
       (list-imgs [_]             (println "not implemented"))
 
       IResourceManager
-      (clear-resources! [_]
-        (reset! store {}))
-
-      (create-render-target! [this id w h]
-        (throw (Exception. "not implemented")))
-
-      (get-loader [_] loader)
-
-      (load-img!
-        "Async loads img file"
-        [this file-name]
+      (clear-resources! [this] (reset! store {}))
+      (create-render-target! [this id w h] (throw (Exception. "not implemented")))
+      (get-loader [this] loader)
+      (load-img! [this file-name]
         (go
           (try
             (->
@@ -51,6 +44,9 @@
             (catch Exception e
               (do
                 (println "[Error loading ] " file-name (.getMessage e)) 
-                (println  (.getMessage e)) 
-                e))))))))
+                e)))))
+      )))
+
+
+
 

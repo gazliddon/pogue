@@ -78,7 +78,6 @@
     ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def key-defs
   {:quit  [:key-esc :key-q]
    :up    [:key-up :key-k] 
@@ -96,9 +95,9 @@
   (fn [file-name]
     (->>
       file-name
-      (res-p/load-img! res-man "test-data/blocks.png") 
+      (res-p/load-img! res-man) 
       (<??)
-      (#(rend-p/make-spr! r % (rend-p/dims %))))))
+      (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
@@ -106,13 +105,13 @@
         gkeys (mk-game-keys (sys-p/get-keyboard sys) key-defs)
         r (sys-p/get-render-engine sys)
         res-man (sys-p/get-resource-manager sys)
-        dims (v2 640 480) ]
+        dims (v2 640 480)
+        make-spr! (spr-maker res-man r) ]
     (do
       (win-p/create! window dims "rogue bow")
       (init! r)
       (try
-        (let [tex-ch (res-p/load-img! res-man "test-data/blocks.png")
-              tex (rend-p/make ) (<?? tex-ch)
+        (let [tex (make-spr! "test-data/blocks.png")
               spr-printer (mk-game-sprs res-man r) ]
 
           (println (rend-p/img tex) )
