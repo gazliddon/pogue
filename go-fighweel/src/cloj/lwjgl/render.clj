@@ -3,7 +3,7 @@
     [cloj.renderutils :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
-    [cloj.lwjgl.protocols     :refer [bind-texture! IOGLTexture]]
+    [cloj.lwjgl.protocols     :refer [bind-texture! IOGLTexture get-uv-coords]]
     [clojure-gl.texture       :refer [make-texture-low!]]
     [cloj.protocols.render    :as rend-p :refer [IImage]]
     [cloj.protocols.resources :as res-p])
@@ -29,30 +29,37 @@
   (GL11/glVertex2f (+ x w) y)
   (GL11/glEnd))
 
-(defn draw-t-quad [x y w h r g b a]
+(defn draw-t-quad [x y w h u v u-w v-h ]
   (GL11/glBegin GL11/GL_QUADS)
-  (GL11/glColor4f r g b a)
+  (GL11/glColor4f 1 1 1 1)
 
-  (GL11/glTexCoord2f 0 0)
+  (GL11/glTexCoord2f u v)
   (GL11/glVertex2f x y)
 
-  (GL11/glTexCoord2f 1 0)
+  (GL11/glTexCoord2f (+ u u-w) v)
   (GL11/glVertex2f (+ x w) y)
 
-  (GL11/glTexCoord2f 1 1)
+  (GL11/glTexCoord2f (+ u u-w) (+ v v-h))
   (GL11/glVertex2f (+ x w) (+ y h))
 
-  (GL11/glTexCoord2f 0 1)
+  (GL11/glTexCoord2f u (+ v v-h))
   (GL11/glVertex2f x (+ y h))
 
   (GL11/glEnd))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn- my-make-spr! [id img [x y w h]]
-  (let [ get-gl-texture (memoize make-texture-low!)  ]
+  (let [get-gl-texture (memoize make-texture-low!)
+        [_ _ i-w i-h] (rend-p/dims img)
+        norm-x #(float ( * (/ 1 i-w ) %))
+        norm-y #(float ( * (/ 1 i-h ) %))
+        uv-coords [(norm-x x) (norm-y y) (norm-x w) (norm-y h)] ]
     (try
       (reify
         IOGLTexture
+
+        (get-uv-coords [ this ] uv-coords)
+
         (bind-texture! [this]
               (->>
                 (get-gl-texture (rend-p/img img))
@@ -120,8 +127,7 @@
       rend-p/IRenderBackend
 
       (make-spr! [this id img dims]
-        (my-make-spr! id img dims)
-        this)
+        (my-make-spr! id img dims))
 
       (init! [this]
         (init-gl!)
@@ -160,10 +166,11 @@
         this)
 
       (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
-        (GL11/glEnable GL11/GL_TEXTURE_2D)
-        (bind-texture! spr)
-        (draw-t-quad x y w h 1 1 1 1)  
-        this)
+        (let [uv (get-uv-coords spr)]
+          (GL11/glEnable GL11/GL_TEXTURE_2D)
+          (bind-texture! spr)
+          (apply draw-t-quad x y w h uv)
+          this))
 
       (box! [this {x :x y :y} {w :x h :y} [r g b a]]
         (GL11/glDisable GL11/GL_TEXTURE_2D)

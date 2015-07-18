@@ -12,20 +12,6 @@
     ))
 ;; }}}
 
-(defn mk-spr
-  "Makes an IImage from an img"
-  ([img id [x y w h]]
-   (reify IImage
-     (id [_] id)
-     (dims [_]
-       [x y w h])
-     (width [_] w)
-     (height [_] h)
-     (img [_] img)))
-  
-  ([img id x y w h]
-   (mk-spr img id [x y w h])))
-
 (defn- k->file-name [k] (str "resources/public/data/" (name k) ".png"))
 
 (defn- get-img-file-names [sprs]
@@ -44,9 +30,10 @@
    and then starts them loading asynchronously
    and returns a chan"
 
-  [resource-manager sprs]
+  [resource-manager renderer sprs]
 
-  (let [load-img! (partial res-p/load-img! resource-manager)
+  (let [make-spr! (partial rend-p/make-spr! renderer)
+        load-img! (partial res-p/load-img! resource-manager)
         spr-chan (->> (get-img-file-names sprs) 
                       (map load-img!)
                       (async/merge)
@@ -58,7 +45,7 @@
         (mapcat  (fn [ [kork img] ]
                    (->
                      (fn [[sprite-id dims]]
-                       [sprite-id (mk-spr img sprite-id dims)])
+                       [sprite-id (make-spr! sprite-id img dims)])
                      (map (kork sprs)))))
         (into {})))))
 

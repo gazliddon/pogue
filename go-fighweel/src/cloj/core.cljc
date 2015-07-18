@@ -4,7 +4,13 @@
     [game.sprs          :as sprs]
     [game.sprdata       :as sprdata]
     [clojure.core.async :as async    :refer [go <!! ]]
-    [game.gamekeys      :as gamekeys :refer [mk-game-keys ]]
+    [game.gamekeys      :as gamekeys :refer [mk-game-keys
+                                             up?
+                                             down?
+                                             left?
+                                             right?
+                                             quit?
+                                             ]]
 
     [cloj.utils :as utils :refer [<? <??]]
 
@@ -70,12 +76,12 @@
       )))
 
 (defn draw-spr [r t tex]
-  (let [scale 0.10
-        pos (v2 (* 20 (cos-01 (* 3 t))) 10)]
+  (let [scale 0.02
+        base (v2 100 100)
+        pos (v2 (* 40 (cos-01 (* 4 t))) (* 40 (sin (* 4 t))))]
     (do
       (rend-p/scale! r (v2 scale scale))
-      (rend-p/spr! r tex pos))
-    ))
+      (rend-p/spr! r tex (v2/add base  pos)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def key-defs
@@ -87,7 +93,7 @@
    :fire  [:key-space] })
 
 (defn mk-game-sprs [res r]
-  (let [sprs-chan (sprs/load-sprs res sprdata/spr-data)
+  (let [sprs-chan (sprs/load-sprs res r sprdata/spr-data)
         sprs (<?? sprs-chan) ]
     (sprs/mk-spr-printer r sprs)))
 
@@ -99,32 +105,36 @@
       (<??)
       (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
 
+(defn draw-sprs [r spr-printer t]
+  (rend-p/scale! r (v2 0.1 0.1))
+  (rend-p/spr! spr-printer :b-floor (v2 1 1)))
 
-(defn small-test [ window res-man r]
-  (do
-    (try
-      (win-p/create! window (v2 100 100) "rogue bow")
-      (do
-        (println "made it!")
-        (mk-game-sprs res-man r))
+;; Some stuff to control things on screen
+(def func->vel
+  [[right? (v2  1  0)]
+   [left?  (v2 -1  0)]
+   [up?    (v2  0 -1)]
+   [down?  (v2  0  1)] ])
 
-      (catch Exception e
-        (println "Excepted")
-        )
-
-      (finally
-        (win-p/destroy! window )))))
+(defn new-pos [keyb pos]
+  (->>
+    ;; filter only pressed keys
+    (filter (fn [[func _]]
+              (func keyb)) func->vel)
+    ;; strip out the func and leave the vel
+    (map (fn [_ v] v))
+    ;; reduce add them all together
+    (reduce v2/add pos)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
-  (let [window (sys-p/get-window sys)
-        gkeys (mk-game-keys (sys-p/get-keyboard sys) key-defs)
-        r (sys-p/get-render-engine sys)
-        res-man (sys-p/get-resource-manager sys)
-        dims (v2 640 480)
+  (let [window    (sys-p/get-window sys)
+        gkeys     (mk-game-keys (sys-p/get-keyboard sys) key-defs)
+        r         (sys-p/get-render-engine sys)
+        res-man   (sys-p/get-resource-manager sys)
+        dims      (v2 640 480)
         make-spr! (spr-maker res-man r) ]
 
-    (comment small-test window res-man r)
     (do
       (win-p/create! window dims "rogue bow")
       (init! r)
@@ -132,20 +142,19 @@
         (let [tex (make-spr! "test-data/blocks.png")
               spr-printer (mk-game-sprs res-man r)
               ]
-
           ; (println (rend-p/img tex) )
-          (loop [t 0]
+          (loop [t 0
+                 pos (v2 3 3)]
             (do
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
               (draw-frame dims r t)
-              ; (draw-spr r t tex)
+              (draw-sprs r spr-printer t)
 
-              ; (rend-p/spr! spr-printer :b-floor (v2 3 3))
-
-              (when-not (gamekeys/quit? gkeys) 
-                (recur (+ t (/ 1 60)))))))
+              (when-not (quit? gkeys)
+                (recur (+ t (/ 1 60))
+                       (new-pos gkeys pos))))))
 
         (catch Exception e
           (println "[Error in main] " (.getMessage e)))
