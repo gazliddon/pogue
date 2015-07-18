@@ -28,27 +28,38 @@
 
 (defn- k->file-name [k] (str "resources/public/data/" (name k) ".png"))
 
+(defn- get-img-file-names [sprs]
+  (map k->file-name (keys sprs))) 
+
+
+(defn ->>dump [txt v]
+  (println txt " " v)
+  v)
+
+
 (defn load-sprs
 
   "Takes the spr defs in sprdata.cljc
    hoists out the image files
    and then starts them loading asynchronously
    and returns a chan"
-  
+
   [resource-manager sprs]
 
   (let [load-img! (partial res-p/load-img! resource-manager)
-        spr-chan (->> (map #(load-img! % (k->file-name  %)) (keys sprs) )
+        spr-chan (->> (get-img-file-names sprs) 
+                      (map load-img!)
                       (async/merge)
                       (async/into ())) ]
     (go
       (->>
         (<? spr-chan)
-        (mapcat  (fn [i]
+        (map vector (keys sprs))
+        (mapcat  (fn [ [kork img] ]
                    (->
                      (fn [[sprite-id dims]]
-                       [sprite-id (mk-spr i sprite-id dims)])
-                     (map ((rend-p/id i) sprs)))))
+                       [sprite-id (mk-spr img sprite-id dims)])
+                     (map (kork sprs)))))
         (into {})))))
 
 (defn mk-spr-printer [rend sprs]

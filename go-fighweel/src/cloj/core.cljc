@@ -48,7 +48,7 @@
   (do
     (let [cos-01-t (cos-01 t)
           cos-t (cos t)
-          amount 100]
+          amount 300]
       (doseq [v (range amount)]
         (let [v-norm (/ v amount)
               v-scaled (* cos-t  (*  v-norm 8))
@@ -99,6 +99,22 @@
       (<??)
       (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
 
+
+(defn small-test [ window res-man r]
+  (do
+    (try
+      (win-p/create! window (v2 100 100) "rogue bow")
+      (do
+        (println "made it!")
+        (mk-game-sprs res-man r))
+
+      (catch Exception e
+        (println "Excepted")
+        )
+
+      (finally
+        (win-p/destroy! window )))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn main [sys]
   (let [window (sys-p/get-window sys)
@@ -107,21 +123,24 @@
         res-man (sys-p/get-resource-manager sys)
         dims (v2 640 480)
         make-spr! (spr-maker res-man r) ]
+
+    (comment small-test window res-man r)
     (do
       (win-p/create! window dims "rogue bow")
       (init! r)
       (try
         (let [tex (make-spr! "test-data/blocks.png")
-              spr-printer (mk-game-sprs res-man r) ]
+              spr-printer (mk-game-sprs res-man r)
+              ]
 
-          (println (rend-p/img tex) )
+          ; (println (rend-p/img tex) )
           (loop [t 0]
             (do
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
               (draw-frame dims r t)
-              (draw-spr r t tex)
+              ; (draw-spr r t tex)
 
               ; (rend-p/spr! spr-printer :b-floor (v2 3 3))
 
@@ -132,5 +151,6 @@
           (println "[Error in main] " (.getMessage e)))
 
         (finally
-          (win-p/destroy! window ))))))
+          (win-p/destroy! window ))
+        ))))
 
