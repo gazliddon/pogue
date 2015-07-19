@@ -11,23 +11,25 @@
   ([x y] (mapv #(* 32 %) [x y 1 1])))
 
 (def spr-data
-  {:blocks {:b-wood-0       (spr16 0)
-            :b-wood-1       (spr16 1)
-            :b-wall         (spr16 2)
-            :b-floor        (spr16 3)
-            :b4             (spr16 4)
-            :b5             (spr16 5)
-            :b6             (spr16 6)
-            :b-blank        (spr16 7)
+  {
 
-            :b-purple       (spr16 8)
-            }
+   ; :blocks {:b-wood-0       (spr16 0)
+   ;          :b-wood-1       (spr16 1)
+   ;          :b-wall         (spr16 2)
+   ;          :b-floor        (spr16 3)
+   ;          :b4             (spr16 4)
+   ;          :b5             (spr16 5)
+   ;          :b6             (spr16 6)
+   ;          :b-blank        (spr16 7)
 
-   :items  {:green-pepper (spr16 3)
-            :aubergine    (spr16 4)
-            :carrot       (spr16 5)
-            :onion        (spr16 6)
-            :wacdonalds   (spr16 0 2)}
+   ;          :b-purple       (spr16 8)
+   ;          }
+
+   ; :items  {:green-pepper (spr16 3)
+   ;          :aubergine    (spr16 4)
+   ;          :carrot       (spr16 5)
+   ;          :onion        (spr16 6)
+   ;          :wacdonalds   (spr16 0 2)}
 
    :bubbob {:bub0 (spr32 0 0)
             :bub1 (spr32 1 0)

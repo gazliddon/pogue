@@ -22,6 +22,8 @@
     [cloj.protocols.render    :as rend-p :refer [clear!
                                                  box!
                                                  ortho!
+                                                 scale!
+                                                 spr!
                                                  init!
                                                  clear-all!]]
     [cloj.protocols.keyboard  :as key-p]))
@@ -47,10 +49,9 @@
         (v2f t t)
         scale)
       (v2/apply cos-01)
-      (v2/mul (v2f 16 9)))))
+      (v2/mul (v2f 320 240)))))
 
-
-(defn draw-snake [r t]
+(defn draw-snake [r t f]
   (do
     (let [cos-01-t (cos-01 t)
           cos-t (cos t)
@@ -62,26 +63,29 @@
               pos (f-pos (+ t v-scaled (cos t)))
               col [(cos-01 (+ (* t 20) (/ v 100))) (cos-01 (* v 0.10)) (cos-01 (+ t v)) 1]
               ]
-          (box! r pos (v2 (+ 0.5  (cos-01 (* 2 v-t))) (+ 0.5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
+          (f pos (v2 (+ 5  (cos-01 (* 2 v-t))) (+ 5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
         ))
     ))
 
-(defn draw-frame [dims r t]
+
+
+(defn draw-frame [dims r spr-printer t]
+
   (do
     (let [ ]
       (clear-all! r [0.1 0 0.1 0])
-      (ortho! r dims (v2 16 9))
+      (ortho! r dims (v2 320 240))
       (clear! r (funny-col (/ t 10)))
-      (draw-snake r t)
+      (draw-snake r t
+                  (fn [pos dims col]
+                    (box! r pos dims col))
+                  )
+      (draw-snake r t
+                  (fn [pos dims col]
+                    (spr! spr-printer :bub0 pos))
+                  )
       )))
 
-(defn draw-spr [r t tex]
-  (let [scale 0.02
-        base (v2 100 100)
-        pos (v2 (* 40 (cos-01 (* 4 t))) (* 40 (sin (* 4 t))))]
-    (do
-      (rend-p/scale! r (v2 scale scale))
-      (rend-p/spr! r tex (v2/add base  pos)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def key-defs
@@ -105,9 +109,13 @@
       (<??)
       (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
 
+(defn get-frm [anim t]
+  (let [anim-fn (anim sprdata/anim-data)]
+    (anim-fn t)))
+
 (defn draw-sprs [r spr-printer pos t]
-  (rend-p/scale! r (v2 0.2 0.2))
-  (rend-p/spr! spr-printer :b-floor pos))
+  (let [frm (get-frm :bub-stand t) ]
+    (rend-p/spr! spr-printer frm pos)))
 
 ;; Some stuff to control things on screen
 (def func->vel
@@ -115,7 +123,6 @@
    [left?   (v2 -1  0)]
    [up?     (v2  0 -1)]
    [down?   (v2  0  1)] ])
-
 
 (defn new-pos [keyb pos scale]
   (->>
@@ -150,7 +157,7 @@
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
-              (draw-frame dims r t)
+              (draw-frame dims r spr-printer t)
               (draw-sprs r spr-printer pos t)
 
               (when-not (quit? gkeys)

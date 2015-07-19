@@ -62,6 +62,8 @@
   (let [texid (create-texture-id)
         width (greater-power-of-two (.getWidth image))
         height (greater-power-of-two (.getHeight image))
+        width (greater-power-of-two (.getWidth image))
+        height (greater-power-of-two (.getHeight image))
         bytes (convert-texture-data image)]
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texid)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
@@ -75,9 +77,14 @@
                        GL11/GL_UNSIGNED_BYTE
                        bytes)
     {:tex-id texid
-     :width  (.getWidth image)
-     :height (.getHeight image)
-     :has-alpha (has-alpha image) }))
+     :dims [width height]
+     :original-dims [(.getWidth image) (.getHeight image)]
+     :width  width
+     :height  height
+     :original-width (.getWidth image)
+     :original-height (.getHeight image)
+     :has-alpha (has-alpha image)
+     }))
 
 (defn make-texture [^BufferedImage image ]
   (:tex-id (make-texture-low! image)))

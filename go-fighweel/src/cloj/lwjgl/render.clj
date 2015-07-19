@@ -47,30 +47,53 @@
 
   (GL11/glEnd))
 
+
+(defn get-uv-bodge [id x y w h]
+  (let [x-pix-sz (/ 1 320)
+        y-pix-sz (/ 1 240)]
+
+    (when (= id :b-wood-0)
+      (println [x y w h])
+      )
+
+    (mapv float 
+
+          (if (= id :b-wood-0)
+            [0 0 (* w x-pix-sz) (* h y-pix-sz)]
+            [x y w h]
+            )))
+  )
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- get-uv-cords [[t-w t-h] [x y w h]]
+  (let [x-scale (/ 1 t-w)
+        y-scale (/ 1 t-h)]
+  [(* x-scale x)
+   (* y-scale y)
+   (* x-scale w)
+   (* y-scale h) ]) )
+
 (defn- my-make-spr! [id img [x y w h]]
-  (let [get-gl-texture (memoize make-texture-low!)
-        [_ _ i-w i-h] (rend-p/dims img)
-        norm-x #(float ( * (/ 1 i-w ) %))
-        norm-y #(float ( * (/ 1 i-h ) %))
-        uv-coords [(norm-x x) (norm-y y) (norm-x w) (norm-y h)] ]
+  (let [get-gl-texture (memoize make-texture-low!) ]
     (try
       (reify
         IOGLTexture
-
-        (get-uv-coords [ this ] uv-coords)
+        (get-uv-coords [ this ]
+          (get-uv-cords (:dims (get-gl-texture (rend-p/img img)) ) [x y w h]))
 
         (bind-texture! [this]
-              (->>
-                (get-gl-texture (rend-p/img img))
-                (:tex-id)
-                (GL11/glBindTexture GL11/GL_TEXTURE_2D)))
+          (->>
+            (get-gl-texture (rend-p/img img))
+            (:tex-id)
+            (GL11/glBindTexture GL11/GL_TEXTURE_2D )))
+
         IImage
-        (id [_] id)
-        (dims [this] [x y w h])
-        (width [_] w)
+        (id     [_] id)
+        (dims   [this] [x y w h])
+        (width  [_] w)
         (height [_] h )
-        (img [ this ] img))
+        (img    [ this ] img))
       (catch Exception e
         (do
           (println "[Error making textuer ] " (.getMessage e)))))))
@@ -84,7 +107,7 @@
   (GL11/glDisable GL11/GL_DEPTH_TEST)
   (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
-  (GL11/glDisable GL11/GL_BLEND)  )
+  (GL11/glEnable GL11/GL_BLEND)  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-renderer [canvas-id]
