@@ -3,7 +3,10 @@
   (:require 
     [clojure.reflect :refer [reflect]]
     [cloj.utils          :as utils :refer [<?]]
-    [clojure.core.async  :as async :refer [go <!]])
+    [clojure.core.async  :as async :refer [go <!]]
+
+    [game.sprdata :refer [spr-data]]
+    )
 
   (:require
     [cloj.protocols.resources :as res-p ]
@@ -12,16 +15,17 @@
     ))
 ;; }}}
 
-(defn- k->file-name [k] (str "resources/public/data/" (name k) ".png"))
+(defn ->>dump [txt v] (println txt " " v) v)
+(def resource-base-dir "resources/public/data/")
+(defn- k->file-name [k] (str resource-base-dir (name k) ".png"))
 
-(defn- get-img-file-names [sprs]
-  (map k->file-name (keys sprs))) 
-
-
-(defn ->>dump [txt v]
-  (println txt " " v)
-  v)
-
+(defn load-image-with-id! [res id]
+  (let [fname (k->file-name id)]
+    (go
+      (->>
+        (res-p/load-img! res fname)
+        (<!)
+        (assoc {:id id} :img )))))
 
 (defn load-sprs
 
@@ -34,15 +38,16 @@
 
   (let [make-spr! (partial rend-p/make-spr! renderer)
         load-img! (partial res-p/load-img! resource-manager)
-        spr-chan (->> (get-img-file-names sprs) 
-                      (map load-img!)
+        spr-chan (->> (keys sprs) 
+                      (map
+                        #(load-image-with-id! resource-manager %))
                       (async/merge)
                       (async/into ())) ]
     (go
       (->>
         (<? spr-chan)
-        (map vector (keys sprs))
-        (mapcat  (fn [ [kork img] ]
+        (->>dump "chans")
+        (mapcat  (fn [ {kork :id img :img} ]
                    (->
                      (fn [[sprite-id dims]]
                        [sprite-id (make-spr! sprite-id img dims)])

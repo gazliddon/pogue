@@ -51,11 +51,10 @@
       (v2/apply cos-01)
       (v2/mul (v2f 320 240)))))
 
-(defn draw-snake [r t f]
+(defn draw-snake [r t amount f]
   (do
     (let [cos-01-t (cos-01 t)
-          cos-t (cos t)
-          amount 300]
+          cos-t (cos t) ]
       (doseq [v (range amount)]
         (let [v-norm (/ v amount)
               v-scaled (* cos-t  (*  v-norm 8))
@@ -76,13 +75,13 @@
       (clear-all! r [0.1 0 0.1 0])
       (ortho! r dims (v2 320 240))
       (clear! r (funny-col (/ t 10)))
-      (draw-snake r t
+      (draw-snake r t 300
                   (fn [pos dims col]
                     (box! r pos dims col))
                   )
-      (draw-snake r t
+      (draw-snake r t 30
                   (fn [pos dims col]
-                    (spr! spr-printer :bub0 pos))
+                    (spr! spr-printer :green-pepper  pos))
                   )
       )))
 
