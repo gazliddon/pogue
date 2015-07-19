@@ -1,5 +1,10 @@
 (ns cloj.lwjgl.protocols)
 
-(defprotocol IOGLTexture
+(defprotocol IGLFBO
+  (bind-fbo! [_])
+  (has-z? [_]))
+
+(defprotocol IGLTexture
   (get-uv-coords [_])
   (bind-texture! [_]))
+

@@ -3,7 +3,7 @@
     [cloj.renderutils :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
-    [cloj.lwjgl.protocols     :refer [bind-texture! IOGLTexture get-uv-coords]]
+    [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords]]
     [clojure-gl.texture       :refer [make-texture-low!]]
     [cloj.protocols.render    :as rend-p :refer [IImage]]
     [cloj.protocols.resources :as res-p])
@@ -60,7 +60,7 @@
   (let [get-gl-texture (memoize make-texture-low!) ]
     (try
       (reify
-        IOGLTexture
+        IGLTexture
         (get-uv-coords [ this ]
           (get-uv-cords (:dims (get-gl-texture (rend-p/img img)) ) [x y w h]))
 
