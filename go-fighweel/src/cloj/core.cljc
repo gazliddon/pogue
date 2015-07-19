@@ -23,6 +23,7 @@
                                                  box!
                                                  ortho!
                                                  scale!
+                                                 activate!
                                                  spr!
                                                  init!
                                                  clear-all!]]
@@ -76,32 +77,31 @@
         ))
     ))
 
+(defn draw-frame
+  ([r win-dims canv-dims sprs t]
+   (let [spr-printer (sprs/mk-spr-printer r sprs)]
+     (do
+       (clear-all! r [0.1 0 0.1 0])
+       (ortho! r win-dims canv-dims)
+       (clear! r (funny-col (/ t 10)))
 
+       (draw-snake r t 300
+                   (fn [pos dims col]
+                     (box! r pos dims col)))
 
-(defn draw-frame [dims r spr-printer t]
+       (draw-snake r t 30
+                   (fn [pos dims col]
+                     (spr! spr-printer :green-pepper  pos))))))
 
-  (do
-    (let [ ]
-      (clear-all! r [0.1 0 0.1 0])
-      (ortho! r dims (v2 320 240))
-      (clear! r (funny-col (/ t 10)))
-      (draw-snake r t 300
-                  (fn [pos dims col]
-                    (box! r pos dims col))
-                  )
-      (draw-snake r t 30
-                  (fn [pos dims col]
-                    (spr! spr-printer :green-pepper  pos))
-                  )
-      )))
+  ([r dims sprs t]
+   (draw-frame r dims dims sprs t)))
 
 (defn mk-sprs [amount]
-    (->
-      (fn [i]
-        {:frame (sprdata/rand-spr)
-         :pos (v2 (rand-int 320) (rand-int 240)) })
-      (map (range amount))))
-
+  (->
+    (fn [i]
+      {:frame (sprdata/rand-spr)
+       :pos (v2 (rand-int 320) (rand-int 240)) })
+    (map (range amount))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def key-defs
@@ -112,26 +112,19 @@
    :right [:key-right :key-l]
    :fire  [:key-space] })
 
-(defn mk-game-sprs [res r]
-  (let [sprs-chan (sprs/load-sprs res r sprdata/spr-data)
+(defn mk-game-sprs [res render-manager]
+  (let [sprs-chan (sprs/load-sprs res render-manager sprdata/spr-data)
         sprs (<?? sprs-chan) ]
-    (sprs/mk-spr-printer r sprs)))
-
-(defn spr-maker [res-man r]
-  (fn [file-name]
-    (->>
-      file-name
-      (res-p/load-img! res-man) 
-      (<??)
-      (#(rend-p/make-spr! r :poo % (rend-p/dims %))))))
+    sprs))
 
 (defn get-frm [anim t]
   (let [anim-fn (anim sprdata/anim-data)]
     (anim-fn t)))
 
-(defn draw-sprs [r spr-printer pos t]
-  (let [frm (get-frm :bub-stand t) ]
-    (rend-p/spr! spr-printer frm pos)))
+(defn draw-sprs [r sprs pos t]
+  (let [frm (get-frm :bub-stand t)
+        printer (sprs/mk-spr-printer r sprs)]
+    (rend-p/spr! printer frm pos)))
 
 ;; Some stuff to control things on screen
 (def func->vel
@@ -151,30 +144,50 @@
     (reduce v2/add pos)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn create-window! [sys win-dims]
+  (let [window (sys-p/get-window sys)
+        rmanager (sys-p/get-render-manager sys)]
+    (do
+      (win-p/create! window win-dims "rogue bow")
+      (init! rmanager)
+      window
+      )))
+
+(defn destroy-window! [window]
+  (win-p/destroy! window))
+
 (defn main [sys]
-  (let [window    (sys-p/get-window sys)
-        gkeys     (mk-game-keys (sys-p/get-keyboard sys) key-defs)
-        r         (sys-p/get-render-engine sys)
-        res-man   (sys-p/get-resource-manager sys)
-        dims      (v2 640 480)
-        make-spr! (spr-maker res-man r) ]
+  (let [win-dims  (v2 640 480)
+        canv-dims (v2 320 240)
+        off-scr-dims (v2 512 512)
+
+        window          (create-window! sys win-dims)
+        gkeys           (mk-game-keys (sys-p/get-keyboard sys) key-defs)
+        render-manager  (sys-p/get-render-manager sys)
+        screen          (rend-p/make-screen-renderer! render-manager)
+        off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
+        res-man         (sys-p/get-resource-manager sys) ]
 
     (do
-      (win-p/create! window dims "rogue bow")
-      (init! r)
       (try
-        (let [tex (make-spr! "test-data/blocks.png")
-              spr-printer (mk-game-sprs res-man r)
-              ]
-          ; (println (rend-p/img tex) )
+        (let [sprs (mk-game-sprs res-man render-manager) ]
           (loop [t 0
                  pos (v2 3 3)]
             (do
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
-              (draw-frame dims r spr-printer t)
-              (draw-sprs r spr-printer pos t)
+              (let [r (activate! off-screen)]
+                (doto r
+                  (draw-frame off-scr-dims sprs t)
+                  ))
+
+              (let [r (activate! screen)]
+                (doto r
+                  (draw-sprs sprs pos t) 
+                  (draw-frame win-dims canv-dims sprs t)
+                  (rend-p/spr! off-screen pos)
+                  ))
 
               (when-not (quit? gkeys)
                 (recur (+ t (/ 1 60))
@@ -184,6 +197,7 @@
           (println "[Error in main] " (.getMessage e)))
 
         (finally
-          (win-p/destroy! window ))
+          (destroy-window! window)
+          )
         ))))
 

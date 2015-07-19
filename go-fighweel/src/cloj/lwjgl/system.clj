@@ -27,25 +27,19 @@
         (apply func args)
         (recur)))
     ch))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def game-state (atom {:please-quit  false
                        }))
 
 (def msg->func {:quit (fn [sys]
-                        (reset! game-state :please-quit true))
-                })
-
+                        (reset! game-state :please-quit true)) })
 
 (defn mk-system []
   (let [msg-chan (mk-msg-center msg->func)
         sys      (->ClojSystem
                    (mk-lwjgl-window)
                    (mk-resource-manager (mk-loader))
-                   (render/mk-lwjgl-renderer :poo  )
+                   (render/mk-lwjgl-render-manager )
                    (keyb/mk-keyboard)
                    (chan))]
     (do

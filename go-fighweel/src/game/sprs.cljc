@@ -34,9 +34,9 @@
    and then starts them loading asynchronously
    and returns a chan"
 
-  [resource-manager renderer sprs]
+  [resource-manager render-manager sprs]
 
-  (let [make-spr! (partial rend-p/make-spr! renderer)
+  (let [make-spr! (partial rend-p/make-spr! render-manager)
         load-img! (partial res-p/load-img! resource-manager)
         spr-chan (->> (keys sprs) 
                       (map
@@ -46,7 +46,6 @@
     (go
       (->>
         (<? spr-chan)
-        (->>dump "chans")
         (mapcat  (fn [ {kork :id img :img} ]
                    (->
                      (fn [[sprite-id dims]]

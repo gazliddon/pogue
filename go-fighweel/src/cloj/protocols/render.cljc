@@ -18,12 +18,18 @@
 (defprotocol IRenderViewport
   (set-window-size! [this dims]))
 
-(defprotocol IRenderBackend
-
-  (make-spr! [this id img [x y w h]])
-
-  (ortho! [this window-dims canvas-dims])
+(defprotocol IRenderManager
   (init! [this])
+  (make-spr! [this id img dims])
+  (make-screen-renderer! [this])
+  (make-render-target! [this dims]))
+
+(defprotocol IRenderTarget
+  (get-renderer [_])
+  (activate! [_]))
+
+(defprotocol IRenderBackend
+  (ortho! [this window-dims canvas-dims])
   (save! [this])
   (restore! [this])
   (clear! [this col])
@@ -33,6 +39,7 @@
   (box! [this pos dims col])
   (spr! [this img pos])
   (spr-scaled! [this img pos dims]))
+
 
 (defprotocol ITextureManager
   (add-texture! [this info])

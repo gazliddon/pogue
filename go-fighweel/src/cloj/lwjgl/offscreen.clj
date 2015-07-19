@@ -2,8 +2,10 @@
 
   (:require
     [cloj.lwjgl.protocols :refer [IGLTexture
-                                  IGLFBO]]
-    [cloj.protocols.render :refer [IImage]]
+                                  IGLFBO
+                                  bind-fbo!  ]]
+
+    [cloj.protocols.render :as rend-p :refer [IImage]]
     [cloj.math.vec2 :as v2 :refer [v2]])
 
   (:import
@@ -59,19 +61,32 @@
      :width  w
      :height  h }))
 
+;; Main screen buffer, bind to 0 draws to screen
+(def screen-buffer
+  (reify
+    IGLFBO
+    (bind-fbo! [_]
+      (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0))
 
-(defrecord FrameBufferObject [tex-id fbo-id dims has-z?]
+    (has-z? [_]
+      true)))
 
+(defrecord FrameBufferObject [renderer tex-id fbo-id dims has-z?]
   IGLFBO
   (bind-fbo! [_]
-    (assert false)
-    )
+    (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER fbo-id))
   (has-z? [_] has-z?)
 
   IGLTexture
   (get-uv-coords [_] [0 0 1 1] )
   (bind-texture! [_]
-    (assert false)) 
+    (GL11/glBindTexture GL11/GL_TEXTURE_2D tex-id))
+  
+  rend-p/IRenderTarget
+  (get-renderer [_] renderer)
+  (activate! [_]
+    (bind-fbo! screen-buffer)
+    renderer)
 
   IImage
   (id [_] nil)
@@ -91,7 +106,7 @@
   )
 
 (defn mk-offscreen-buffer!
-  [w h has-z-buffer?]
+  [renderer w h has-z-buffer?]
   (let [tex (mk-texture! w h)
         tex-id (:tex-id tex)
         fb-id (create-frame-buffer-id)]
@@ -126,6 +141,6 @@
       (check-fbo-status!)
 
       (->FrameBufferObject
-        tex-id fb-id (v2 w h) has-z-buffer?))))
+        renderer tex-id fb-id (v2 w h) has-z-buffer?))))
 
 

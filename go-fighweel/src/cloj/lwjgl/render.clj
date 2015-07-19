@@ -3,7 +3,10 @@
     [cloj.renderutils :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
-    [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords]]
+    [cloj.lwjgl.offscreen :refer [screen-buffer mk-offscreen-buffer!]]
+
+
+    [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords bind-fbo!]]
     [clojure-gl.texture       :refer [make-texture-low!]]
     [cloj.protocols.render    :as rend-p :refer [IImage]]
     [cloj.protocols.resources :as res-p])
@@ -90,11 +93,10 @@
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
   (GL11/glEnable GL11/GL_BLEND)  )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn mk-lwjgl-renderer [canvas-id]
-  (let [dims (atom (v2 100 100))
-        clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT) ]
+(def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
 
+(defn mk-renderer []
+  (let [dims (atom (v2 100 100)) ]
     (reify
       rend-p/ITransformable
       (matrix! [this mat]
@@ -121,22 +123,7 @@
         (GL11/glRotatef v 0 0 1)
         this)
 
-      rend-p/IImage
-      (id     [_] canvas-id)
-      (dims   [_] [v2/zero @dims])
-      (width  [_] (:x @dims))
-      (height [_] (:y @dims))
-      (img    [_] nil )
-
       rend-p/IRenderBackend
-
-      (make-spr! [this id img dims]
-        (my-make-spr! id img dims))
-
-      (init! [this]
-        (init-gl!)
-        this)
-
       (ortho! [this win-dims canv-dims]
         (let [[a b c d] (get-viewport win-dims canv-dims) ]
           (do
@@ -149,7 +136,7 @@
             (GL11/glLoadIdentity) ))
         this)
 
-      (save!    [this]
+      (save! [this]
         (GL11/glPushMatrix)
         this)
 
@@ -183,3 +170,29 @@
 
       (spr! [this img pos]
         (rend-p/spr-scaled! this img pos (v2 (rend-p/width img) (rend-p/height img)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn mk-lwjgl-render-manager []
+  (reify
+    rend-p/IRenderManager
+    (init! [this]
+      (init-gl!)
+      this)
+
+    (make-spr! [this id img dims]
+      (my-make-spr! id img dims))
+
+    (make-render-target! [this {w :x h :y}]
+      (->
+        (mk-renderer) 
+        (mk-offscreen-buffer! w h false)))
+
+    (make-screen-renderer! [this]
+      (let [renderer (mk-renderer)]
+        (reify
+          rend-p/IRenderTarget
+          (get-renderer [_] renderer)
+          (activate! [this]
+            (bind-fbo! screen-buffer)
+            (rend-p/get-renderer this)))))))
+

@@ -6,21 +6,21 @@
 (defprotocol ISystem
   (get-window           [_])
   (get-resource-manager [_])
-  (get-render-engine    [_])
+  (get-render-manager   [_])
   (get-keyboard         [_])
   (get-msg-chan         [_]))
 
 (defrecord ClojSystem
   [window
    resource-manager
-   render-engine
+   render-manager
    keyboard
    msg-chan ]
 
   ISystem
   (get-window           [_] window)
   (get-resource-manager [_] resource-manager)
-  (get-render-engine    [_] render-engine)  
+  (get-render-manager   [_] render-manager)  
   (get-keyboard         [_] keyboard)  
   (get-msg-chan         [_] msg-chan))
 
