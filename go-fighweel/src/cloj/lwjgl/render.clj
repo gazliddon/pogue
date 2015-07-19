@@ -47,24 +47,6 @@
 
   (GL11/glEnd))
 
-
-(defn get-uv-bodge [id x y w h]
-  (let [x-pix-sz (/ 1 320)
-        y-pix-sz (/ 1 240)]
-
-    (when (= id :b-wood-0)
-      (println [x y w h])
-      )
-
-    (mapv float 
-
-          (if (= id :b-wood-0)
-            [0 0 (* w x-pix-sz) (* h y-pix-sz)]
-            [x y w h]
-            )))
-  )
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn- get-uv-cords [[t-w t-h] [x y w h]]
   (let [x-scale (/ 1 t-w)
@@ -97,7 +79,6 @@
       (catch Exception e
         (do
           (println "[Error making textuer ] " (.getMessage e)))))))
-
 
 (defn- init-gl! []
   (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))

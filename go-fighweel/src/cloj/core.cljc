@@ -28,6 +28,7 @@
                                                  clear-all!]]
     [cloj.protocols.keyboard  :as key-p]))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn funny-col [t]
   [(cos-01 t)
@@ -50,6 +51,15 @@
         scale)
       (v2/apply cos-01)
       (v2/mul (v2f 320 240)))))
+
+(defn snake-pos [t amount i]
+  (let [cos-01-t (cos-01 t)
+        cos-t (cos t)
+        v-norm (/ i amount)
+        v-scaled (* cos-t  (*  v-norm 8))
+        v-t (+ t i cos-t)
+        pos (f-pos (+ t v-scaled cos-t)) ]
+    pos))
 
 (defn draw-snake [r t amount f]
   (do
@@ -84,6 +94,13 @@
                     (spr! spr-printer :green-pepper  pos))
                   )
       )))
+
+(defn mk-sprs [amount]
+    (->
+      (fn [i]
+        {:frame (sprdata/rand-spr)
+         :pos (v2 (rand-int 320) (rand-int 240)) })
+      (map (range amount))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

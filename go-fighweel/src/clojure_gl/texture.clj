@@ -30,8 +30,8 @@
                         DataBuffer/TYPE_BYTE))
 
 (defn convert-texture-data [^BufferedImage img]
-  (let [width (greater-power-of-two (.getWidth img))
-        height (greater-power-of-two (.getHeight img))
+  (let [width (.getWidth img)
+        height (.getHeight img)
         ^ComponentColorModel color-model (if (has-alpha img)
                                            (alpha-color-model)
                                            (color-model))
@@ -60,14 +60,17 @@
 
 (defn make-texture-low! [^BufferedImage image ]
   (let [texid (create-texture-id)
-        width (greater-power-of-two (.getWidth image))
-        height (greater-power-of-two (.getHeight image))
-        width (greater-power-of-two (.getWidth image))
-        height (greater-power-of-two (.getHeight image))
+        width (.getWidth image)
+        height (.getHeight image)
         bytes (convert-texture-data image)]
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texid)
+
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_CLAMP)
+    (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_CLAMP)
+
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D
                        0
                        GL11/GL_RGBA
@@ -78,11 +81,8 @@
                        bytes)
     {:tex-id texid
      :dims [width height]
-     :original-dims [(.getWidth image) (.getHeight image)]
      :width  width
      :height  height
-     :original-width (.getWidth image)
-     :original-height (.getHeight image)
      :has-alpha (has-alpha image)
      }))
 
