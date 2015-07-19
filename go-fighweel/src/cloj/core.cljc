@@ -9,8 +9,7 @@
                                              down?
                                              left?
                                              right?
-                                             quit?
-                                             ]]
+                                             quit?]]
 
     [cloj.utils :as utils :refer [<? <??]]
 
@@ -168,36 +167,33 @@
         off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
         res-man         (sys-p/get-resource-manager sys) ]
 
-    (do
-      (try
-        (let [sprs (mk-game-sprs res-man render-manager) ]
-          (loop [t 0
-                 pos (v2 3 3)]
-            (do
-              (win-p/update! window)
-              (gamekeys/update! gkeys)
+    (try
+      (let [sprs (mk-game-sprs res-man render-manager) ]
+        (loop [t 0 pos (v2 3 3)]
+          (do
+            (win-p/update! window)
+            (gamekeys/update! gkeys)
 
-              (let [r (activate! off-screen)]
-                (doto r
-                  (draw-frame off-scr-dims sprs t)
-                  ))
+            (let [r (activate! off-screen)]
+              (doto r
+                (draw-frame off-scr-dims sprs t)
+                ))
 
-              (let [r (activate! screen)]
-                (doto r
-                  (draw-sprs sprs pos t) 
-                  (draw-frame win-dims canv-dims sprs t)
-                  (rend-p/spr! off-screen pos)
-                  ))
+            (let [r (activate! screen)]
+              (doto r
+                (draw-sprs sprs pos t) 
+                (draw-frame win-dims canv-dims sprs t)
+                (rend-p/spr! off-screen pos)
+                ))
 
-              (when-not (quit? gkeys)
-                (recur (+ t (/ 1 60))
-                       (new-pos gkeys pos (v2 0.5 0.5)))))))
+            (when-not (quit? gkeys)
+              (recur (+ t (/ 1 60))
+                     (new-pos gkeys pos (v2 0.5 0.5)))))))
 
-        (catch Exception e
-          (println "[Error in main] " (.getMessage e)))
+      (catch Exception e
+        (println "[Error in main] " (.getMessage e)))
 
-        (finally
-          (destroy-window! window)
-          )
-        ))))
+      (finally
+        (destroy-window! window))
+      )))
 
