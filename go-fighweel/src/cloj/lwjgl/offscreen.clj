@@ -12,28 +12,21 @@
                                 ]]
 
     [cloj.protocols.render :as rend-p :refer [IImage]]
-    [cloj.math.vec2 :as v2 :refer [v2]])
+    [cloj.math.vec2 :as v2 :refer [v2 v2i]])
 
   (:import (java.nio IntBuffer ByteBuffer)
-           (org.lwjgl.opengl GL11 GL15 GL20 GL30))
-  )
+           (org.lwjgl.opengl GL11 GL15 GL20 GL30)))
 
 (set! *warn-on-reflection* true)
 
-(defn ^Integer create-texture-id []
+(defn ^Integer get-id [func]
   (let [^IntBuffer ib (create-int-buffer 1)]
-    (GL11/glGenTextures ib)
+    (func ib)
     (.get ib 0)))
 
-(defn ^Integer create-frame-buffer-id []
-  (let [^IntBuffer ib (create-int-buffer 1)]
-    (GL30/glGenFramebuffers ib)
-    (.get ib 0)))
-
-(defn ^Integer create-render-buffer-id []
-  (let [^IntBuffer ib (create-int-buffer 1)]
-    (GL30/glGenRenderbuffers ib)
-    (.get ib 0)))
+(defn create-texture-id []       (get-id #(GL11/glGenTextures %)))
+(defn create-frame-buffer-id []  (get-id #(GL30/glGenFramebuffers %)))
+(defn create-render-buffer-id [] (get-id #(GL30/glGenRenderbuffers %)))
 
 (defn mk-texture! [^Integer w ^Integer h]
   (let [texid (create-texture-id)]
@@ -54,7 +47,7 @@
                        GL11/GL_UNSIGNED_BYTE
                        ^ByteBuffer ( native-byte-buffer (* w h 4)))
     {:tex-id texid
-     :dims (v2 w h)
+     :dims (v2i w h)
      :width  w
      :height h}))
 
@@ -103,7 +96,8 @@
   )
 
 (defn mk-offscreen-buffer!
-  [renderer w h has-z-buffer?]
+  [renderer ^Integer w ^Integer h ^Boolean has-z-buffer?]
+
   (let [tex (mk-texture! w h)
         tex-id (:tex-id tex)
         fb-id (create-frame-buffer-id)]
@@ -138,6 +132,6 @@
       (check-fbo-status!)
 
       (->FrameBufferObject
-        renderer tex-id fb-id (v2 w h) has-z-buffer?))))
+        renderer tex-id fb-id (v2i w h) has-z-buffer?))))
 
 

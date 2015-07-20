@@ -9,6 +9,7 @@
 (defrecord Vec2 [x y])
 
 (defn v2 [x y] (->Vec2 x y))
+(defn v2i [x y] (->Vec2 (int x) (int y)))
 (defn v2f [x y] (->Vec2 (float x) (float y)))
 
 (defn as-vector [v]
