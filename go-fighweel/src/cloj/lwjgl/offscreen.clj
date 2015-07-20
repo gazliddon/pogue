@@ -46,8 +46,7 @@
                        0
                        GL11/GL_RGBA
                        GL11/GL_BYTE
-                       ^ByteBuffer ( native-byte-buffer (* w h 4))
-                       )
+                       ^ByteBuffer ( native-byte-buffer (* w h 4)))
     {:tex-id texid
      :dims (v2i w h)
      :width  w

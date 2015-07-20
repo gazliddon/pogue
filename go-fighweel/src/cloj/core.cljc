@@ -156,6 +156,14 @@
 (defn destroy-window! [window]
   (win-p/destroy! window))
 
+(defmacro render-to [scr & forms]
+  `(let [r# (activate! ~scr)]
+     (doto r#
+       ~@forms
+       )
+     )
+  )
+
 (defn main [sys]
   (let [win-dims  (v2 640 480)
         canv-dims (v2 320 240)
@@ -177,24 +185,22 @@
             (win-p/update! window)
             (gamekeys/update! gkeys)
 
-            (let [r (activate! off-screen)]
-              (doto r
-                (draw-frame off-scr-dims sprs (+ 10 t))
-                ))
+            (render-to off-screen
+              (draw-frame off-scr-dims sprs (+ 10 t)))
 
-            (let [r (activate! screen)]
-              (doto r
-                ; (draw-sprs sprs pos t) 
+            (render-to screen
                 (draw-frame win-dims canv-dims sprs t)
+
+                (identity!)
+                (scale! (v2 0.3 0.3))
+                (rend-p/spr! off-screen pos)
 
                 (identity!)
                 (scale! (v2  2 2))
                 (draw-sprs sprs pos t)
 
-                (identity!)
-                (scale! (v2  0.3 0.3))
-                (rend-p/spr! off-screen pos)
-                ))
+                
+                )
 
             (when-not (quit? gkeys)
               (recur (+ t (/ 1 60))
@@ -204,6 +210,6 @@
         (println "[Error in main] " (.getMessage e)))
 
       (finally
-        (destroy-window! window))
-      )))
+        (destroy-window! window)))))
+
 

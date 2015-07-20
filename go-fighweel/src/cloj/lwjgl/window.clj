@@ -10,14 +10,9 @@
 
 (defn- init-window
   [{width :x height :y} title]
-  (let [current-time-millis 0]
-    (def globals (ref {:width width
-                       :height height
-                       :title title }))
-    (Display/setDisplayMode (DisplayMode. width height))
-    (Display/setTitle title)
-    (Display/create)
-    ))
+  (Display/setDisplayMode (DisplayMode. width height))
+  (Display/setTitle title)
+  (Display/create))
 
 
 (defn mk-lwjgl-window []
