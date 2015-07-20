@@ -12,7 +12,9 @@
   [{width :x height :y} title]
   (Display/setDisplayMode (DisplayMode. width height))
   (Display/setTitle title)
-  (Display/create))
+  (Display/setVSyncEnabled true)
+  (Display/create)
+  )
 
 
 (defn mk-lwjgl-window []
@@ -22,14 +24,13 @@
       window-p/IWindow
 
       (create! [this dims-in title]
-        (do
-          (when (not @exists? ) 
-            (init-window dims-in title)
-            (reset! dims dims-in)
-            (swap! exists? not))))
+        (when (not @exists? ) 
+          (init-window dims-in title)
+          (reset! dims dims-in)
+          (swap! exists? not)))
 
       (destroy! [_]
-        (if @exists?
+        (when @exists?
           (do
             (Display/destroy)
             (swap! exists? not))))

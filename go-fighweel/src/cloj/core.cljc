@@ -73,9 +73,11 @@
               pos (f-pos (+ t v-scaled (cos t)))
               col [(cos-01 (+ (* t 20) (/ v 100))) (cos-01 (* v 0.10)) (cos-01 (+ t v)) 1]
               ]
-          (f pos (v2 (+ 5  (cos-01 (* 2 v-t))) (+ 5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
+          (f v pos (v2 (+ 5  (cos-01 (* 2 v-t))) (+ 5 (cos-01 (* 3 (+ 1 v-t))))) col ))  
         ))
     ))
+
+
 
 (defn draw-frame
   ([r win-dims canv-dims sprs t]
@@ -85,13 +87,13 @@
        (ortho! r win-dims canv-dims)
        (clear! r (funny-col (/ t 10)))
 
-       (draw-snake r (- 0 t) 100
-                   (fn [pos dims col]
+       (draw-snake r (- 0 t) 1000
+                   (fn [i pos dims col]
                      (box! r pos dims col)))
 
        (draw-snake r t 100
-                   (fn [pos dims col]
-                     (spr! spr-printer :green-pepper  pos))))))
+                   (fn [i pos dims col]
+                     (spr! spr-printer (sprdata/get-spr i)  pos))))))
 
   ([r dims sprs t]
    (draw-frame r dims dims sprs t)))
@@ -165,8 +167,8 @@
   )
 
 (defn main [sys]
-  (let [win-dims  (v2 640 480)
-        canv-dims (v2 320 240)
+  (let [win-dims  (v2 840 480)
+        canv-dims (v2/mul (v2 1600 900) (v2 0.3 0.3))
         off-scr-dims (v2 512 512)
 
         window          (create-window! sys win-dims)
@@ -176,8 +178,6 @@
         off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
         res-man         (sys-p/get-resource-manager sys) ]
 
-    (println "off screen" off-screen)
-
     (try
       (let [sprs (mk-game-sprs res-man render-manager) ]
         (loop [t 0 pos (v2 3 3)]
@@ -185,20 +185,19 @@
             (win-p/update! window)
             (gamekeys/update! gkeys)
 
-            (render-to off-screen
-              (draw-frame off-scr-dims sprs (+ 10 t)))
+            ; (render-to off-screen
+            ;   (draw-frame off-scr-dims sprs (+ 10 t)))
 
             (render-to screen
                 (draw-frame win-dims canv-dims sprs t)
 
                 (identity!)
                 (scale! (v2 0.3 0.3))
-                (rend-p/spr! off-screen pos)
+                ; (rend-p/spr! off-screen pos)
 
                 (identity!)
                 (scale! (v2  2 2))
                 (draw-sprs sprs pos t)
-
                 
                 )
 
