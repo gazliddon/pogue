@@ -22,6 +22,7 @@
                                                  box!
                                                  ortho!
                                                  scale!
+                                                 identity!
                                                  activate!
                                                  spr!
                                                  init!
@@ -80,15 +81,15 @@
   ([r win-dims canv-dims sprs t]
    (let [spr-printer (sprs/mk-spr-printer r sprs)]
      (do
-       (clear-all! r [0.1 0 0.1 0])
+       (clear-all! r [0.1 0 0.1 1])
        (ortho! r win-dims canv-dims)
        (clear! r (funny-col (/ t 10)))
 
-       (draw-snake r t 300
+       (draw-snake r t 1
                    (fn [pos dims col]
                      (box! r pos dims col)))
 
-       (draw-snake r t 30
+       (draw-snake r t 100
                    (fn [pos dims col]
                      (spr! spr-printer :green-pepper  pos))))))
 
@@ -167,6 +168,8 @@
         off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
         res-man         (sys-p/get-resource-manager sys) ]
 
+    (println "off screen" off-screen)
+
     (try
       (let [sprs (mk-game-sprs res-man render-manager) ]
         (loop [t 0 pos (v2 3 3)]
@@ -176,13 +179,15 @@
 
             (let [r (activate! off-screen)]
               (doto r
-                (draw-frame off-scr-dims sprs t)
+                (draw-frame win-dims off-scr-dims sprs (+ 10 t))
                 ))
 
             (let [r (activate! screen)]
               (doto r
-                (draw-sprs sprs pos t) 
+                ; (draw-sprs sprs pos t) 
                 (draw-frame win-dims canv-dims sprs t)
+                (identity!)
+                (scale! (v2  (cos-01 t) 0.1))
                 (rend-p/spr! off-screen pos)
                 ))
 
