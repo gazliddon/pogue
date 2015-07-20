@@ -85,7 +85,7 @@
        (ortho! r win-dims canv-dims)
        (clear! r (funny-col (/ t 10)))
 
-       (draw-snake r t 1
+       (draw-snake r (- 0 t) 100
                    (fn [pos dims col]
                      (box! r pos dims col)))
 
@@ -179,21 +179,26 @@
 
             (let [r (activate! off-screen)]
               (doto r
-                (draw-frame win-dims off-scr-dims sprs (+ 10 t))
+                (draw-frame off-scr-dims sprs (+ 10 t))
                 ))
 
             (let [r (activate! screen)]
               (doto r
                 ; (draw-sprs sprs pos t) 
                 (draw-frame win-dims canv-dims sprs t)
+
                 (identity!)
-                (scale! (v2  (cos-01 t) 0.1))
+                (scale! (v2  2 2))
+                (draw-sprs sprs pos t)
+
+                (identity!)
+                (scale! (v2  0.3 0.3))
                 (rend-p/spr! off-screen pos)
                 ))
 
             (when-not (quit? gkeys)
               (recur (+ t (/ 1 60))
-                     (new-pos gkeys pos (v2 0.5 0.5)))))))
+                     (new-pos gkeys pos (v2 1.5 1.5)))))))
 
       (catch Exception e
         (println "[Error in main] " (.getMessage e)))
