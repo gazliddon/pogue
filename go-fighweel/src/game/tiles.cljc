@@ -1,7 +1,7 @@
-(ns gaz.tiles
+(ns game.tiles
   (:require
-    [gaz.tilemapprotocol :as tmp]
-    [gaz.tilemaputils :as tmu]
+    [game.tilemapprotocol :as tmp]
+    [game.tilemaputils :as tmu]
     [cloj.math.vec2 :as v2 :refer [vec2]]
     [cloj.math.misc :refer [in-range?
                             clamp]]))

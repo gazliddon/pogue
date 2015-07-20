@@ -31,16 +31,13 @@
 
       (destroy! [_]
         (when @exists?
-          (do
-            (Display/destroy)
-            (swap! exists? not))))
+          (Display/destroy)
+          (swap! exists? not)))
 
       (get-dims [_]
         @dims)
 
       (update! [_]
         (when @exists?
-          (do
-            (Display/update)
-            (Display/sync 60))
-          )))))
+          (Display/update)
+          (Display/sync 60))))))
