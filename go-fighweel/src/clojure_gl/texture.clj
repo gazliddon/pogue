@@ -1,4 +1,6 @@
 (ns clojure-gl.texture
+  (:require
+    [clojure.reflect :as reflect :refer [reflect] ])
   (:use (clojure-gl buffers resources))
   (:import (java.awt Color Graphics)
            (java.awt.color ColorSpace)
@@ -9,6 +11,7 @@
            (java.nio ByteBuffer ByteOrder IntBuffer FloatBuffer)
            (java.util Hashtable)))
 
+; (set! *warn-on-reflection* true)
 
 (defn has-alpha [^BufferedImage img]
   (.. img (getColorModel) (hasAlpha)))
@@ -29,7 +32,7 @@
                         ComponentColorModel/OPAQUE
                         DataBuffer/TYPE_BYTE))
 
-(defn convert-texture-data [^BufferedImage img]
+(defn ^ByteBuffer convert-texture-data [^BufferedImage img]
   (let [width (.getWidth img)
         height (.getHeight img)
         ^ComponentColorModel color-model (if (has-alpha img)
@@ -62,7 +65,9 @@
   (let [texid (create-texture-id)
         width (.getWidth image)
         height (.getHeight image)
-        bytes (convert-texture-data image)]
+        bytes (convert-texture-data image)
+        alpha (do  (if (has-alpha image) GL11/GL_RGBA GL11/GL_RGB)) ]
+
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texid)
 
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
@@ -74,9 +79,9 @@
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D
                        0
                        GL11/GL_RGBA
-                       width height
+                       (int  width) (int  height)
                        0
-                       (if (has-alpha image) GL11/GL_RGBA GL11/GL_RGB)
+                       alpha
                        GL11/GL_UNSIGNED_BYTE
                        bytes)
     {:tex-id texid
@@ -120,11 +125,11 @@
     (GL11/glTexImage2D GL11/GL_TEXTURE_2D
                        0
                        GL30/GL_RGB16F
-                       width height
+                       (int width ) (int height )
                        0
                        GL11/GL_RGBA
                        GL11/GL_FLOAT
-                       buffer)
+                       ^ByteBuffer buffer)
     {:width width
      :height height
      :depth depth

@@ -5,42 +5,39 @@
                                   IGLFBO
                                   bind-fbo!  ]]
 
+    [clojure.reflect :as reflect :refer [reflect] ]
+
+    [clojure-gl.buffers :refer [create-int-buffer
+                                native-byte-buffer
+                                ]]
+
     [cloj.protocols.render :as rend-p :refer [IImage]]
     [cloj.math.vec2 :as v2 :refer [v2]])
 
-  (:import
-
-    (java.nio ByteBuffer ByteOrder IntBuffer FloatBuffer)
-    (org.lwjgl.opengl GL11 GL30 GL31)
-    )
+  (:import (java.nio IntBuffer ByteBuffer)
+           (org.lwjgl.opengl GL11 GL15 GL20 GL30))
   )
 
-(defn native-byte-buffer [sz]
-  (let [bb (ByteBuffer/allocateDirect (* 4 sz))]
-    (.order bb (ByteOrder/nativeOrder))
-    bb))
+(set! *warn-on-reflection* true)
 
-(defn create-int-buffer [sz]
-  (.asIntBuffer (native-byte-buffer sz)))
-
-
-(defn create-texture-id []
+(defn ^Integer create-texture-id []
   (let [^IntBuffer ib (create-int-buffer 1)]
     (GL11/glGenTextures ib)
     (.get ib 0)))
 
-(defn create-frame-buffer-id []
+(defn ^Integer create-frame-buffer-id []
   (let [^IntBuffer ib (create-int-buffer 1)]
     (GL30/glGenFramebuffers ib)
     (.get ib 0)))
 
-(defn create-render-buffer-id []
+(defn ^Integer create-render-buffer-id []
   (let [^IntBuffer ib (create-int-buffer 1)]
     (GL30/glGenRenderbuffers ib)
     (.get ib 0)))
 
-(defn mk-texture! [w h]
-  (let [texid (create-texture-id) ]
+(defn mk-texture! [^Integer w ^Integer h]
+  (let [texid (create-texture-id)]
+
     (GL11/glBindTexture GL11/GL_TEXTURE_2D texid)
 
     (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
@@ -55,11 +52,11 @@
                        0
                        GL11/GL_RGBA 
                        GL11/GL_UNSIGNED_BYTE
-                       nil)
+                       ^ByteBuffer ( native-byte-buffer (* w h 4)))
     {:tex-id texid
      :dims (v2 w h)
      :width  w
-     :height  h }))
+     :height h}))
 
 ;; Main screen buffer, bind to 0 draws to screen
 (def screen-buffer
