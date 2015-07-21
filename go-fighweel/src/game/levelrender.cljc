@@ -3,6 +3,7 @@
 (ns game.levelrender
   (:require
     [game.tilemapprotocol  :as tmp]
+    [game.tiles            :as tiles]
     [game.sprs             :as sprs]
     [cloj.math.vec2        :as v2     :refer [v2 v2i v2f]]
     [cloj.protocols.render :as rend-p :refer [IRenderBackend
@@ -10,7 +11,6 @@
                                               make-render-target! 
                                               clear!
                                               spr!]])
-
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,12 +78,11 @@
                     :tile (tmp/get-tile level x y)}) ]
 
     (doseq [{pos :pixel-pos tile :tile} to-print ]
-      (spr! tile-printer tile pos)))
-  )
+      (spr! tile-printer tile pos))))
 
-#_(defn mk-level-spr [sprs rman id w-b h-b all-tile-data]
+(defn mk-level-spr [sprs rman id w-b h-b all-tile-data]
   (let [[w h] [(* 16 w-b) (* 16 h-b)]
-        render-target (create-render-target! rman (name id ) w h)
+        render-target (rend-p/make-render-target! rman (v2i w h))
         level (->
                 (tiles/mk-tile-map w-b h-b :blank all-tile-data)
                 (shit-room (v2i 3 3) (v2i 10 10 ))) ]
