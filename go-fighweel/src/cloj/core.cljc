@@ -183,8 +183,8 @@
   )
 
 (defn main [sys]
-  (let [win-dims  (v2 840 480)
-        canv-dims (v2/mul (v2 1600 900) (v2 0.3 0.3))
+  (let [win-dims     (v2 840 480)
+        canv-dims    (v2/mul (v2 1600 900) (v2 0.2 0.2))
         off-scr-dims (v2 512 512)
 
         window          (create-window! sys win-dims)
@@ -197,30 +197,26 @@
 
     (try
       (let [sprs (mk-game-sprs res-man render-manager)
-            lev-spr (mk-level-spr! render-manager sprs)
+            lev-spr (mk-level-spr! render-manager sprs) ]
 
-            ]
         (loop [t 0
                pos (v2 3 3)
                cam-pos (v2 0 0)]
           (do
             (let [desired-pos (->>
                                 (v2/sub pos mid-scr)
-                                (v2/clamp (v2 0 0) (v2 1000 1000)))
-                  ]
+                                (v2/clamp (v2 0 0) (v2 1000 1000))) ]
+
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
               (render-to screen
-
-                (identity!)
-                (clear-all! [1 0 1 1])
+                (clear-all! (funny-col t))
                 (ortho! win-dims canv-dims)
                 (clear! [0 0 0 1])
                 (translate! (v2/sub v2/zero cam-pos))
                 (rend-p/spr! lev-spr (v2 0 0))
-                (draw-sprs sprs pos t)
-                )
+                (draw-sprs sprs pos t))
 
               (when-not (quit? gkeys)
                 (recur (+ t (/ 1 60))
