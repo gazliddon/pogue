@@ -28,7 +28,7 @@
                                                  ortho!
                                                  scale!
                                                  identity!
-                                                 activate!
+                                                 translate!
                                                  spr!
                                                  init!
                                                  clear-all!
@@ -37,6 +37,16 @@
     [cloj.protocols.keyboard  :as key-p]))
 
 
+
+;; =============================================================================
+;; {{{ Shit Camera
+(defn camera [current-pos desired-pos]
+  (->
+    (v2/sub desired-pos current-pos)
+    (v2/div (v2 12 12))
+    (v2/add current-pos)))
+
+;; }}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn funny-col [t]
@@ -183,41 +193,40 @@
         screen          (rend-p/make-screen-renderer! render-manager)
         off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
         res-man         (sys-p/get-resource-manager sys)
-
-        
-        
-        ]
+        mid-scr         (v2/mul canv-dims v2/half)  ]
 
     (try
       (let [sprs (mk-game-sprs res-man render-manager)
             lev-spr (mk-level-spr! render-manager sprs)
 
             ]
-        (loop [t 0 pos (v2 3 3)]
+        (loop [t 0
+               pos (v2 3 3)
+               cam-pos (v2 0 0)]
           (do
-            (win-p/update! window)
-            (gamekeys/update! gkeys)
+            (let [desired-pos (->>
+                                (v2/sub pos mid-scr)
+                                (v2/clamp (v2 0 0) (v2 1000 1000)))
+                  ]
+              (win-p/update! window)
+              (gamekeys/update! gkeys)
 
-            ; (render-to off-screen
-            ;   (draw-frame off-scr-dims sprs (+ 10 t)))
-
-            (render-to screen
-                (draw-frame win-dims canv-dims sprs t)
-
-                (identity!)
-                ; (scale! (v2 0.3 0.3))
-                ; (rend-p/spr! off-screen pos)
-                (rend-p/spr! lev-spr pos)
+              (render-to screen
 
                 (identity!)
-                (scale! (v2  2 2))
+                (clear-all! [1 0 1 1])
+                (ortho! win-dims canv-dims)
+                (clear! [0 0 0 1])
+                (translate! (v2/sub v2/zero cam-pos))
+                (rend-p/spr! lev-spr (v2 0 0))
                 (draw-sprs sprs pos t)
-                
                 )
 
-            (when-not (quit? gkeys)
-              (recur (+ t (/ 1 60))
-                     (new-pos gkeys pos (v2 1.5 1.5)))))))
+              (when-not (quit? gkeys)
+                (recur (+ t (/ 1 60))
+                       (new-pos gkeys pos (v2 1.5 1.5))
+                       (camera cam-pos desired-pos)
+                       ))))))
 
       (catch Exception e
         (println "[Error in main] " (.getMessage e)))

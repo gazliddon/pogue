@@ -40,4 +40,5 @@
       (update! [_]
         (when @exists?
           (Display/update)
-          (Display/sync 60))))))
+          ; (Display/sync 60)
+          )))))
