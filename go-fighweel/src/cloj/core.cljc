@@ -4,12 +4,17 @@
     [game.sprs          :as sprs]
     [game.sprdata       :as sprdata]
     [clojure.core.async :as async    :refer [go <!! ]]
-    [game.gamekeys      :as gamekeys :refer [mk-game-keys
-                                             up?
-                                             down?
-                                             left?
-                                             right?
-                                             quit?]]
+
+    [game.levelrender   :as level-render]
+
+    [game.tiledata      :as tile-data :refer [tile-data]]
+
+    [game.gamekeys      :as gamekeys  :refer [mk-game-keys
+                                              up?
+                                              down?
+                                              left?
+                                              right?
+                                              quit?]]
 
     [cloj.utils :as utils :refer [<? <??]]
 
@@ -26,8 +31,11 @@
                                                  activate!
                                                  spr!
                                                  init!
-                                                 clear-all!]]
+                                                 clear-all!
+                                                 render-to
+                                                 ]]
     [cloj.protocols.keyboard  :as key-p]))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -158,12 +166,10 @@
 (defn destroy-window! [window]
   (win-p/destroy! window))
 
-(defmacro render-to [scr & forms]
-  `(let [r# (activate! ~scr)]
-     (doto r#
-       ~@forms
-       )
-     )
+
+(defn mk-level-spr! [render-manager spr-data ]
+  (level-render/mk-level-spr! render-manager spr-data 30 30 tile-data)
+  
   )
 
 (defn main [sys]
@@ -176,10 +182,17 @@
         render-manager  (sys-p/get-render-manager sys)
         screen          (rend-p/make-screen-renderer! render-manager)
         off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
-        res-man         (sys-p/get-resource-manager sys) ]
+        res-man         (sys-p/get-resource-manager sys)
+
+        
+        
+        ]
 
     (try
-      (let [sprs (mk-game-sprs res-man render-manager) ]
+      (let [sprs (mk-game-sprs res-man render-manager)
+            lev-spr (mk-level-spr! render-manager sprs)
+
+            ]
         (loop [t 0 pos (v2 3 3)]
           (do
             (win-p/update! window)
@@ -192,8 +205,9 @@
                 (draw-frame win-dims canv-dims sprs t)
 
                 (identity!)
-                (scale! (v2 0.3 0.3))
+                ; (scale! (v2 0.3 0.3))
                 ; (rend-p/spr! off-screen pos)
+                (rend-p/spr! lev-spr pos)
 
                 (identity!)
                 (scale! (v2  2 2))

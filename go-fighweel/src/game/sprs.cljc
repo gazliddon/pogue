@@ -53,7 +53,14 @@
                      (map (kork sprs)))))
         (into {})))))
 
-(defn mk-spr-printer [rend sprs]
+(defn mk-spr-printer
+  "Take a render target and a database
+   of spr defintions
+   Return a renderbackend that will
+   print sprs to the renderer "
+  
+  [rend sprs]
+
   (reify
     IRenderBackend
     (spr! [this img-key pos]

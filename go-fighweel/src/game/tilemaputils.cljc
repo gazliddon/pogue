@@ -1,7 +1,6 @@
 (ns game.tilemaputils
   (:require
     [game.tilemapprotocol :as tmp :refer [ITileMap]]
-    
     ))
 
 (defn get-size [tiles]

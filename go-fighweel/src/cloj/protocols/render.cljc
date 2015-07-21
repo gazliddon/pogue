@@ -40,9 +40,14 @@
   (spr! [this img pos])
   (spr-scaled! [this img pos dims]))
 
-
 (defprotocol ITextureManager
   (add-texture! [this info])
   (create-new-texture! [this info]))
 
-
+(defmacro render-to [scr & forms]
+  `(let [r# (activate! ~scr)]
+     (doto r#
+       ~@forms
+       )
+     )
+  )

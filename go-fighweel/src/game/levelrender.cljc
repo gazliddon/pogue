@@ -2,14 +2,17 @@
 ; {{{ Requires
 (ns game.levelrender
   (:require
-    [game.tilemapprotocol  :as tmp]
+    [game.tilemapprotocol  :as tmp ]
     [game.tiles            :as tiles]
     [game.sprs             :as sprs]
     [cloj.math.vec2        :as v2     :refer [v2 v2i v2f]]
     [cloj.protocols.render :as rend-p :refer [IRenderBackend
                                               IRenderManager
                                               make-render-target! 
+                                              ortho!
                                               clear!
+                                              identity!
+                                              render-to
                                               spr!]])
   )
 
@@ -65,30 +68,35 @@
     IRenderBackend
     (spr! [this {gfx :gfx} pos]
       (doseq [ [tile offset ] (map vector gfx (map #(v2/add pos %) tile-offsets))]
-        (rend-p/spr! rend tile offset)))))
+        (spr! rend tile offset)))))
 
 (defn render-level! [render-target level sprs]
   (let [spr-printer (sprs/mk-spr-printer render-target sprs)
         tile-printer (mk-tile-printer spr-printer)
         [w h] [(tmp/get-width level) (tmp/get-height level)]
-        spr! (partial spr! tile-printer)
         to-print (for [x (range w) y (range h)]
                    {:pos  (v2i x y)
                     :pixel-pos (v2/mul (v2i 32 32) (v2i x y))
                     :tile (tmp/get-tile level x y)}) ]
 
     (doseq [{pos :pixel-pos tile :tile} to-print ]
-      (spr! tile-printer tile pos))))
+      (spr! tile-printer tile pos)   
+      )))
 
-(defn mk-level-spr [sprs rman id w-b h-b all-tile-data]
-  (let [[w h] [(* 16 w-b) (* 16 h-b)]
-        render-target (rend-p/make-render-target! rman (v2i w h))
+(defn mk-level-spr! [rman sprs w-b h-b all-tile-data]
+  (let [dims (v2i (* 16 w-b) (* 16 h-b))
+        render-target (rend-p/make-render-target! rman dims)
         level (->
                 (tiles/mk-tile-map w-b h-b :blank all-tile-data)
                 (shit-room (v2i 3 3) (v2i 10 10 ))) ]
     (do
-      (clear! render-target [0 1 0])
-      (render-level! render-target level sprs)
+      (render-to render-target
+          (ortho! dims dims)
+          (identity!)
+          (clear! [0 1 0 1])
+          (render-level! level sprs)
+          )
+
       render-target)))
 
 ;; }}}
