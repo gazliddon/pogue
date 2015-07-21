@@ -9,7 +9,13 @@
   (down?   [_])
   (left?   [_])
   (right?  [_])
-  (fire?   [_]))
+  (fire?   [_])
+
+
+  (zoom-in? [_])
+  (zoom-out? [_])
+  
+  )
 
 (defn any-keys-pressed? [keypfn ks]
   (reduce (fn [r v]
@@ -31,6 +37,9 @@
       (left?  [_] (any-pressed? :left))
       (right? [_] (any-pressed? :right))
       (fire?  [_] (any-pressed? :fire))
+
+      (zoom-in?  [_] (any-pressed? :zoom-in))
+      (zoom-out?  [_] (any-pressed? :zoom-out))
       ))
   )
 

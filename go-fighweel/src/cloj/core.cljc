@@ -10,6 +10,8 @@
     [game.tiledata      :as tile-data :refer [tile-data]]
 
     [game.gamekeys      :as gamekeys  :refer [mk-game-keys
+                                              zoom-out?
+                                              zoom-in?
                                               up?
                                               down?
                                               left?
@@ -18,7 +20,7 @@
 
     [cloj.utils :as utils :refer [<? <??]]
 
-    [cloj.math.misc :refer [cos-01 cos sin]]
+    [cloj.math.misc :refer [cos-01 cos sin clamp]]
     [cloj.math.vec2 :as v2 :refer [v2 v2f]]
     [cloj.protocols.system    :as sys-p]
     [cloj.protocols.window    :as win-p]
@@ -130,7 +132,11 @@
    :down  [:key-down :key-j] 
    :left  [:key-left :key-h] 
    :right [:key-right :key-l]
-   :fire  [:key-space] })
+   :fire  [:key-space]
+
+   :zoom-out [:key-minus]
+   :zoom-in [:key-equals]
+   })
 
 (defn mk-game-sprs [res render-manager]
   (let [sprs-chan (sprs/load-sprs res render-manager sprdata/spr-data)
@@ -179,19 +185,30 @@
 
 (defn mk-level-spr! [render-manager spr-data ]
   (level-render/mk-level-spr! render-manager spr-data 30 30 tile-data)
-  
+  )
+
+(def zoom-check-funcs
+  [zoom-in? 
+   zoom-out? ])
+
+(defn handle-zoom
+  ""
+  [gkeys zoom-inc]
+  (reduce (fn [res f]
+            (if (:state (f gkeys)) 
+              (+ res zoom-inc)
+              res)
+            ) 0 zoom-check-funcs)
   )
 
 (defn main [sys]
   (let [win-dims     (v2 840 480)
         canv-dims    (v2/mul (v2 1600 900) (v2 0.2 0.2))
-        off-scr-dims (v2 512 512)
 
         window          (create-window! sys win-dims)
         gkeys           (mk-game-keys (sys-p/get-keyboard sys) key-defs)
         render-manager  (sys-p/get-render-manager sys)
         screen          (rend-p/make-screen-renderer! render-manager)
-        off-screen      (rend-p/make-render-target! render-manager off-scr-dims)
         res-man         (sys-p/get-resource-manager sys)
         mid-scr         (v2/mul canv-dims v2/half)  ]
 
@@ -201,11 +218,20 @@
 
         (loop [t 0
                pos (v2 3 3)
-               cam-pos (v2 0 0)]
+               cam-pos (v2 0 0)
+               zoom 2]
           (do
             (let [desired-pos (->>
-                                (v2/sub pos mid-scr)
-                                (v2/clamp (v2 0 0) (v2 1000 1000))) ]
+                                (v2 zoom zoom)
+                                (v2/div mid-scr)
+                                (v2/sub pos)
+                                (v2/clamp (v2 0 0) (v2 1000 1000)))
+                  new-zoom    (->>
+                                (+ zoom (handle-zoom gkeys 0.1))
+                                (clamp 0.1 10)
+                                )
+
+                  ]
 
               (win-p/update! window)
               (gamekeys/update! gkeys)
@@ -214,6 +240,7 @@
                 (clear-all! (funny-col t))
                 (ortho! win-dims canv-dims)
                 (clear! [0 0 0 1])
+                (scale! (v2 zoom zoom))
                 (translate! (v2/sub v2/zero cam-pos))
                 (rend-p/spr! lev-spr (v2 0 0))
                 (draw-sprs sprs pos t))
@@ -222,6 +249,7 @@
                 (recur (+ t (/ 1 60))
                        (new-pos gkeys pos (v2 1.5 1.5))
                        (camera cam-pos desired-pos)
+                       new-zoom
                        ))))))
 
       (catch Exception e
