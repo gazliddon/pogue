@@ -1,10 +1,10 @@
 (ns game.tiles
   (:require
-    [game.tilemapprotocol :as tmp]
-    [game.tilemaputils :as tmu]
-    [cloj.math.vec2 :as v2 :refer [vec2]]
-    [cloj.math.misc :refer [in-range?
-                            clamp]]))
+    [game.tilemapprotocol :as tmp :refer [ITileMap]]
+    [game.tilemaputils    :as tmu]
+    [cloj.math.vec2       :as v2 :refer [vec2]]
+    [cloj.math.misc       :refer [in-range?
+                                  clamp]]))
 
 (defn- tiles-four [tile] (into [] (take 4 (repeat tile))))
 (def duff-tile {:gfx (tiles-four :b-purple)})
@@ -32,7 +32,8 @@
            :print-info (map vector gfx offsets))))
 
 (defrecord TileMap [width height tiles all-tile-data]
-  tmp/ITileMap
+
+  ITileMap
 
   (get-width [_] width)
   (get-height [_] height)
