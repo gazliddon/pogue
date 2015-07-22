@@ -1,8 +1,9 @@
 (ns game.tiles
   (:require
+    [cloj.math.protocols :as math-p :refer [sub add div mul]]
     [game.tilemapprotocol :as tmp :refer [ITileMap]]
     [game.tilemaputils    :as tmu]
-    [cloj.math.vec2       :as v2 :refer [vec2]]
+    [cloj.math.vec2       :refer [v2]]
     [cloj.math.misc       :refer [in-range?
                                   clamp]]))
 
@@ -23,9 +24,9 @@
     (assoc :id id)))
 
 (defn mk-map-tile-cell [{:keys [gfx] :as tile} x y]
-  (let [pos (vec2 x y)
-        pos-px (v2/mul (vec2 16 16) pos)
-        offsets (for [x [0 16] y [0 16]] (v2/add pos-px (vec2 x y)))]
+  (let [pos (v2 x y)
+        pos-px (mul (v2 16 16) pos)
+        offsets (for [x [0 16] y [0 16]] (add pos-px (v2 x y)))]
     (assoc tile 
            :pos pos
            :pixel-pos pos-px
@@ -69,7 +70,7 @@
   (tmu/reducer
     level
     (fn [memo x y v]
-      (cons (f level (v2/v2 x y) v) memo))
+      (cons (f level (v2 x y) v) memo))
     ()))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
