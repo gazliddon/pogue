@@ -9,6 +9,7 @@
 
     [cloj.lwjgl.keyboard :as keyb]
     [cloj.lwjgl.render :as render]
+    [cloj.lwjgl.render2 :as render-2]
 
     [cloj.lwjgl.window            :refer [mk-lwjgl-window]]
     [clojure.core.async :as async :refer [chan put! <! go-loop]]  
@@ -39,7 +40,7 @@
         sys      (->ClojSystem
                    (mk-lwjgl-window)
                    (mk-resource-manager (mk-loader))
-                   (render/mk-lwjgl-render-manager )
+                   (render-2/mk-lwjgl-render-manager )
                    (keyb/mk-keyboard)
                    (chan))]
     (do
