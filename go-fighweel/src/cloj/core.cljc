@@ -20,8 +20,9 @@
 
     [cloj.utils :as utils :refer [<? <??]]
 
-    [cloj.math.misc :refer [cos-01 cos sin clamp]]
-    [cloj.math.vec2 :as v2 :refer [v2 v2f]]
+    [cloj.math.misc           :refer [cos-01 cos sin clamp]]
+    [cloj.math.vec2           :as v2 :refer [v2 v2f]]
+    [cloj.math.protocols      :as m :refer [add sub div mul]]
     [cloj.protocols.system    :as sys-p]
     [cloj.protocols.window    :as win-p]
     [cloj.protocols.resources :as res-p]
@@ -134,8 +135,8 @@
    :right [:key-right :key-l]
    :fire  [:key-space]
 
-   :zoom-out [:key-minus]
-   :zoom-in [:key-equals]
+   :zoom-out [:key-minus :key-a]
+   :zoom-in [:key-equals :key-s]
    })
 
 (defn mk-game-sprs [res render-manager]
@@ -187,19 +188,23 @@
   (level-render/mk-level-spr! render-manager spr-data 30 30 tile-data)
   )
 
-(def zoom-check-funcs
-  [zoom-in? 
-   zoom-out? ])
-
 (defn handle-zoom
   ""
   [gkeys zoom-inc]
-  (reduce (fn [res f]
-            (if (:state (f gkeys)) 
-              (+ res zoom-inc)
-              res)
-            ) 0 zoom-check-funcs)
+  (cond
+    (zoom-out? gkeys) (- 0  zoom-inc)
+    (zoom-in? gkeys) zoom-inc
+    :default 0))
+
+(defn interp-to [time-to-interp current desired]
+  (add current  (div (sub desired current) time-to-interp)))
+
+(defprotocol IEaser
+  
+  
   )
+
+(defrecord Interpolator [from to])
 
 (defn main [sys]
   (let [win-dims     (v2 840 480)
@@ -230,7 +235,6 @@
                                 (+ zoom (handle-zoom gkeys 0.1))
                                 (clamp 0.1 10)
                                 )
-
                   ]
 
               (win-p/update! window)
@@ -249,7 +253,7 @@
                 (recur (+ t (/ 1 60))
                        (new-pos gkeys pos (v2 1.5 1.5))
                        (camera cam-pos desired-pos)
-                       new-zoom
+                       (interp-to 60 zoom new-zoom )
                        ))))))
 
       (catch Exception e
