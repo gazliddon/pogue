@@ -1,9 +1,17 @@
 (ns cloj.lwjgl.render2
   (:require 
+    [cognitect.transit :as transit]
+
+    [clojure.pprint :as pprint :refer [pprint]]
+
+    [clojure.reflect :as reflect :refer [reflect]]
+
     [cloj.renderutils :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
     [cloj.lwjgl.offscreen :refer [screen-buffer mk-offscreen-buffer!]]
+
+    [clojure-gl.buffers :as buff]
 
 
     [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords bind-fbo!]]
@@ -11,9 +19,15 @@
     [cloj.protocols.render    :as rend-p :refer [IImage]]
     [cloj.protocols.resources :as res-p])
 
-  (:import (org.lwjgl.util.vector Matrix Matrix4f)
-           (org.lwjgl.opengl GL11)))
+  (:import 
+    (java.nio FloatBuffer IntBuffer ByteOrder ByteBuffer)
+    (java.io ByteArrayInputStream ByteArrayOutputStream )
+    (org.lwjgl BufferUtils)
+    (org.lwjgl.util.vector Matrix Matrix4f)
+    (org.lwjgl.opengl GL11 GL15)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set! *warn-on-reflection* true)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn px [v]
   ; (int (+ 0.5 v))
@@ -21,8 +35,51 @@
 
 (def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)  )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
+
+(defn read-transit-str [^String s]
+  (->
+    (.getBytes s)
+    (ByteArrayInputStream. )
+    (transit/reader :json)
+    (transit/read )))
+
+(def models (read-transit-str models-src))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn ^FloatBuffer to-floats [vs]
+  (doto (BufferUtils/createFloatBuffer (count vs))
+    (.put (float-array vs))
+    (.flip)))
+
+(defn ^IntBuffer to-ints [vs]
+ (doto (BufferUtils/createIntBuffer (count vs))
+    (.put (int-array vs))
+    (.flip)) )
+
+(defn to-floats-gl [verts]
+  (let [glb (GL15/glGenBuffers)]
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER glb)
+    (GL15/glBufferData GL15/GL_ARRAY_BUFFER (to-floats verts) GL15/GL_STATIC_DRAW)
+    glb))
+
+(defn to-indicies-gl [indicies]
+  (let [vbo-id (GL15/glGenBuffers) ]
+    (do
+        (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id)
+        (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (to-ints indicies) GL15/GL_STATIC_DRAW))
+    vbo-id))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(->>
+    (reflect 'GL11/glLoadMatrix)
+    (pprint)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
+
 (defn draw-quad [x y w h r g b a]
   (GL11/glBegin GL11/GL_QUADS)
   (GL11/glColor4f r g b a)
@@ -64,6 +121,8 @@
     (GL11/glMatrixMode GL11/GL_MODELVIEW)
     (GL11/glPopMatrix)
     ))
+
+
 
 (defn draw-quad-2 [x y w h r g b a]
   (do
@@ -126,11 +185,11 @@
     (reify
       rend-p/ITransformable
       (matrix! [this mat]
-        (GL11/glLoadMatrix mat)
+        (GL11/glLoadMatrix ^FloatBuffer mat)
         this)
 
       (mul! [this mat]
-        (GL11/glMultMatrix mat )
+        (GL11/glMultMatrix ^FloatBuffer mat )
         mat)
 
       (identity! [this]

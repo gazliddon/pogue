@@ -14,6 +14,7 @@
                  [digest "1.4.4"]
                  [cider/cider-nrepl "0.9.1"]
                  [net.mikera/imagez "0.6.0"]
+                 [com.cognitect/transit-clj "0.8.275"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]
@@ -46,10 +47,10 @@
                                    :pretty-print false}}]}
 
   :repl-options { :port 6502
-                  :init-ns cloj.lwjgl.main
-                  :nrepl-middleware [cider.nrepl.middleware.stacktrace/wrap-stacktrace
-                                     ]
-                 
+                 :init-ns cloj.lwjgl.main
+                 :nrepl-middleware [cider.nrepl.middleware.stacktrace/wrap-stacktrace
+                                    ]
+
                  }
 
   :figwheel {

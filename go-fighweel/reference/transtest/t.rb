@@ -2,20 +2,27 @@ require 'transit'
 
 io = StringIO.new('', 'w+')
 writer = Transit::Writer.new(:json, io)
-def v2 x,y
-    [x, y]
+
+# Vert is x y u v, all floats
+def vert x,y,u,v
+    [x, y, u, v]
 end
 
 def verts v
-    return {:vals => v.flatten,
-     :num => v.length
-    }
+    return {:vals => v.flatten.each {|vv| vv.to_f},
+            :num => v.length }
 end
 
-# Vert is x y u v, all floats
-test_map = {:verts => verts( [v2(0,0), v2(1,0), v2(1,1), v2(0,1)] ),
-            :uvs   => verts( [v2(0,0), v2(1,0), v2(1,1), v2(0,1)] ) }
+quad = {:indicies => [0,3,1,2],
+        :verts => verts( [vert(0,0,0,0), 
+                          vert(0,0,0,0),
+                          vert(1,1,1,1),
+                          vert(0,1,0,1)] )}
 
-writer.write(test_map)
+data = {:models => {:quad => quad}}
 
+
+writer.write(data)
 puts io.string
+
+
