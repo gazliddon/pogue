@@ -17,7 +17,7 @@
   (:import (java.nio IntBuffer ByteBuffer)
            (org.lwjgl.opengl GL11 GL15 GL20 GL30)))
 
-(set! *warn-on-eflection* true)
+(set! *warn-on-reflection* true)
 
 (defn ^Integer get-id [func]
   (let [^IntBuffer ib (create-int-buffer 1)]

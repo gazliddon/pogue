@@ -48,34 +48,67 @@
 (def models (read-transit-str models-src))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn ^FloatBuffer to-floats [vs]
+(def float-array-symbol (symbol "[F"))
+(def byte-array-symbol  (symbol "[B"))
+(def int-array-symbol   (symbol "[I"))
+
+(defmulti to-buffer class)
+
+(defmethod to-buffer float-array-symbol [vs]
   (doto (BufferUtils/createFloatBuffer (count vs))
-    (.put (float-array vs))
+    (.put vs)
     (.flip)))
 
-(defn ^IntBuffer to-ints [vs]
- (doto (BufferUtils/createIntBuffer (count vs))
-    (.put (int-array vs))
-    (.flip)) )
+(defmethod to-buffer int-array-symbol [vs]
+  (doto (BufferUtils/createIntBuffer (count vs))
+    (.put vs)
+    (.flip)))
+
+(defmethod to-buffer byte-array-symbol [vs]
+  (doto (BufferUtils/createByteBuffer (count vs))
+    (.put vs)
+    (.flip)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn make-gl-buffer [buffer-type buffer]
+  (let [vbo-id (GL15/glGenBuffers)]
+    (do
+        (GL15/glBindBuffer buffer-type vbo-id)
+        (GL15/glBufferData buffer-type (to-buffer buffer) GL15/GL_STATIC_DRAW))
+    vbo-id))
+
+; (defn to-floats-gl [verts]
+;   (let [glb (GL15/glGenBuffers)
+;         buffer (-> verts (float-array) (to-buffer))]
+
+;     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER glb)
+;     (GL15/glBufferData GL15/GL_ARRAY_BUFFER buffer GL15/GL_STATIC_DRAW)
+;     glb))
+
+; (defn to-indicies-gl [indicies]
+;   (let [vbo-id (GL15/glGenBuffers)
+;         buffer (-> verts (int-array) (to-buffer)) 
+;         ]
+;     (do
+;         (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id)
+;         (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER buffer GL15/GL_STATIC_DRAW))
+;     vbo-id))
+
+(defn to-indicies-gl [indices]
+  (make-gl-buffer GL15/GL_ELEMENT_ARRAY_BUFFER (int-array indices)))
 
 (defn to-floats-gl [verts]
-  (let [glb (GL15/glGenBuffers)]
-    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER glb)
-    (GL15/glBufferData GL15/GL_ARRAY_BUFFER (to-floats verts) GL15/GL_STATIC_DRAW)
-    glb))
+  (make-gl-buffer GL15/GL_ARRAY_BUFFER (float-array verts)))
 
-(defn to-indicies-gl [indicies]
-  (let [vbo-id (GL15/glGenBuffers) ]
-    (do
-        (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id)
-        (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER (to-ints indicies) GL15/GL_STATIC_DRAW))
-    vbo-id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (->>
     (reflect 'GL11/glLoadMatrix)
     (pprint)
 )
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     
