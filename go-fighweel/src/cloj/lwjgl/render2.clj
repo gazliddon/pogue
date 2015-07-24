@@ -2,17 +2,17 @@
   (:require 
     [cognitect.transit :as transit]
 
+    [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
+                                            to-floats-gl]]
+
     [clojure.pprint :as pprint :refer [pprint]]
 
     [clojure.reflect :as reflect :refer [reflect]]
 
-    [cloj.renderutils :refer [get-viewport]]
+    [cloj.renderutils         :refer [get-viewport]]
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
-    [cloj.lwjgl.offscreen :refer [screen-buffer mk-offscreen-buffer!]]
-
-    [clojure-gl.buffers :as buff]
-
+    [cloj.lwjgl.offscreen     :refer [screen-buffer mk-offscreen-buffer!]]
 
     [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords bind-fbo!]]
     [clojure-gl.texture       :refer [make-texture-low!]]
@@ -24,15 +24,12 @@
     (java.io ByteArrayInputStream ByteArrayOutputStream )
     (org.lwjgl BufferUtils)
     (org.lwjgl.util.vector Matrix Matrix4f)
-    (org.lwjgl.opengl GL11 GL15)))
+    (org.lwjgl.opengl GL11 GL15 GL20 GL30)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (set! *warn-on-reflection* true)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn px [v]
-  ; (int (+ 0.5 v))
-  v)
-
 (def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,87 +44,41 @@
 
 (def models (read-transit-str models-src))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def float-array-symbol (symbol "[F"))
-(def byte-array-symbol  (symbol "[B"))
-(def int-array-symbol   (symbol "[I"))
-
-; (defmulti to-buffer class)
-
-; (defmethod to-buffer float-array-symbol [vs]
-;   (doto (BufferUtils/createFloatBuffer (count vs))
-;     (.put vs)
-;     (.flip)))
-
-; (defmethod to-buffer int-array-symbol [vs]
-;   (doto (BufferUtils/createIntBuffer (count vs))
-;     (.put vs)
-;     (.flip)))
-
-; (defmethod to-buffer byte-array-symbol [vs]
-;   (doto (BufferUtils/createByteBuffer (count vs))
-;     (.put vs)
-;     (.flip)))
-
-(defprotocol IToBuffer
-  (my-to-buffer [_]))
-
-(extend-protocol IToBuffer
-  (Class/forName "[F") ; Float buffer
-
-  (my-to-buffer [ this ]
-    (doto (BufferUtils/createFloatBuffer (count this))
-      (.put this)
-      (.flip)) 
-    )
-  )
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn make-gl-buffer [buffer-type buffer]
-  (let [vbo-id (GL15/glGenBuffers)]
+(defn make-bufffers [model]
+  (let [verts (-> model :verts :vals)
+        indicies (-> model :indicies )
+        vao-id (GL30/glGenVertexArrays)
+        ibo-id (to-indicies-gl indicies)
+        vbo-id (to-floats-gl verts)]
     (do
-        (GL15/glBindBuffer buffer-type vbo-id)
-        (GL15/glBufferData buffer-type (to-buffer buffer) GL15/GL_STATIC_DRAW))
-    vbo-id))
+      (GL30/glBindVertexArray vao-id)
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo-id)
+      (GL11/glEnableClientState GL11/GL_VERTEX_ARRAY)
+      (GL11/glVertexPointer 2 GL11/GL_FLOAT 8 0)
+      (GL11/glEnableClientState GL11/GL_TEXTURE_COORD_ARRAY)
+      (GL11/glVertexPointer 2 GL11/GL_FLOAT 8 8)
+      (GL11/glEnableClientState GL11/GL_INDEX_ARRAY)
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id))
+    {:vao-id vao-id
+     :num-of-indicies (count indicies)}))
 
-; (defn to-floats-gl [verts]
-;   (let [glb (GL15/glGenBuffers)
-;         buffer (-> verts (float-array) (to-buffer))]
+(defprotocol IModel
+  (draw [_]))
 
-;     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER glb)
-;     (GL15/glBufferData GL15/GL_ARRAY_BUFFER buffer GL15/GL_STATIC_DRAW)
-;     glb))
-
-; (defn to-indicies-gl [indicies]
-;   (let [vbo-id (GL15/glGenBuffers)
-;         buffer (-> verts (int-array) (to-buffer)) 
-;         ]
-;     (do
-;         (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id)
-;         (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER buffer GL15/GL_STATIC_DRAW))
-;     vbo-id))
-
-(defn to-indicies-gl [indices]
-  (make-gl-buffer GL15/GL_ELEMENT_ARRAY_BUFFER (int-array indices)))
-
-(defn to-floats-gl [verts]
-  (make-gl-buffer GL15/GL_ARRAY_BUFFER (float-array verts)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(->>
-    (reflect 'GL11/glLoadMatrix)
-    (pprint)
-)
-
+(defn make-model [model]
+  (let [gl-model (delay (make-bufffers model))]
+    (reify
+      IModel
+      (draw [_]
+        (let [{:keys [vao-id num-of-indicies]} @gl-model] 
+          (do
+            (GL30/glBindVertexArray vao-id)
+            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_INT 0)
+            (GL30/glBindVertexArray 0)
+            ))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    
-
 (defn draw-quad [x y w h r g b a]
   (GL11/glBegin GL11/GL_QUADS)
   (GL11/glColor4f r g b a)
@@ -147,6 +98,7 @@
     (GL11/glLoadIdentity)
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
+
 
     (GL11/glBegin GL11/GL_QUADS)
     (GL11/glColor4f 1 1 1 1)
@@ -170,8 +122,6 @@
     (GL11/glPopMatrix)
     ))
 
-
-
 (defn draw-quad-2 [x y w h r g b a]
   (do
     (GL11/glPushMatrix)
@@ -181,7 +131,6 @@
     (draw-quad 0 0 1 1 r g b a)
     (GL11/glPopMatrix)
   ))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn- get-uv-cords [[t-w t-h] [x y w h]]
@@ -193,17 +142,16 @@
    (* y-scale h) ]) )
 
 (defn- my-make-spr! [id img [x y w h]]
-  (let [get-gl-texture (memoize make-texture-low!) ]
+  (let [gl-texture (delay (make-texture-low! (rend-p/img img)))]
     (try
       (reify
         IGLTexture
-        (get-uv-coords [ this ]
-          (get-uv-cords (:dims (get-gl-texture (rend-p/img img)) ) [x y w h]))
+        (get-uv-coords [_]
+          (get-uv-cords (:dims @gl-texture) [x y w h]))
 
-        (bind-texture! [this]
+        (bind-texture! [_]
           (->>
-            (get-gl-texture (rend-p/img img))
-            (:tex-id)
+            (:tex-id @gl-texture)
             (GL11/glBindTexture GL11/GL_TEXTURE_2D )))
 
         IImage
@@ -212,9 +160,10 @@
         (width  [_] w)
         (height [_] h )
         (img    [ this ] img))
+
       (catch Exception e
         (do
-          (println "[Error making textuer ] " (.getMessage e)))))))
+          (println "[Error making texture] " (.getMessage e)))))))
 
 (defn- init-gl! []
   (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))
@@ -226,84 +175,80 @@
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
   (GL11/glEnable GL11/GL_BLEND)  )
 
-(def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
-
 (defn mk-renderer []
-  (let [dims (atom (v2 100 100)) ]
-    (reify
-      rend-p/ITransformable
-      (matrix! [this mat]
-        (GL11/glLoadMatrix ^FloatBuffer mat)
-        this)
+  (reify
+    rend-p/ITransformable
+    (matrix! [this mat]
+      (GL11/glLoadMatrix ^FloatBuffer mat)
+      this)
 
-      (mul! [this mat]
-        (GL11/glMultMatrix ^FloatBuffer mat )
-        mat)
+    (mul! [this mat]
+      (GL11/glMultMatrix ^FloatBuffer mat )
+      mat)
 
-      (identity! [this]
-        (GL11/glLoadIdentity)
-        this)
+    (identity! [this]
+      (GL11/glLoadIdentity)
+      this)
 
-      (translate! [this {:keys [x y]}]
-        (GL11/glTranslatef x y 0)
-        this)
+    (translate! [this {:keys [x y]}]
+      (GL11/glTranslatef x y 0)
+      this)
 
-      (scale! [this {:keys [x y] }]
-        (GL11/glScalef x y 1)
-        this)
+    (scale! [this {:keys [x y] }]
+      (GL11/glScalef x y 1)
+      this)
 
-      (rotate! [this v]
-        (GL11/glRotatef v 0 0 1)
-        this)
+    (rotate! [this v]
+      (GL11/glRotatef v 0 0 1)
+      this)
 
-      rend-p/IRenderBackend
-      (ortho! [this win-dims canv-dims]
-        (let [[a b c d] (get-viewport win-dims canv-dims) ]
-          (do
-            (GL11/glViewport a b c d)
-            (GL11/glScissor a b c d)
-            (GL11/glMatrixMode GL11/GL_PROJECTION)
-            (GL11/glLoadIdentity) 
-            (GL11/glOrtho 0 (:x canv-dims) (:y canv-dims) 0 -1 1)
-            (GL11/glMatrixMode GL11/GL_MODELVIEW)
-            (GL11/glLoadIdentity) ))
-        this)
-
-      (save! [this]
-        (GL11/glPushMatrix)
-        this)
-
-      (restore! [this]
-        (GL11/glPopMatrix)
-        this)
-
-      (clear-all! [this rgba]
+    rend-p/IRenderBackend
+    (ortho! [this win-dims canv-dims]
+      (let [[a b c d] (get-viewport win-dims canv-dims) ]
         (do
-          (GL11/glDisable GL11/GL_SCISSOR_TEST)
-          (rend-p/clear! this rgba)
-          (GL11/glEnable GL11/GL_SCISSOR_TEST)
-          this))
+          (GL11/glViewport a b c d)
+          (GL11/glScissor a b c d)
+          (GL11/glMatrixMode GL11/GL_PROJECTION)
+          (GL11/glLoadIdentity) 
+          (GL11/glOrtho 0 (:x canv-dims) (:y canv-dims) 0 -1 1)
+          (GL11/glMatrixMode GL11/GL_MODELVIEW)
+          (GL11/glLoadIdentity) ))
+      this)
 
-      (clear! [this [r g b a]]
-        (GL11/glClearColor r g b a)
-        (GL11/glClear clear-mask)
-        this)
+    (save! [this]
+      (GL11/glPushMatrix)
+      this)
 
-      (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
-        (let [uv (get-uv-coords spr)]
-          (GL11/glEnable GL11/GL_TEXTURE_2D)
-          (bind-texture! spr)
-          (apply draw-quad-textured x y w h uv)
-          ; (apply draw-t-quad x y w h uv)
-          this))
+    (restore! [this]
+      (GL11/glPopMatrix)
+      this)
 
-      (box! [this {x :x y :y} {w :x h :y} [r g b a]]
-        (GL11/glDisable GL11/GL_TEXTURE_2D)
-        (draw-quad-2 x y w h r g b a)
-        this) 
+    (clear-all! [this rgba]
+      (do
+        (GL11/glDisable GL11/GL_SCISSOR_TEST)
+        (rend-p/clear! this rgba)
+        (GL11/glEnable GL11/GL_SCISSOR_TEST)
+        this))
 
-      (spr! [this img pos]
-        (rend-p/spr-scaled! this img pos (v2 (rend-p/width img) (rend-p/height img)))))))
+    (clear! [this [r g b a]]
+      (GL11/glClearColor r g b a)
+      (GL11/glClear clear-mask)
+      this)
+
+    (spr-scaled! [this spr {x :x y :y} {w :x h :y}]
+      (let [uv (get-uv-coords spr)]
+        (GL11/glEnable GL11/GL_TEXTURE_2D)
+        (bind-texture! spr)
+        (apply draw-quad-textured x y w h uv)
+        this))
+
+    (box! [this {x :x y :y} {w :x h :y} [r g b a]]
+      (GL11/glDisable GL11/GL_TEXTURE_2D)
+      (draw-quad-2 x y w h r g b a)
+      this) 
+
+    (spr! [this img pos]
+      (rend-p/spr-scaled! this img pos (v2 (rend-p/width img) (rend-p/height img))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn mk-lwjgl-render-manager []

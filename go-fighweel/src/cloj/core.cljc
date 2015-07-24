@@ -5,6 +5,8 @@
     [game.sprdata       :as sprdata]
     [clojure.core.async :as async    :refer [go <!! ]]
 
+    [clojure.pprint :refer [pprint]]
+
     [game.levelrender   :as level-render]
 
     [game.tiledata      :as tile-data :refer [tile-data]]
@@ -257,6 +259,7 @@
                        ))))))
 
       (catch Exception e
+        (pprint e)
         (println "[Error in main] " (.getMessage e)))
 
       (finally
