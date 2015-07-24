@@ -33,7 +33,7 @@
 (def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
+(def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0, 1,0,1,0, 1,1,1,1, 0,1,0,1],\"~:num\",4]]]]" )
 
 (defn read-transit-str [^String s]
   (->
@@ -50,6 +50,7 @@
         vao-id (GL30/glGenVertexArrays)
         ibo-id (to-indicies-gl indicies)
         vbo-id (to-floats-gl verts)]
+
     (do
       (GL30/glBindVertexArray vao-id)
 

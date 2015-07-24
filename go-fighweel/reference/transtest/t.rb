@@ -15,7 +15,7 @@ end
 
 quad = {:indicies => [0,3,1,2],
         :verts => verts( [vert(0,0,0,0), 
-                          vert(0,0,0,0),
+                          vert(1,0,1,0),
                           vert(1,1,1,1),
                           vert(0,1,0,1)] )}
 
