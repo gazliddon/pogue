@@ -52,22 +52,37 @@
 (def byte-array-symbol  (symbol "[B"))
 (def int-array-symbol   (symbol "[I"))
 
-(defmulti to-buffer class)
+; (defmulti to-buffer class)
 
-(defmethod to-buffer float-array-symbol [vs]
-  (doto (BufferUtils/createFloatBuffer (count vs))
-    (.put vs)
-    (.flip)))
+; (defmethod to-buffer float-array-symbol [vs]
+;   (doto (BufferUtils/createFloatBuffer (count vs))
+;     (.put vs)
+;     (.flip)))
 
-(defmethod to-buffer int-array-symbol [vs]
-  (doto (BufferUtils/createIntBuffer (count vs))
-    (.put vs)
-    (.flip)))
+; (defmethod to-buffer int-array-symbol [vs]
+;   (doto (BufferUtils/createIntBuffer (count vs))
+;     (.put vs)
+;     (.flip)))
 
-(defmethod to-buffer byte-array-symbol [vs]
-  (doto (BufferUtils/createByteBuffer (count vs))
-    (.put vs)
-    (.flip)))
+; (defmethod to-buffer byte-array-symbol [vs]
+;   (doto (BufferUtils/createByteBuffer (count vs))
+;     (.put vs)
+;     (.flip)))
+
+(defprotocol IToBuffer
+  (my-to-buffer [_]))
+
+(extend-protocol IToBuffer
+  (Class/forName "[F") ; Float buffer
+
+  (my-to-buffer [ this ]
+    (doto (BufferUtils/createFloatBuffer (count this))
+      (.put this)
+      (.flip)) 
+    )
+  )
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
