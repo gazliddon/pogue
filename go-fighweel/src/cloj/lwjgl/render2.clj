@@ -52,30 +52,46 @@
         vbo-id (to-floats-gl verts)]
     (do
       (GL30/glBindVertexArray vao-id)
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo-id)
-      (GL11/glEnableClientState GL11/GL_VERTEX_ARRAY)
-      (GL11/glVertexPointer 2 GL11/GL_FLOAT 8 0)
-      (GL11/glEnableClientState GL11/GL_TEXTURE_COORD_ARRAY)
-      (GL11/glVertexPointer 2 GL11/GL_FLOAT 8 8)
+
+      ;; Enable all the things
       (GL11/glEnableClientState GL11/GL_INDEX_ARRAY)
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vbo-id))
+      (GL11/glEnableClientState GL11/GL_VERTEX_ARRAY)
+      (GL11/glEnableClientState GL11/GL_TEXTURE_COORD_ARRAY)
+
+      ;; Bind the vert buffer
+      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo-id)
+      ;; point at the right vert elements
+      (GL11/glVertexPointer 2 GL11/GL_FLOAT 16 0)
+      (GL11/glTexCoordPointer 2 GL11/GL_FLOAT 16 8)
+
+      ;; Bind the index buffer
+      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER ibo-id) 
+
+      ;; Bind back to a nothing VAO
+      (GL30/glBindVertexArray 0)
+      )
     {:vao-id vao-id
      :num-of-indicies (count indicies)}))
 
 (defprotocol IModel
-  (draw [_]))
+  (draw! [_]))
 
 (defn make-model [model]
   (let [gl-model (delay (make-bufffers model))]
     (reify
       IModel
-      (draw [_]
+      (draw! [_]
         (let [{:keys [vao-id num-of-indicies]} @gl-model] 
           (do
             (GL30/glBindVertexArray vao-id)
-            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_INT 0)
+            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
             (GL30/glBindVertexArray 0)
             ))))))
+
+
+(def the-model (make-model (-> models :models :quad )))
+
+; (pprint the-model)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -99,25 +115,25 @@
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
+    (draw! the-model)
 
-    (GL11/glBegin GL11/GL_QUADS)
-    (GL11/glColor4f 1 1 1 1)
+    ; (GL11/glBegin GL11/GL_QUADS)
+    ; (GL11/glColor4f 1 1 1 1)
 
-    (GL11/glTexCoord2f 0 0)
-    (GL11/glVertex2f 0 0)
+    ; (GL11/glTexCoord2f 0 0)
+    ; (GL11/glVertex2f 0 0)
 
-    (GL11/glTexCoord2f 1 0)
-    (GL11/glVertex2f 1 0)
+    ; (GL11/glTexCoord2f 1 0)
+    ; (GL11/glVertex2f 1 0)
 
-    (GL11/glTexCoord2f 1 1)
-    (GL11/glVertex2f 1 1 )
+    ; (GL11/glTexCoord2f 1 1)
+    ; (GL11/glVertex2f 1 1 )
 
-    (GL11/glTexCoord2f 0 1)
-    (GL11/glVertex2f 0 1)
+    ; (GL11/glTexCoord2f 0 1)
+    ; (GL11/glVertex2f 0 1)
 
-    (GL11/glEnd) 
+    ; (GL11/glEnd) 
 
-    (GL11/glPopMatrix)
     (GL11/glMatrixMode GL11/GL_MODELVIEW)
     (GL11/glPopMatrix)
     ))
