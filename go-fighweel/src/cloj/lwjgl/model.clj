@@ -19,7 +19,6 @@
         vao-id   (GL30/glGenVertexArrays)
         ibo-id   (to-indicies-gl indicies)
         vbo-id   (to-floats-gl verts)]
-
     (do
       (GL30/glBindVertexArray vao-id)
 
@@ -42,6 +41,21 @@
       )
     {:vao-id vao-id
      :num-of-indicies (count indicies)}))
+
+; (def vdef [(make-elem :pos :vec3)
+;            (make-elem :uv :vec3)
+;            (make-elem :col :vec4)])
+
+; (defmacro vertex [vert-name & elems]
+;   (let [elem-array (partition 2 elems)]
+
+;     )
+;   )
+
+; (vetex standard-vert
+;        [vec3 pos
+;         vec2 uv
+;         vec4 col])
 
 (defn make-model [model]
   (let [gl-model (delay (make-bufffers model))]
