@@ -2,6 +2,8 @@
   (:require 
     [cognitect.transit :as transit]
 
+    [msgpack.core :as msg]
+
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
 
@@ -26,7 +28,7 @@
     (java.io ByteArrayInputStream ByteArrayOutputStream )
     (org.lwjgl BufferUtils)
     (org.lwjgl.util.vector Matrix Matrix4f)
-    (org.lwjgl.opengl GL11 GL15 GL20 GL30)))
+    (org.lwjgl.opengl GL11 GL15 GL20 GL30 GL31)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (set! *warn-on-reflection* true)
@@ -37,12 +39,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,1,0,1,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
 
-(defn read-transit-str [^String s]
-  (->
-    (.getBytes s)
-    (ByteArrayInputStream. )
-    (transit/reader :json)
-    (transit/read )))
+(do
+  (def new-model-src (slurp "resources/public/data/test.json"))
+  (def new-model (read-transit-str new-model-src)))
+
+(defn read-transit-str
+  ([^String s file-type]
+   (->
+     (.getBytes s)
+     (ByteArrayInputStream. )
+     (transit/reader file-type)
+     (transit/read )))
+  ([^String s]
+   (read-transit-str s :json)))
+
 
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
@@ -142,7 +152,10 @@
   (GL11/glDisable GL11/GL_DEPTH_TEST)
   (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
-  (GL11/glEnable GL11/GL_BLEND)  )
+  (GL11/glEnable GL11/GL_BLEND)
+
+  (GL11/glEnable GL31/GL_PRIMITIVE_RESTART)
+  (GL31/glPrimitiveRestartIndex 0xffff))
 
 (defn mk-renderer []
   (reify

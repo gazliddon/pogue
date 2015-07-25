@@ -3,6 +3,7 @@ GEM
   specs:
     addressable (2.3.8)
     docile (1.1.5)
+    edn (1.0.8)
     msgpack (0.5.12)
     oj (2.10.4)
     rake (10.4.2)
@@ -17,6 +18,7 @@ PLATFORMS
 
 DEPENDENCIES
   docile
+  edn
   rake
   rmath3d
   transit-ruby

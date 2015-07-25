@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+gem 'rmath3d'
+gem 'docile'
+gem 'transit-ruby'
+gem 'rake'
+gem 'edn'

@@ -15,6 +15,7 @@
                  [cider/cider-nrepl "0.9.1"]
                  [net.mikera/imagez "0.6.0"]
                  [com.cognitect/transit-clj "0.8.275"]
+                 [clojure-msgpack "1.1.1"]
                  [org.omcljs/om "0.8.8"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]

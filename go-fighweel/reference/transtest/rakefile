@@ -1,0 +1,15 @@
+$: << File.expand_path(File.dirname(__FILE__))
+
+require 'pp'
+require 'lib/geo'
+include Geo
+
+task default: %w[main]
+
+task :main do
+     txt = run_script("src/quad.rb", :json)
+     File.write("../../resources/public/data/test.json", txt)
+end
+
+
+
