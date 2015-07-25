@@ -24,7 +24,7 @@
       (float= 1 (clamp01 199)))
 
     (should
-      (float= 0.6502 (clamp01 0.6502))))
+ ev     (float= 0.6502 (clamp01 0.6502))))
 
   (it "should do this num digits right"
     (should= 4 (num-digits 1000 10)))
