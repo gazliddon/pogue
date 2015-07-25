@@ -41,3 +41,20 @@
   (reduce (fn [acc v]
             (let [info ((:elem-type v) elem->info )]
               (+ acc (:size-bytes info))))0 vdef))
+
+
+(defn make-elem [type elem-type]
+  {:type type :elem-info (elem-type elem->info)})
+
+(defn set-pointers [vdef]
+  (let [stride (get-vert-size-bytes vdef)]
+
+    (loop [vdefs-left vdef
+           offset 0]
+
+
+      
+      )
+    )
+  )
+
