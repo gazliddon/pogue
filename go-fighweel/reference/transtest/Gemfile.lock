@@ -5,6 +5,7 @@ GEM
     docile (1.1.5)
     msgpack (0.5.12)
     oj (2.10.4)
+    rake (10.4.2)
     rmath3d (1.2.0)
     transit-ruby (0.8.591)
       addressable (~> 2.3.6)
@@ -16,6 +17,7 @@ PLATFORMS
 
 DEPENDENCIES
   docile
+  rake
   rmath3d
   transit-ruby
 

@@ -13,10 +13,12 @@
     [cloj.math.vec2           :as v2 :refer [ v2 v2f ]]
 
     [cloj.lwjgl.offscreen     :refer [screen-buffer mk-offscreen-buffer!]]
+    [cloj.lwjgl.model :as model]
 
     [cloj.lwjgl.protocols     :refer [bind-texture! IGLTexture get-uv-coords bind-fbo!]]
     [clojure-gl.texture       :refer [make-texture-low!]]
     [cloj.protocols.render    :as rend-p :refer [IImage]]
+    [cloj.protocols.model     :as model-p :refer [IModel ]]
     [cloj.protocols.resources :as res-p])
 
   (:import 
@@ -26,14 +28,14 @@
     (org.lwjgl.util.vector Matrix Matrix4f)
     (org.lwjgl.opengl GL11 GL15 GL20 GL30)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (set! *warn-on-reflection* true)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0, 1,0,1,0, 1,1,1,1, 0,1,0,1],\"~:num\",4]]]]" )
+(def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,1,0,1,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
 
 (defn read-transit-str [^String s]
   (->
@@ -43,57 +45,7 @@
     (transit/read )))
 
 (def models (read-transit-str models-src))
-
-(defn make-bufffers [model]
-  (let [verts (-> model :verts :vals)
-        indicies (-> model :indicies )
-        vao-id (GL30/glGenVertexArrays)
-        ibo-id (to-indicies-gl indicies)
-        vbo-id (to-floats-gl verts)]
-
-    (do
-      (GL30/glBindVertexArray vao-id)
-
-      ;; Enable all the things
-      (GL11/glEnableClientState GL11/GL_INDEX_ARRAY)
-      (GL11/glEnableClientState GL11/GL_VERTEX_ARRAY)
-      (GL11/glEnableClientState GL11/GL_TEXTURE_COORD_ARRAY)
-
-      ;; Bind the vert buffer
-      (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo-id)
-      ;; point at the right vert elements
-      (GL11/glVertexPointer 2 GL11/GL_FLOAT 16 0)
-      (GL11/glTexCoordPointer 2 GL11/GL_FLOAT 16 8)
-
-      ;; Bind the index buffer
-      (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER ibo-id) 
-
-      ;; Bind back to a nothing VAO
-      (GL30/glBindVertexArray 0)
-      )
-    {:vao-id vao-id
-     :num-of-indicies (count indicies)}))
-
-(defprotocol IModel
-  (draw! [_]))
-
-(defn make-model [model]
-  (let [gl-model (delay (make-bufffers model))]
-    (reify
-      IModel
-      (draw! [_]
-        (let [{:keys [vao-id num-of-indicies]} @gl-model] 
-          (do
-            (GL30/glBindVertexArray vao-id)
-            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
-            (GL30/glBindVertexArray 0)
-            ))))))
-
-
-(def the-model (make-model (-> models :models :quad )))
-
-; (pprint the-model)
-
+(def the-model (model/make-model (-> models :models :quad )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
@@ -116,7 +68,7 @@
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
-    (draw! the-model)
+    (model-p/draw! the-model)
 
     ; (GL11/glBegin GL11/GL_QUADS)
     ; (GL11/glColor4f 1 1 1 1)
