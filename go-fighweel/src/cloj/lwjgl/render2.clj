@@ -41,7 +41,14 @@
 
 (do
   (def new-model-src (slurp "resources/public/data/test.json"))
-  (def new-model (read-transit-str new-model-src)))
+  (def new-model (read-transit-str new-model-src))
+
+(pprint (type (first  new-model)))  
+
+(->
+  new-model
+  (first)
+  (keys)))
 
 (defn read-transit-str
   ([^String s file-type]
@@ -53,9 +60,10 @@
   ([^String s]
    (read-transit-str s :json)))
 
-
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
+
+; (def the-other-model (model/make-other-model))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
