@@ -1,11 +1,9 @@
 (ns cloj.lwjgl.render2
   (:require 
-    [cognitect.transit :as transit]
-
-    [msgpack.core :as msg]
-
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
+
+    [cloj.totransit :refer [read-transit-str]]
 
     [clojure.pprint :as pprint :refer [pprint]]
 
@@ -28,7 +26,23 @@
     (java.io ByteArrayInputStream ByteArrayOutputStream )
     (org.lwjgl BufferUtils)
     (org.lwjgl.util.vector Matrix Matrix4f)
-    (org.lwjgl.opengl GL11 GL15 GL20 GL30 GL31)))
+    (org.lwjgl.opengl
+      GLContext
+      NVPrimitiveRestart   
+      GL11 GL15 GL20 GL30
+      )))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn set-primitive-restart-ext
+  "Enable and set primive restart using the NV extension"
+  [^Integer index]
+  (GL11/glEnable NVPrimitiveRestart/GL_PRIMITIVE_RESTART_NV)
+  (NVPrimitiveRestart/glPrimitiveRestartIndexNV index))
+
+(defn get-caps
+  "get the current gl context capabilities"
+  []
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (set! *warn-on-reflection* true)
@@ -42,23 +56,10 @@
 (do
   (def new-model-src (slurp "resources/public/data/test.json"))
   (def new-model (read-transit-str new-model-src))
-
-(pprint (type (first  new-model)))  
-
 (->
   new-model
   (first)
   (keys)))
-
-(defn read-transit-str
-  ([^String s file-type]
-   (->
-     (.getBytes s)
-     (ByteArrayInputStream. )
-     (transit/reader file-type)
-     (transit/read )))
-  ([^String s]
-   (read-transit-str s :json)))
 
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
@@ -152,7 +153,18 @@
         (do
           (println "[Error making texture] " (.getMessage e)))))))
 
+(defn check-capabilities [a-set]
+  (let [caps (GLContext/getCapabilities)]
+    (map (fn [func]
+           {:func func
+            :supported? true}
+           ))
+    )
+  )
+
 (defn- init-gl! []
+  (pprint
+    (GLContext/getCapabilities))
   (println "OpenGL version:" (GL11/glGetString GL11/GL_VERSION))
   (GL11/glClearColor 0.0 0.0 0.0 0.0)
   (GL11/glClear clear-mask) 
@@ -161,9 +173,7 @@
   (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
   (GL11/glEnable GL11/GL_BLEND)
-
-  (GL11/glEnable GL31/GL_PRIMITIVE_RESTART)
-  (GL31/glPrimitiveRestartIndex 0xffff))
+  (set-primitive-restart-ext 0x7fffffff))
 
 (defn mk-renderer []
   (reify

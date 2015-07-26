@@ -1,5 +1,8 @@
 def main
     tri_strips do
+
+        restart_maker 0x7fffffff
+
         amount = 3
         step = 360 / amount
         identity

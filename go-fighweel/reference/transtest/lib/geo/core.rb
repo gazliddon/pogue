@@ -16,7 +16,7 @@ include RMath3D
 
 module Geo
 
-    def merge_verts varray, restart_marker = 0xffff
+    def merge_verts varray, restart_marker = 0x7fffffff
         index_base = 0
 
         indicies = []
@@ -142,6 +142,7 @@ module Geo
     # {{{ class GeoBuilder
     class GeoBuilder
         def initialize(prim_type)
+            @restart_marker = 0x7fffffff
             @prim_type = prim_type
             @verts = []
             @mat = RMtx4.new.setIdentity
@@ -194,8 +195,12 @@ module Geo
             @mat.mul!(RMtx4.new.translation x,y,z)
         end
 
+        def restart_maker i
+            @restart_maker = i
+        end
+
         def build
-            merge_verts @verts
+            merge_verts @verts, @restart_marker
         end
 
         def verts(&block)
