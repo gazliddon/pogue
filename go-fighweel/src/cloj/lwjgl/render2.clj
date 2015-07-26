@@ -34,6 +34,22 @@
       )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO put in a utils file somewhere
+
+(def pref (comp pprint reflect))
+
+(defn ->pprint
+  ([v]
+   (do
+     (pprint v)
+     v))
+
+  ([msg v]
+   (do
+     (print (str msg " "))
+     (->pprint v))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn set-primitive-restart-ext
   "Enable and set primive restart using the NV extension"
   [^Integer index]
@@ -55,17 +71,21 @@
 (def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,1,0,1,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
 
 (do
-  (def new-model-src (slurp "resources/public/data/test.json"))
-  (def new-model (read-transit-str new-model-src))
+  (def new-model-src )
+  (def other- (read-transit-str new-model-src))
   (pprint new-model)
 )
 
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
 
-
-
-; (def the-other-model (model/make-other-model))
+(def the-other-model
+  (->
+    (slurp "resources/public/data/test.json")
+    (read-transit-str)
+    (first)
+    (->pprint)
+    (model/make-other-model ) ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
