@@ -3,6 +3,7 @@
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
 
+
     [cloj.totransit :refer [read-transit-str]]
 
     [clojure.pprint :as pprint :refer [pprint]]
@@ -56,13 +57,13 @@
 (do
   (def new-model-src (slurp "resources/public/data/test.json"))
   (def new-model (read-transit-str new-model-src))
-(->
-  new-model
-  (first)
-  (keys)))
+  (pprint new-model)
+)
 
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
+
+
 
 ; (def the-other-model (model/make-other-model))
 
@@ -118,16 +119,16 @@
     (GL11/glScalef w h 1)
     (draw-quad 0 0 1 1 r g b a)
     (GL11/glPopMatrix)
-  ))
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn- get-uv-cords [[t-w t-h] [x y w h]]
   (let [x-scale (/ 1 t-w)
         y-scale (/ 1 t-h)]
-  [(* x-scale x)
-   (* y-scale y)
-   (* x-scale w)
-   (* y-scale h) ]) )
+    [(* x-scale x)
+     (* y-scale y)
+     (* x-scale w)
+     (* y-scale h) ]) )
 
 (defn- my-make-spr! [id img [x y w h]]
   (let [gl-texture (delay (make-texture-low! (rend-p/img img)))]

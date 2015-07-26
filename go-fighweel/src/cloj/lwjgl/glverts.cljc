@@ -104,14 +104,18 @@
     final-code))
 
 (comment
-  (defverts set-standard-vert
-    vec3 pos
-    vec2 uv
-    vec4 col)
+  (do
 
-  (binding[ pprint/*print-right-margin* 100 ]
-    (with-pprint-dispatch code-dispatch
-      (pprint (macroexpand-1 '(defverts set-stanard-vert! vec3 pos vec2 uv vec4 col)))
-      )))
+    (defverts set-standard-vert
+      vec3 pos
+      vec2 uv
+      vec4 col)
+
+    (binding[ pprint/*print-right-margin* 100 ]
+      (with-pprint-dispatch code-dispatch
+        (pprint (macroexpand-1 '(defverts set-stanard-vert! vec3 pos vec2 uv vec4 col)))
+        ))
+    ) 
+  )
 
 
