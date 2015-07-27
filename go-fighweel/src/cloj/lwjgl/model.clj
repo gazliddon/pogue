@@ -22,6 +22,18 @@
   vec2 uv
   vec4 col)
 
+
+(pprint
+
+  (macroexpand-1 '(defverts set-standard-vert
+  vec3 pos
+  vec2 uv
+  vec4 col))
+  
+  )
+
+
+
 (defn make-other-buffers [{:keys [verts indicies] :as model}]
   (let [vao-id   (GL30/glGenVertexArrays)
         ibo-id   (to-indicies-gl indicies)
@@ -87,5 +99,6 @@
           (do
             (GL30/glBindVertexArray vao-id)
             (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
+            ; (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP 4 GL11/GL_UNSIGNED_INT 0)
             )))))
   )

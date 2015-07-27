@@ -1,5 +1,6 @@
 (ns cloj.lwjgl.render2
   (:require 
+    [game.appstate :refer [get-time]]
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
 
@@ -70,12 +71,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def models-src "[\"^ \",\"~:models\",[\"^ \",\"~:quad\",[\"^ \",\"~:indicies\",[0,3,1,2],\"~:verts\",[\"^ \",\"~:vals\",[0,0,0,0,1,0,1,0,1,1,1,1,0,1,0,1],\"~:num\",4]]]]" )
 
-(do
-  (def new-model-src )
-  (def other- (read-transit-str new-model-src))
-  (pprint new-model)
-)
-
 (def models (read-transit-str models-src))
 (def the-model (model/make-model (-> models :models :quad )))
 
@@ -84,7 +79,6 @@
     (slurp "resources/public/data/test.json")
     (read-transit-str)
     (first)
-    (->pprint)
     (model/make-other-model ) ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,6 +91,8 @@
   (GL11/glVertex2f (+ x w) y)
   (GL11/glEnd))
 
+(def rot (atom 0))
+
 (defn draw-quad-textured [x y w h u v u-w v-h ]
   (do
     (GL11/glPushMatrix)
@@ -105,11 +101,12 @@
 
     (GL11/glMatrixMode GL11/GL_TEXTURE)
     (GL11/glLoadIdentity)
+    ; (GL11/glRotatef (get-time) 0 0 1 )
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
-    (model-p/draw! the-model)
-
+    ; (model-p/draw! the-model)
+    (model-p/draw! the-other-model)
     ; (GL11/glBegin GL11/GL_QUADS)
     ; (GL11/glColor4f 1 1 1 1)
 

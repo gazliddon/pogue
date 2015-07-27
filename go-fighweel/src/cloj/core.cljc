@@ -3,6 +3,7 @@
 
     [game.sprs          :as sprs]
     [game.sprdata       :as sprdata]
+    [game.appstate      :as appstare :refer [add-time! get-time]]
     [clojure.core.async :as async    :refer [go <!! ]]
 
     [clojure.pprint :refer [pprint]]
@@ -202,9 +203,8 @@
   (add current  (div (sub desired current) time-to-interp)))
 
 (defprotocol IEaser
-  
-  
   )
+
 
 (defrecord Interpolator [from to])
 
@@ -250,6 +250,9 @@
                 (translate! (v2/sub v2/zero cam-pos))
                 (rend-p/spr! lev-spr (v2 0 0))
                 (draw-sprs sprs pos t))
+
+              ;; FILTH! globals are eval
+              (add-time! (/ 1 60))
 
               (when-not (quit? gkeys)
                 (recur (+ t (/ 1 60))

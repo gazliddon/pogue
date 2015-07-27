@@ -92,7 +92,9 @@ module Geo
         end
 
         def to_floats
-            [@pos.to_a, @uv,@col].map{|a| a.map( &:to_f )}.flatten
+            ret = [@pos.to_a.slice(0,3), @uv, @col].map{|a| a.map( &:to_f )}
+            # pp ret
+            ret.flatten
         end
     end
     # }}}
@@ -166,7 +168,7 @@ module Geo
         end
 
         def push
-            @mat_stack.push @mat
+            @mat_stack.push @mat.clone
         end
 
         def pop

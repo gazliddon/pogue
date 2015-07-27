@@ -3,7 +3,7 @@ def main
 
         restart_maker 0x7fffffff
 
-        amount = 3
+        amount = 30
         step = 360 / amount
         identity
 
@@ -13,11 +13,11 @@ def main
 
             push
 
-            scale 0.5, 0.5
             translate 1,1
+            scale 0.5, 0.5
 
             verts do
-                color(1,0,0)
+                color(1,1,1)
 
                 uv(0, 0)
                 vert(-1, -1)
