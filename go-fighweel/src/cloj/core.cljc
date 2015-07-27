@@ -248,7 +248,7 @@
                 (clear! [0 0 0 1])
                 (scale! (v2 zoom zoom))
                 (translate! (v2/sub v2/zero cam-pos))
-                (rend-p/spr! lev-spr (v2 0 0))
+                ; (rend-p/spr! lev-spr (v2 0 0))
                 (draw-sprs sprs pos t))
 
               ;; FILTH! globals are eval

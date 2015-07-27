@@ -1,7 +1,8 @@
 (ns cloj.totransit
   (:require 
+    [cloj.utils        :refer [pref ->pprint ->>pprint]]
     [cognitect.transit :as transit]
-    [msgpack.core :as msg])
+    [msgpack.core      :as msg])
 
   (:import 
     (java.io ByteArrayInputStream ByteArrayOutputStream ))
@@ -13,6 +14,7 @@
      (.getBytes s)
      (ByteArrayInputStream. )
      (transit/reader file-type)
-     (transit/read )))
+     (transit/read )
+     ))
   ([^String s]
    (read-transit-str s :json)))

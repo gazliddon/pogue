@@ -31,31 +31,20 @@
     (org.lwjgl.opengl
       GLContext
       NVPrimitiveRestart   
-      GL11 GL15 GL20 GL30
+      GL11 GL15 GL20 GL30 GL31
       )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TODO put in a utils file somewhere
 
-(def pref (comp pprint reflect))
-
-(defn ->pprint
-  ([v]
-   (do
-     (pprint v)
-     v))
-
-  ([msg v]
-   (do
-     (print (str msg " "))
-     (->pprint v))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn set-primitive-restart-ext
-  "Enable and set primive restart using the NV extension"
+  "Enable and set primive restart using the NV extension
+   because my laptop doesn't support gl31"
   [^Integer index]
-  (GL11/glEnable NVPrimitiveRestart/GL_PRIMITIVE_RESTART_NV)
-  (NVPrimitiveRestart/glPrimitiveRestartIndexNV index))
+  (NVPrimitiveRestart/glPrimitiveRestartNV)
+  (NVPrimitiveRestart/glPrimitiveRestartIndexNV index)
+  )
 
 (defn get-caps
   "get the current gl context capabilities"
@@ -98,10 +87,10 @@
     (GL11/glPushMatrix)
     (GL11/glTranslatef x y 0) 
     (GL11/glScalef w h 1)
+    (GL11/glRotatef (* 30 ( get-time )) 0 0 1 )
 
     (GL11/glMatrixMode GL11/GL_TEXTURE)
     (GL11/glLoadIdentity)
-    ; (GL11/glRotatef (get-time) 0 0 1 )
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
@@ -191,7 +180,10 @@
   (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
   (GL11/glEnable GL11/GL_BLEND)
-  (set-primitive-restart-ext 0x7fffffff))
+  (GL11/glEnable GL31/GL_PRIMITIVE_RESTART)
+  (GL31/glPrimitiveRestartIndex 0x7fffffff)
+  ; (set-primitive-restart-ext 0x7fffffff)
+  )
 
 (defn mk-renderer []
   (reify

@@ -1,6 +1,8 @@
 (ns cloj.utils
   (:require
-    [clojure.set :refer [difference]])
+    [clojure.set     :refer [difference]]
+    [clojure.reflect :refer [reflect]]
+    [clojure.pprint  :refer [pprint]])
 
   (:require
     [clojure.core.async        :as async :refer [go <!]])
@@ -57,3 +59,26 @@
      }))
 
 
+(def pref (comp pprint reflect))
+
+(defn ->pprint
+  ([v]
+   (do
+     (pprint v)
+     v))
+
+  ([v msg]
+   (do
+     (print (str msg " "))
+     (->pprint v))))
+
+(defn ->>pprint
+  ([v]
+   (do
+     (pprint v)
+     v))
+
+  ([msg v]
+   (do
+     (print (str msg " "))
+     (->>pprint v))))

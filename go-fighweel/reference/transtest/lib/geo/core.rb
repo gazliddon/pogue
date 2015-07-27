@@ -14,6 +14,11 @@ require 'mytransit'
 
 include RMath3D
 
+def dbg_log t
+    # puts t
+end
+
+
 module Geo
 
     def merge_verts varray, restart_marker = 0x7fffffff
@@ -36,11 +41,12 @@ module Geo
 
     # {{{ Helper funcs
     def to_rad deg
-        (deg / 360 ) * (Math::PI * 2)
+        radians = (deg / 360.0 ) * Math::PI * 2.0
+        return radians
     end
 
     def not_done msg
-        puts "NOT DONE: #{msg}"
+        dbg_log "NOT DONE: #{msg}"
     end
 
     # }}}
@@ -93,7 +99,6 @@ module Geo
 
         def to_floats
             ret = [@pos.to_a.slice(0,3), @uv, @col].map{|a| a.map( &:to_f )}
-            # pp ret
             ret.flatten
         end
     end
@@ -154,11 +159,13 @@ module Geo
         # Rudimentary matrix stuff
         def identity
             @mat = RMtx4.new.setIdentity
+            dbg_log "matrix after identity #{@mat}"
         end
 
         def scale x, y, z = 1
             scale_mat = RMtx4.new.scaling( x,y,z  )
             @mat.mul!(scale_mat)
+            dbg_log "matrix after scale #{@mat}"
         end
 
         def transform verts
@@ -168,17 +175,20 @@ module Geo
         end
 
         def push
-            @mat_stack.push @mat.clone
+            @mat_stack.push(RMtx4.new(@mat))
         end
 
         def pop
             @mat = @mat_stack.pop
+            dbg_log "matrix after pop #{@mat}"
         end
 
         def rotate deg, x,y,z
             rad = to_rad deg
-            rot_mat = RMtx4.new.rotationAxis(RVec3.new(x,y,z),rad )
+            rot_mat = RMtx4.new.rotationAxis(RVec3.new(x,y,z), rad )
             @mat.mul!(rot_mat)
+
+            dbg_log "matrix after rotate #{@mat}"
         end
 
         def rotate_x deg
@@ -195,6 +205,7 @@ module Geo
 
         def translate x,y,z=0
             @mat.mul!(RMtx4.new.translation x,y,z)
+            dbg_log "matrix after translate #{@mat}"
         end
 
         def restart_maker i
@@ -216,7 +227,7 @@ module Geo
     # }}}
     
     def run_script file_name, type = :json
-        puts "about run script file #{file_name}"
+        dbg_log "about run script file #{file_name}"
         txt = File.read file_name
         m = Module.new
         m.module_eval txt
