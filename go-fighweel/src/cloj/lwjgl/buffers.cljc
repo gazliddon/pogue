@@ -13,6 +13,10 @@
 (defprotocol IToBuffer
   (to-buffer [_]))
 
+
+(defprotocol IToGLBuffer
+  (to-gl-buffer [_]))
+
 ;; Some nasty macroing so I can extend primitive buffers
 ;; with routines to create the kind of typed buffer I need
 ;; to send stuff to openGL
