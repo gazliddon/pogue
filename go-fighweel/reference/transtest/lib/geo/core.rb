@@ -117,7 +117,7 @@ module Geo
             @indicies = []
         end
 
-        def vert x,y,z=1
+        def vert x,y,z=0
             vert = Vert.new
             vert.pos(x,y,z)
             vert.col( *@col )

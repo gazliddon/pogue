@@ -152,7 +152,7 @@
     (anim-fn t)))
 
 (defn draw-sprs [r sprs pos t]
-  (let [frm (get-frm :bub-stand t)
+  (let [frm :wacdonalds   
         printer (sprs/mk-spr-printer r sprs)]
     (rend-p/spr! printer frm pos)))
 
@@ -224,9 +224,9 @@
             lev-spr (mk-level-spr! render-manager sprs) ]
 
         (loop [t 0
-               pos (v2 3 3)
+               pos (v2 100 100)
                cam-pos (v2 0 0)
-               zoom 2]
+               zoom 4]
           (do
             (let [desired-pos (->>
                                 (v2 zoom zoom)
@@ -245,7 +245,7 @@
               (render-to screen
                 (clear-all! (funny-col t))
                 (ortho! win-dims canv-dims)
-                (clear! [0 0 0 1])
+                (clear! [(cos-01 t) 0 0 1])
                 (scale! (v2 zoom zoom))
                 (translate! (v2/sub v2/zero cam-pos))
                 ; (rend-p/spr! lev-spr (v2 0 0))
