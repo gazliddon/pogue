@@ -3,13 +3,36 @@ $: << File.expand_path(File.dirname(__FILE__))
 require 'pp'
 require 'lib/geo'
 include Geo
+require 'rake/clean'
 
-task default: %w[main]
+require 'lib/rakeutils'
+include RakeUtils
 
-task :main do
-     txt = run_script("src/quad.rb", :json)
-     File.write("../../resources/public/data/test.json", txt)
+SRC_DIR  = "src"
+DST_DIR = "dst"
+
+task :default => "a.rb"
+
+
+
+
+def grule(hash, &body)
+    dst_spec = hash.keys[0]
+    src_dir, src_ext = hash[dst_spec]
+    dst_dir, dst_ext = dst_spec
+
+    src_files, dst_files = get_src_dst src_dir, src_ext, dst_dir, dst_ext
+
+    puts src_files
+    puts dst_files
 end
+
+grule [DST_DIR,".json"] => [SRC_DIR, ".rb" ] do |t|
+     puts "Writing #{t.name}"
+     txt = run_script(t.source, :json)
+     File.write(t.name, txt)
+end
+
 
 
 

@@ -66,7 +66,7 @@
     (slurp "resources/public/data/test.json")
     (read-transit-str)
     (first)
-    (model/make-other-model ) ))
+    (model/make-other-model)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
