@@ -17,7 +17,7 @@ def main
                 vert(x2, y2)
 
                 uv(0, 1)
-                vert(x3,y3)
+                vert(x3, y3)
 
                 indicies [0,1,3,2]
             end
@@ -54,7 +54,7 @@ def main
             (0..(steps-1)).each do |i|
 
                 rad0 = i * to_rad_mul
-                rad1 = (i + 1) * to_rad_mul
+                rad1 = ((i + 1) % steps) * to_rad_mul
 
                 # puts "step #{i} rad0 #{rad0} rad1 #{rad1}"
 
@@ -62,13 +62,13 @@ def main
                 y0 = Math::sin(rad0)
 
                 x1 = Math::cos(rad1)
-                y1 = Math::sin(rad0)
+                y1 = Math::sin(rad1)
 
-                x2 = Math::cos(rad1) * my_scale
-                y2 = Math::sin(rad1) * my_scale
+                x2 = x1 * my_scale
+                y2 = y1 * my_scale
 
-                x3 = Math::cos(rad0) * my_scale
-                y3 = Math::sin(rad1) * my_scale
+                x3 = x0 * my_scale
+                y3 = y0 * my_scale
 
                 quad(x0,y0,
                      x1,y1,
@@ -78,7 +78,7 @@ def main
         end
 
         identity
-        ring(0.1,10)
+        ring(0.2,30)
 
         # amount = 5
         # step = 360 / amount

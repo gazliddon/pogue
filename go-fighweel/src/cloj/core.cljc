@@ -152,7 +152,8 @@
     (anim-fn t)))
 
 (defn draw-sprs [r sprs pos t]
-  (let [frm :wacdonalds   
+  (let [frm (get-frm :bub-walk t)
+        frm :wacdonalds
         printer (sprs/mk-spr-printer r sprs)]
     (rend-p/spr! printer frm pos)))
 
