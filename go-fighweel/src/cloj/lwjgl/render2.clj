@@ -7,6 +7,8 @@
 
     [cloj.totransit :refer [read-transit-str]]
 
+    [cloj.utils :as utils :refer [pref]]
+
     [clojure.pprint :as pprint :refer [pprint]]
 
     [clojure.reflect :as reflect :refer [reflect]]
@@ -42,14 +44,10 @@
   "Enable and set primive restart using the NV extension
    because my laptop doesn't support gl31"
   [^Integer index]
-  (NVPrimitiveRestart/glPrimitiveRestartNV)
+  (GL11/glEnableClientState NVPrimitiveRestart/GL_PRIMITIVE_RESTART_NV)
   (NVPrimitiveRestart/glPrimitiveRestartIndexNV index)
   )
 
-(defn get-caps
-  "get the current gl context capabilities"
-  []
-  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (set! *warn-on-reflection* true)
@@ -164,9 +162,9 @@
   (GL11/glEnable GL11/GL_SCISSOR_TEST)
   (GL11/glEnable GL11/GL_BLEND)
   (GL11/glDisable GL11/GL_BLEND)
-  (GL11/glEnable GL31/GL_PRIMITIVE_RESTART)
-  (GL31/glPrimitiveRestartIndex 0x7fffffff)
-  ; (set-primitive-restart-ext 0x7fffffff)
+  ; (GL11/glEnable GL31/GL_PRIMITIVE_RESTART)
+  ; (GL31/glPrimitiveRestartIndex 0x7fffffff)
+  (set-primitive-restart-ext 0x7fffffff)
   )
 
 (defn mk-renderer []
