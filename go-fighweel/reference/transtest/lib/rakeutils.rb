@@ -34,6 +34,11 @@ module RakeUtils
         replace_dir_ext(dst_dir, src_dir, src_ext, f)
     end
 
+    # mkdir if it doesn't exit
+    def mkdir_p? dir_name
+        mkdir_p dir_name unless File.exist?(dir_name)
+    end
+
     def grule( hash )
         dst_spec = hash.keys[0]
         src_dir, src_ext = hash[dst_spec]
