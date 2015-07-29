@@ -3,9 +3,9 @@ def main
 
         restart_maker 0x7fffffff
 
-        def quad x0,y0, x1,y1, x2,y2, x3, y3
+        def quad x0,y0, x1,y1, x2,y2, x3, y3, r = 1, g = 1, b = 1, a =1
             verts do
-                color(1,1,1)
+                color(r,g,b,a)
 
                 uv(0, 0)
                 vert(x0, y0)
@@ -24,7 +24,7 @@ def main
         end
 
         # Axis aligned 2d quad
-        def quad_aa x,y,w,h
+        def quad_aa x,y,w,h, r = 1, g = 1, b = 1, a =1
             x1 = x + w
             y1= y
 
@@ -34,12 +34,48 @@ def main
             x3 = x
             y3 = y + h
 
-            quad(x,y,x1,y1,x2,y2,x3,y3)
+            quad(x,y,x1,y1,x2,y2,x3,y3, r,g,b,a)
         end
 
         # twonit quad
-        def quad_twonit
-            quad_aa(-1,-1,2,2)
+        def quad_twonit r = 1, g = 1, b = 1, a =1
+            quad_aa(-1,-1,2,2,r,g,b,a)
+        end
+
+        def quad_unit    r = 1, g = 1, b = 1, a =1
+            quad_aa(-0.5,-0.5,1,1,r,g,b,a)
+        end
+
+        def cube
+            push
+            # top and bottom 
+            rotate_x(180)
+            quad_unit 1,0,1,1
+            translate(0,0, -0.5)
+            rotate_x(180)
+            quad_unit 0,1,0,1
+
+            pop; push
+
+            # # left and right
+            # rotate_y(90)
+            # translate(-0.5,0,0.5)
+            # quad_unit
+            # rotate_y(180)
+            # translate(1,0,0)
+            # quad_unit
+
+            pop; push
+
+            # # front and back
+            # rotate_x(90)
+            # translate( 0,0.5,0.5 )
+            # quad_unit
+            # rotate_x( 180 )
+            # translate( 0,-0.5,0 )
+            # quad_unit
+
+            pop
         end
 
         def ring width,steps
@@ -77,8 +113,11 @@ def main
             end
         end
 
+        # identity
+        # ring(0.2,30)
+        
         identity
-        ring(0.2,30)
+        cube
 
         # amount = 5
         # step = 360 / amount
