@@ -11,7 +11,7 @@ include RakeUtils
 require 'rake/clean'
 
 SRC_DIR  = "src"
-DST_DIR = "dst"
+DST_DIR = "../../resources/public/generated"
 
 task :default => %w{compile}
 
