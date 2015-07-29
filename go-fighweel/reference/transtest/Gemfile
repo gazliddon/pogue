@@ -5,3 +5,6 @@ gem 'docile'
 gem 'transit-ruby'
 gem 'rake'
 gem 'edn'
+
+gem 'guard'
+gem 'guard-rake'
