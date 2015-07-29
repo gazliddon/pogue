@@ -8,24 +8,12 @@ require 'rake/clean'
 require 'lib/rakeutils'
 include RakeUtils
 
+require 'rake/clean'
+
 SRC_DIR  = "src"
 DST_DIR = "dst"
 
-task :default => "a.rb"
-
-
-
-
-def grule(hash, &body)
-    dst_spec = hash.keys[0]
-    src_dir, src_ext = hash[dst_spec]
-    dst_dir, dst_ext = dst_spec
-
-    src_files, dst_files = get_src_dst src_dir, src_ext, dst_dir, dst_ext
-
-    puts src_files
-    puts dst_files
-end
+task :default => %w{compile}
 
 grule [DST_DIR,".json"] => [SRC_DIR, ".rb" ] do |t|
      puts "Writing #{t.name}"
@@ -33,6 +21,10 @@ grule [DST_DIR,".json"] => [SRC_DIR, ".rb" ] do |t|
      File.write(t.name, txt)
 end
 
+_ , dst_files = get_src_dst SRC_DIR, "rb", DST_DIR, "json" 
 
+task :compile => dst_files
+
+CLEAN.include(dst_files)
 
 

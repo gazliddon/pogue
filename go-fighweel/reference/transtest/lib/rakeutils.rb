@@ -1,4 +1,10 @@
 module RakeUtils
+
+    # removing any prepending dots from an extension
+    def remove_dot ext
+        ext.slice( 1, ext.length - 1 ) if ext[0] == '.'
+    end
+
     # Change the extension of a file
     def replace_ext file, new_ext
         in_ext = File.extname file
@@ -24,6 +30,26 @@ module RakeUtils
         end
 
         [src_files, dst_files]
+    end
+
+    # get the src file from the dst file name
+    def get_src_file src_dir, src_ext, dst_dir, f
+        replace_dir_ext(dst_dir, src_dir, src_ext, f)
+    end
+
+    def grule( hash )
+        dst_spec = hash.keys[0]
+        src_dir, src_ext = hash[dst_spec]
+        dst_dir, dst_ext = dst_spec
+
+        dst_ext = remove_dot dst_ext
+        src_ext = remove_dot src_ext
+
+        rule( /^#{dst_dir}\/.*\.#{dst_ext}/ =>
+             [proc {|task_name| 
+                 get_src_file(src_dir, src_ext, dst_dir, task_name)}] ) do |t|
+                     yield t
+                 end
     end
 
 end
