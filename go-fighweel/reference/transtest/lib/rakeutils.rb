@@ -13,7 +13,7 @@ module RakeUtils
 
     # Replace a prepended directory on a file
     def replace_dir src_dir, dst_dir, file
-        raise "no matches!" unless m = /^#{src_dir}\/(.*)$/.match(file)
+        raise "no matches! #{file}" unless m = /^#{src_dir}\/(.*)$/.match(file)
         "#{dst_dir}/#{m[1]}"
     end
 
@@ -37,21 +37,6 @@ module RakeUtils
     # mkdir if it doesn't exit
     def mkdir_p? dir_name
         mkdir_p dir_name unless File.exist?(dir_name)
-    end
-
-    def grule( hash )
-        dst_spec = hash.keys[0]
-        src_dir, src_ext = hash[dst_spec]
-        dst_dir, dst_ext = dst_spec
-
-        dst_ext = remove_dot dst_ext
-        src_ext = remove_dot src_ext
-
-        rule( /^#{dst_dir}\/.*\.#{dst_ext}/ =>
-             [proc {|task_name| 
-                 get_src_file(src_dir, src_ext, dst_dir, task_name)}] ) do |t|
-                     yield t
-                 end
     end
 
 end

@@ -15,28 +15,14 @@ DST_DIR = "dst"
 
 task :default => %w{compile}
 
-# grule [DST_DIR,".json"] => [SRC_DIR, ".rb" ] do |t|
-#      puts "Writing #{t.name}"
-#      mkdir_p t.name.pathmap("%d")
-#      txt = run_script(t.source, :json)
-#      File.write(t.name, txt)
-# end
-#
-# http://devblog.avdi.org/2014/04/25/rake-part-5-file-operations/
-
-
-
-rule ".json" => [->(f){get_src_file(SRC_DIR,"rb",DST_DIR,"json")}] do |t|
+rule ".json" => [->(f){get_src_file(SRC_DIR,"rb",DST_DIR, f)}] do |t|
      puts "Writing #{t.name}"
      mkdir_p? t.name.pathmap("%d") 
      txt = run_script(t.source, :json)
      File.write(t.name, txt)
 end
 
-src_files , dst_files = get_src_dst SRC_DIR, "rb", DST_DIR, "json" 
-
-pp src_files
-pp dst_files
+_ , dst_files = get_src_dst SRC_DIR, "rb", DST_DIR, "json" 
 
 task :compile => dst_files
 
