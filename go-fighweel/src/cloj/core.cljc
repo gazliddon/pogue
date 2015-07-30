@@ -234,19 +234,19 @@
                                 (v2/div mid-scr)
                                 (v2/sub pos)
                                 (v2/clamp (v2 0 0) (v2 1000 1000)))
+
                   new-zoom    (->>
-                                (+ zoom (handle-zoom gkeys 0.1))
-                                (clamp 0.1 10)
-                                )
+                                (+ zoom (handle-zoom gkeys 0.8))
+                                (clamp 0.1 10))
                   ]
 
               (win-p/update! window)
               (gamekeys/update! gkeys)
 
               (render-to screen
-                (clear-all! (funny-col t))
+                (clear-all! [0 0 0 1])
                 (ortho! win-dims canv-dims)
-                (clear! [(cos-01 t) 0 0 1])
+                (clear! [0 0 1 1])
                 (scale! (v2 zoom zoom))
                 (translate! (v2/sub v2/zero cam-pos))
                 ; (rend-p/spr! lev-spr (v2 0 0))

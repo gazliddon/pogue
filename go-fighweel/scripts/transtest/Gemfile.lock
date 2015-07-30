@@ -58,6 +58,3 @@ DEPENDENCIES
   rake
   rmath3d
   transit-ruby
-
-BUNDLED WITH
-   1.10.6
