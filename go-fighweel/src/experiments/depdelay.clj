@@ -25,7 +25,6 @@
         @func-rez
         ))))
 
-
 (defmacro dep-delay [global-atom & forms]
   `(mk-dep-delay
      (fn []
@@ -36,17 +35,62 @@
      ~global-atom
      ))
 
-(comment
-  (defonce x (atom 2))
 
-  (def ddx
-    (dep-delay x
-      (println "called@it")
-      "returning"))
+(def gl-context (atom nil))
 
-  (println @ddx)
 
-  (swap! x inc))
+(def gl-resources (atom {:textures {}
+                         :render-buffers {}
+                         :vao  {}
+                         }))
+
+(defprotocol IUnrealize
+  (unrealize! [_])
+  (get-val [_])
+  )
+
+(defn mk-rez-atom! [func]
+  (let [realized (atom nil)]
+    (reify
+      IUnrealize
+      (unrealize! [_]
+
+        (get-val [_] @realzed)
+        (reset! realized nil))
+
+      clojure.lang.IDeref
+      (deref [this]
+        (when (nil? @realized)
+          (reset! realized (func)))
+        @realized
+        ))
+    ))
+
+(defn add-gl-resource! [korks func]
+  (do
+    (let [rez-atom (mk-rez-atom! func)]
+      (remove-watch gl-context [korks])
+      (add-watch gl-context
+                 korks
+                 (fn [_ _ _ _]
+                   (unrealize! rez-atom)))
+      (swap!
+        gl-resources
+        assoc-in korks rez-atom)
+      rez-atom))) 
+(do
+  (def x
+
+
+    (add-gl-resource! [:textures :tex-1]
+                      (fn []
+                        (println "Created!")
+                        )
+                      ))
+  (println x)
+
+  )
+
 
 
 
