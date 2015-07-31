@@ -36,8 +36,7 @@
      ))
 
 
-(def gl-context (atom nil))
-
+(def gl-context (atom 0))
 
 (def gl-resources (atom {:textures {}
                          :render-buffers {}
@@ -45,17 +44,13 @@
                          }))
 
 (defprotocol IUnrealize
-  (unrealize! [_])
-  (get-val [_])
-  )
+  (unrealize! [_]))
 
 (defn mk-rez-atom! [func]
   (let [realized (atom nil)]
     (reify
       IUnrealize
       (unrealize! [_]
-
-        (get-val [_] @realzed)
         (reset! realized nil))
 
       clojure.lang.IDeref
@@ -78,18 +73,22 @@
         gl-resources
         assoc-in korks rez-atom)
       rez-atom))) 
+
+(defn add-dependant-resource [atm-to-watch id on-add on-realize]
+  )
+
 (do
   (def x
-
-
     (add-gl-resource! [:textures :tex-1]
                       (fn []
                         (println "Created!")
+                        "ITEM"
                         )
                       ))
-  (println x)
+  (println @x)
+  (println (get-val x)))
 
-  )
+(println @gl-resources)
 
 
 
