@@ -1,4 +1,4 @@
-(ns
+(ns experiments.depdelay
   ; "kind of like delay but also dependent on
   ;  a vector of args.
    
@@ -7,41 +7,15 @@
    
   ;  Will be used with the current gl context
   ;  as a dependency"
-  
-  experiments.depdelay)
 
-(defn- mk-dep-delay [func global-atom]
-  (let [atom-val (atom @global-atom) 
-        func-rez (atom nil) ]
-    (reify
-      clojure.lang.IDeref 
-      (deref [_]
-        (when (or
-                (not= @global-atom @atom-val)
-                (nil? @func-rez))
-          (reset! func-rez (func))
-          (reset! atom-val @global-atom)
-          )
-        @func-rez
-        ))))
-
-(defmacro dep-delay [global-atom & forms]
-  `(mk-dep-delay
-     (fn []
-       (do
-         ~@forms
-         )
-       )
-     ~global-atom
-     ))
-
+  (:require
+    [ clojure-watch.core :refer [start-watch]] ))
 
 (def gl-context (atom 0))
 
 (def gl-resources (atom {:textures {}
                          :render-buffers {}
-                         :vao  {}
-                         }))
+                         :vaos  {} }))
 
 (defprotocol IUnrealize
   (unrealize! [_]))
@@ -57,41 +31,48 @@
       (deref [this]
         (when (nil? @realized)
           (reset! realized (func)))
-        @realized
-        ))
-    ))
+        @realized))))
 
 (defn add-gl-resource! [korks func]
-  (do
-    (let [rez-atom (mk-rez-atom! func)]
+  (let [rez-atom (mk-rez-atom! func)]
+    (do
       (remove-watch gl-context [korks])
       (add-watch gl-context
                  korks
                  (fn [_ _ _ _]
                    (unrealize! rez-atom)))
-      (swap!
-        gl-resources
-        assoc-in korks rez-atom)
-      rez-atom))) 
+      (swap! gl-resources assoc-in korks rez-atom)
+      rez-atom)))
 
-(defn add-dependant-resource [atm-to-watch id on-add on-realize]
+(defmacro gl-create-resource! [typ id & body]
+  `(let [func# (fn [] (do ~@body))]
+     (add-gl-resource! [~typ ~id] func#)))
+
+(defmacro gl-create-texture! [id & body]
+  `(gl-create-resource! :textures ~id ~@body))
+
+(defmacro gl-create-vao! [id & body]
+  `(gl-create-resource! :vaos ~id ~@body))
+
+(defmacro gl-create-render-buffer! [id & body]
+  `(gl-create-resource! :render-buffers ~id ~@body))
+
+(defn update-gl-context! [ func]
+  (swap! gl-context func))
+
+(defn depends-on-file
+  "make this resource depend on a file
+   How do I watch files in clj then?"
+  [korks file-name]
+  (let [thing-to-update (get-in @gl-resources korks)]
+    (when (not= nil thing-to-update)
+      (start-watch [{:path file-name
+                     :event-types [:modify]
+                     :bootstrap (fn [path] (println "Starting to watch " path))
+                     :callback (fn [_ _] (do
+                                           (println "The file changed!")
+                                           (unrealize! thing-to-update)))
+                     :options {:recursive false}}]))
+    )
   )
-
-(do
-  (def x
-    (add-gl-resource! [:textures :tex-1]
-                      (fn []
-                        (println "Created!")
-                        "ITEM"
-                        )
-                      ))
-  (println @x)
-  (println (get-val x)))
-
-(println @gl-resources)
-
-
-
-
-
 

@@ -1,8 +1,15 @@
 (ns cloj.lwjgl.render2
   (:require 
     [game.appstate :refer [get-time]]
+
+
+    [clojure-watch.core :refer [start-watch]]   
+
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
+
+    [experiments.depdelay :as exp :refer [gl-create-texture!
+                                          depends-on-file]]
 
 
     [cloj.totransit :refer [read-transit-str]]
@@ -57,12 +64,48 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def the-other-model
-  (->
-    (slurp "resources/public/generated/quad.json")
+(defn load-model! [file-name]
+  (->>
+    (slurp file-name)
     (read-transit-str)
     (first)
-    (model/make-other-model)))
+    (model/make-model file-name)))
+
+(def test-model-file-name "resources/public/generated/quad.json")
+
+(def the-model
+  (let [mod-loader (fn []
+                     (load-model! test-model-file-name))
+        model (mod-loader)]
+    (do
+      (start-watch [{:path file-name
+                     :event-types [:modify]
+                     :bootstrap (fn [path] (println "Starting to watch " path))
+                     :callback (fn [_ _] (do
+                                           (println "The file changed!")
+                                           (unrealize! thing-to-update)))
+                     :options {:recursive false}}])    
+      )
+    model))
+
+(defn depends-on-file
+  "make this resource depend on a file
+   How do I watch files in clj then?"
+  [korks file-name]
+  (let [thing-to-update (get-in @gl-resources korks)]
+    (when (not= nil thing-to-update)
+      (start-watch [{:path file-name
+                     :event-types [:modify]
+                     :bootstrap (fn [path] (println "Starting to watch " path))
+                     :callback (fn [_ _] (do
+                                           (println "The file changed!")
+                                           (unrealize! thing-to-update)))
+                     :options {:recursive false}}]))
+    )
+  )
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
@@ -88,7 +131,7 @@
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
-    (model-p/draw! the-other-model)
+    (model-p/draw! the-model)
 
     (GL11/glMatrixMode GL11/GL_MODELVIEW)
     (GL11/glPopMatrix)
@@ -114,7 +157,7 @@
      (* y-scale h) ]) )
 
 (defn- my-make-spr! [id img [x y w h]]
-  (let [gl-texture (delay (make-texture-low! (rend-p/img img)))]
+  (let [gl-texture (gl-create-texture! id (make-texture-low! (rend-p/img img)))]
     (try
       (reify
         IGLTexture
@@ -142,10 +185,7 @@
     (map (fn [func]
            {:func func
             :supported? true}
-           ))
-    )
-  )
-
+           ))))
 
 (defn setup-frame
   "set up ogl to be a known state every frame"

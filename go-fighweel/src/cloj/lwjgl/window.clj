@@ -1,6 +1,7 @@
 (ns cloj.lwjgl.window
   (:require
-    [cloj.math.vec2 :refer [v2]]
+    [experiments.depdelay     :as exp :refer [update-gl-context!]]
+    [cloj.math.vec2           :refer [v2]]
     [cloj.protocols.system    :refer [ISystem]]
     [cloj.protocols.window    :as window-p]
     [cloj.jvm.loader          :as loader])
@@ -14,7 +15,8 @@
   (Display/setTitle title)
   (Display/setVSyncEnabled true)
   (Display/create)
-  )
+
+  (update-gl-context! inc))
 
 
 (defn mk-lwjgl-window []
@@ -40,5 +42,5 @@
       (update! [_]
         (when @exists?
           (Display/update)
-          ; (Display/sync 60)
+          (Display/sync 60)
           )))))

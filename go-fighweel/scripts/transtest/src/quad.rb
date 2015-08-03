@@ -57,23 +57,23 @@ def main
 
             pop; push
 
-            # # left and right
-            # rotate_y(90)
-            # translate(-0.5,0,0.5)
-            # quad_unit
-            # rotate_y(180)
-            # translate(1,0,0)
-            # quad_unit
+            # left and right
+            rotate_y(90)
+            translate(-0.5,0,0.5)
+            quad_unit
+            rotate_y(180)
+            translate(1,0,0)
+            quad_unit
 
             pop; push
 
-            # # front and back
-            # rotate_x(90)
-            # translate( 0,0.5,0.5 )
-            # quad_unit
-            # rotate_x( 180 )
-            # translate( 0,-0.5,0 )
-            # quad_unit
+            # front and back
+            rotate_x(90)
+            translate( 0,0.5,0.5 )
+            quad_unit
+            rotate_x( 180 )
+            translate( 0,-0.5,0 )
+            quad_unit
 
             pop
         end

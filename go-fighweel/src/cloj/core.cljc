@@ -153,7 +153,7 @@
 
 (defn draw-sprs [r sprs pos t]
   (let [frm (get-frm :bub-walk t)
-        frm :wacdonalds
+        ; frm :aubergine
         printer (sprs/mk-spr-printer r sprs)]
     (rend-p/spr! printer frm pos)))
 
