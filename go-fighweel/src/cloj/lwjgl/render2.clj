@@ -78,17 +78,17 @@
                      (load-model! test-model-file-name))
         model (mod-loader)]
     (do
-      (start-watch [{:path file-name
+      (start-watch [{:path "resources/public/generated"
                      :event-types [:modify]
                      :bootstrap (fn [path] (println "Starting to watch " path))
                      :callback (fn [_ _] (do
                                            (println "The file changed!")
-                                           (unrealize! thing-to-update)))
+                                           (exp/unrealize! model)))
                      :options {:recursive false}}])    
       )
     model))
 
-(defn depends-on-file
+#_(defn depends-on-file
   "make this resource depend on a file
    How do I watch files in clj then?"
   [korks file-name]

@@ -9,6 +9,7 @@
   ;  as a dependency"
 
   (:require
+    [ clojure.core.async  :as async :refer [go <! go-loop]]
     [ clojure-watch.core :refer [start-watch]] ))
 
 (def gl-context (atom 0))
@@ -75,4 +76,22 @@
                      :options {:recursive false}}]))
     )
   )
+
+(defn chan-atom 
+  ([chan default on-change]
+   (let [val (atom default)]
+     (do
+       (go-loop []
+         (let [new-val (<! chan)]
+           (on-change new-val @val)
+           (reset! val new-val)))
+
+       (reify
+         clojure.lang.IDeref
+         (deref [_]
+           @val)))))
+
+  ([chan default]
+   (chan-atom chan default (fn [_ _]))))
+
 

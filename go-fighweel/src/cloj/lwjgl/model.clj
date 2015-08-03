@@ -75,17 +75,12 @@
      :num-of-indicies (count indicies)}))
 
 
-(defprotocol IResource
-  (invalidate)
-  
-  )
-
 (defn make-model [id model]
   (let [gl-model (gl-create-vao! id (make-other-buffers model)) ]
     (reify
       IUnrealize
       (unrealize! [this]
-        (exp/unrealize gl-model))
+        (exp/unrealize! gl-model))
    
       IModel
       (draw! [_]
@@ -98,21 +93,4 @@
 
 
 
-(defn model
-  (fn [app owner]
-    (reify
-      glom/IWillMount
 
-
-      glom/IRender
-      (render [_]
-        (GL30/glBindVertexArray vao-id)
-        (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
-        )
-      
-      
-      )
-    
-    
-    )
-  )
