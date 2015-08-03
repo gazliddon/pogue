@@ -1,8 +1,7 @@
 (ns cloj.asyncutils
   (:require
-    [clojure.core.async :as async])
-  
-  )
+    [clojure.core.async :as async]
+    [clojure.pprint     :as pp]))
 
 (defn alters!
 
@@ -45,15 +44,14 @@
 
 (defn test-aysnc
   "takes from a chan forever and prints the result.
-   Handy for debugging core.async in the repl"
+   Handy for debugging core.async in the repl
+   Doesn't work in cljs"
   [ch]
   (do
    (loop [cnt 0]
     (let [v (async/<!! ch)]
       (println "step: " cnt)
-      (pprint v)
-      (println)
-      )
-    (recur (inc cnt))
-    )))
+      (pp/pprint v)
+      (println))
+    (recur (inc cnt)))))
 
