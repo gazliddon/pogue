@@ -21,7 +21,7 @@ end
 
 module Geo
 
-    def merge_verts varray, restart_marker = 0x7fffffff
+    def merge_verts name, varray, restart_marker = 0x7fffffff
         index_base = 0
 
         indicies = []
@@ -34,8 +34,9 @@ module Geo
             index_base += vchunk[:verts].count
         end
 
-        {:indicies => indicies,
-         :verts => verts}
+        {:name     => name,
+         :indicies => indicies,
+         :verts    => verts }
     end
 
 
@@ -148,12 +149,18 @@ module Geo
 
     # {{{ class GeoBuilder
     class GeoBuilder
+
         def initialize(prim_type)
             @restart_marker = 0x7fffffff
             @prim_type = prim_type
             @verts = []
             @mat = RMtx4.new.setIdentity
             @mat_stack = []
+            @name = "NO NAME"
+        end
+
+        def name s
+            @name = s
         end
 
         # Rudimentary matrix stuff
@@ -213,7 +220,7 @@ module Geo
         end
 
         def build
-            merge_verts @verts, @restart_marker
+            merge_verts @name, @verts, @restart_marker
         end
 
         def verts(&block)
@@ -232,7 +239,12 @@ module Geo
         m = Module.new
         m.module_eval txt
         m.module_eval "module_function :main"
-        to_transit(type, [m.main])
+        val = m.main
+
+        final = to_transit(type, {:verts    => val[:verts].map(&:to_floats).flatten,
+                                  :indicies => val[:indicies],
+                                  :file     => file_name } )
+        final 
     end
 
 end

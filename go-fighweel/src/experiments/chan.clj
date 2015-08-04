@@ -1,96 +1,64 @@
 (ns experiments.chan
   (:require
+    [cloj.totransit :as totransit :refer [read-transit-str]]
+    [cloj.asyncutils :refer [alters! test-aysnc]]
     [clojure.pprint :as pp :refer [pprint]]
-    [ clojure.core.async  :as async :refer [go
-                                            <!
-                                            >!
-                                            <!!
-                                            >!!
-                                            go-loop
-                                            chan
-                                            put!
-                                            timeout
-                                            alts!
-                                            ]]))
+    [clojure.core.async  :as async ]))
 
-; (defn chan-atom 
-;   ([ch default on-change]
-;    (let [val (atom default)]
-;      (do
-;        (go-loop []
-;          (let [new-val (<! ch)]
-;            (on-change new-val @val)
-;            (reset! val new-val)))
+(defn chan-atom 
+  ([ch default xf]
+   (let [val (atom default)]
+     (do
+       (async/go-loop []
+         (let [new-val (async/<! ch)]
+           (reset! val new-val)
+           (recur)))
 
-;        (reify
-;          clojure.lang.IDeref
-;          (deref [_]
-;            @val)))))
+       (reify
+         clojure.lang.IDeref
+         (deref [_]
+           (xf @val))))))
 
-;   ([chan default]
-;    (chan-atom chan default (fn [_ _]))))
+  ([ch default]
+   (chan-atom ch default identity)
+   ))
 
-; (defn nil-map [mp]
-;   (into {} (map vector (keys mp) (repeat nil))))
+(defprotocol IUnrealize
+  (unrealize! [_]))
 
-; (defn inv-map [mp]
-;   (into {} (map vector (vals mp) (keys mp))))
+(defn- deferred-fn [func]
+  (let [deffered-val (atom nil)]
+    (reify
+      IUnrealize
+      (unrealize! [_]
+        (reset! deffered-val nil))
 
-; (defn combine [mp]
-;   (let [inverse (inv-map mp) 
-;         chans (vals mp)]
-;     )
-;   )
+      clojure.lang.IDeref
+      (deref [_]
+        (when (nil? @deffered-val)
+          (reset! deffered-val (func)))
+        @deffered-val
+        ))))
 
-(defn alters!
+(defmacro deffered [& forms]
+  `(do
+     (deferred-fn (fn []
+                    (do ~@forms)))))
 
-  "Takes a map of {:key1 chan1 :key2 chan2}
-   and returns an output channel
+(defn make-stuff [event-chan func]
+  (let [vl (atom nil)
+        stuff-ret (deffered (func @vl)) ]
+    (async/go-loop []
+      (let [ v (async/<! event-chan)]
+        (reset! vl v )
+        (unrealize! stuff-ret)
+        (recur)))
 
-   if you put a value to a map is sent to the
-   output with the value for the key the channel
-   was sent on replaced with the value
+    stuff-ret)
+  )
 
-   The other values in the map are the last value
-   that was sent to that channel or nil if a value
-   has never been sent.
 
-   (def ch-map {:chan-a (chan) :chan-b (chan))
-   (def out-chan (alters! ch-map))
-   (put! (:chan-a) 'hello!')
-   (<!! out-chan)
-   {:chan-a 'hello'
-    :chan-b nil}
 
-   (put! (:chan-b) 'there')
-   (<!! out-chan)
-   {:chan-a 'hello'
-    :chan-b nil} "
-  
-  [ chan-map ]
-  (let [ret-chan (chan)
-        chans (vals chan-map)
-        init-mp (into {} (map (fn [[v _]] [v nil]) chan-map))
-        rev-map (into {} (map vector (vals chan-map) (keys chan-map))) ]
-    (go-loop [mp init-mp]
-      (let [ [v port] (async/alts! chans)
-            new-map (assoc mp (get rev-map port) v) ]
-        (>! ret-chan new-map)
-        (recur new-map) ))
 
-    ret-chan))
 
-(defn test-aysnc
-  "takes from a chan forever and prints the result.
-   Handy for debugging core.async in the repl"
-  [ch]
-  (do
-   (loop [cnt 0]
-    (let [v (<!! ch)]
-      (println "step: " cnt)
-      (pprint v)
-      (println)
-      )
-    (recur (inc cnt))
-    )))
 

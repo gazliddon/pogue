@@ -113,9 +113,11 @@ def main
             end
         end
 
+
         # identity
         # ring(0.2,30)
         
+        name "test"        
         identity
         cube
 

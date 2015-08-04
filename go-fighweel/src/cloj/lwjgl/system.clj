@@ -4,7 +4,7 @@
 
     [cloj.math.vec2 :as vec2 :refer [v2]]
 
-    [cloj.protocols.system    :refer [ISystem ->ClojSystem]]
+    [cloj.protocols.system    :refer [ISystem mk-system]]
     [cloj.protocols.resources :as res-p]
 
     [cloj.lwjgl.keyboard :as keyb]
@@ -28,30 +28,16 @@
         (apply func args)
         (recur)))
     ch))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def game-state (atom {:please-quit  false
-                       }))
-
-(def msg->func {:quit (fn [sys]
-                        (reset! game-state :please-quit true)) })
-
 (defn mk-system []
-  (let [msg-chan (mk-msg-center msg->func)
-        sys      (->ClojSystem
-                   (mk-lwjgl-window)
-                   (mk-resource-manager (mk-loader))
-                   (render-2/mk-lwjgl-render-manager )
-                   (keyb/mk-keyboard)
-                   (chan))]
+  (let [sys (mk-system
+              (mk-lwjgl-window)
+              (mk-resource-manager (mk-loader))
+              (render-2/mk-lwjgl-render-manager )
+              (keyb/mk-keyboard))]
     (do
       (res-p/clear-resources! (:resource-manager sys))
-      (go-loop []
-        (let [v (<! (:msg-chan sys))]
-          (cond
-            (keyword? v) (put! msg-chan [v sys])
-            (vector? v) (put! msg-chan (into [(first v) sys] (rest v))) 
-            :else (throw (Exception. "whooops!"))))
-        (recur))
       sys
       )))
 

@@ -1,6 +1,6 @@
 # A sample Guardfile
 # More info at https://github.com/guard/guard#readme
 
-guard 'rake', :task => 'default', :run_on_start => false do
+guard 'rake', :task => 'default', :run_on_start => true do
   watch(%r{^src/.+\.rb$})
 end

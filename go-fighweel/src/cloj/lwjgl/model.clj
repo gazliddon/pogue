@@ -1,6 +1,12 @@
 (ns cloj.lwjgl.model
   (:require
 
+    [cloj.totransit :as to-transit]
+
+    [clojure.core.async :as async]
+
+    [experiments.chan :as expch]
+
     [experiments.depdelay :as exp :refer [gl-create-texture! 
                                           gl-create-vao! 
                                           gl-create-render-buffer!
@@ -25,11 +31,37 @@
     (org.lwjgl.opengl GL11 GL15 GL20 GL30))
   )
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; loading stuff
+(defn load-it [base-dir file-name]
+  (slurp (str base-dir file-name )))
+
+(def model-xform 
+  (comp
+    (map #(load-it "resources/public/generated/" %))
+    (map #(to-transit/read-transit-str %))))
+
+(def file-data-ch (async/chan 1 model-xform))
+
+(defn mk-file-bind-chan []
+  (async/chan 1 model-xform))
+
+(def the-model
+  (expch/make-stuff
+    (mk-file-bind-chan)
+    (fn [v]
+      (make-other-buffers v)
+      )
+    )
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defverts set-standard-vert
   vec3 pos
   vec2 uv
   vec4 col)
-
 
 (defn make-other-buffers [{:keys [verts indicies] :as model}]
   (let [vao-id   (GL30/glGenVertexArrays)
@@ -90,6 +122,20 @@
             (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
             ))))))
 
+#_(defn make-model-2 [model]
+  (let [gl-model (gl-create-vao! id (make-other-buffers model)) ]
+    (reify
+      IUnrealize
+      (unrealize! [this]
+        (exp/unrealize! gl-model))
+   
+      IModel
+      (draw! [_]
+        (let [{:keys [vao-id num-of-indicies]} @gl-model] 
+          (do
+            (GL30/glBindVertexArray vao-id)
+            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
+            ))))))
 
 
 

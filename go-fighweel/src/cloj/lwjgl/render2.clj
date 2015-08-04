@@ -68,7 +68,6 @@
   (->>
     (slurp file-name)
     (read-transit-str)
-    (first)
     (model/make-model file-name)))
 
 (def test-model-file-name "resources/public/generated/quad.json")

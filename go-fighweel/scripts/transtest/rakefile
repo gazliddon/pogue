@@ -18,6 +18,7 @@ task :default => %w{compile}
 rule ".json" => [->(f){get_src_file(SRC_DIR,"rb",DST_DIR, f)}] do |t|
      puts "Writing #{t.name}"
      mkdir_p? t.name.pathmap("%d") 
+     puts "about to try this"
      txt = run_script(t.source, :json)
      File.write(t.name, txt)
 end
