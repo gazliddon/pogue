@@ -47,6 +47,7 @@
 (defn mk-file-bind-chan []
   (async/chan 1 model-xform))
 
+
 (def the-model
   (expch/make-stuff
     (mk-file-bind-chan)
@@ -55,6 +56,18 @@
       )
     )
   )
+
+(defn do-it
+  (let [j])
+  )
+
+;; make a responder
+;; load the file
+;; send it down the channel
+;; bind the channel to any file changes
+;; job done
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
