@@ -1,63 +1,65 @@
-(ns cloj.jvm.watcher
-  (:require
-    [ clojure.core.async  :as async :refer [go <! go-loop]]
-    [ clojure-watch.core :refer [start-watch]]))
-
-(def watched-dir "resources/public/generated")
-
 (defprotocol IResourceWatcher
-  (watch! [_ resource ch])
-  (unwatch [_ resource ch] )
-  (service-watches! [_ resource new-val])
-  )
+  (stop! [_])
+  (watch! [_ sub-resource ch])
+  (on-change! [_ file]))
 
-(defn mk-watcher [watch-pool]
-  (reify
-    IResourceWatcher
+(defn mk-dir-watcher [dir recursive on-change]
+  (start-watch
+    [{:path dir
+      :event-types [:modify :create]
+      :bootstrap (fn [path] (println "Starting to watch " path))
+      :callback (fn [_ file]
+                  (on-change file))
+      :options {:recursive recursive}}]))
 
-    (watch! [_ resoure ch]
-      (let [current-watches (get @watch-pool resoure ())
-            new-watches (conj current-watches ch) ]
-        (swap! watch-pool assoc resoure new-watches)))
 
-    (service-watches! [_ resource new-val]
-      (doseq [ch (get @watch-pool resource)]
-        (async/put! ch new-val)))))
+(defn dir-watcher [dir recursive]
+  (let [watcher (atom nil)
+        watches (atom {})
+        close-watch  (mk-dir-watcher
+                       dir
+                       recursive
+                       #(when @watcher
+                          (on-change! @watcher %)))
 
-(defn mk-dummy-watcher [watch-pool]
- (reify
-    IResourceWatcher
-    (watch! [_ resource ch]
-      (println "being asked to watch" resource))
+        get-watchers (fn [file] (get @watches file ()))
 
-    (service-watches! [_ resource new-val]
-      (println "this resource updated" resource)
-      )) 
-  )
+        add-watcher  (fn [file ch]
+                       (->>
+                         (cons ch (get-watchers file))
+                         (assoc @watches file)))
+        ret (reify
+              IResourceWatcher
+              (stop! [_]
+                (close-watch)
+                (reset! watches nil))
 
-(defn watch-dir! [dir recursive]
-  (let [watch-pool (atom {})
-        watcher (mk-dummy-watcher watch-pool)
-        watch-fn (fn [evtpe file-name]
-                   (service-watches! watcher file-name (slurp file-name))) ]
+              (watch! [_ file ch]
+                (reset! watches (add-watcher file ch)))
 
-    (do
-      (start-watch [{:path dir
-                     :event-types [:modify :create]
-                     :bootstrap (fn [path] (println "Starting to watch " path))
-                     :callback watch-fn
-                     :options {:recursive recursive}}])
-      watcher)))
+              (on-change! [_ file]
+                (if-let [watchers (get-watchers file)]
+                  (let [data (slurp (str dir "/" file))]
+                    (doseq [ch watchers]
+                      (async/put! ch data)))))) ]
+    (reset! watcher ret)))
+
 
 (defn test-it []
-  (let [watcher (watch-dir! watched-dir false)]
-    (do
-      (watch! watcher "quad.json" (async/chan))
-      (loop []
-        (Thread/sleep 3000)
-        (println "slept")
-        (recur)
-        ))))
+  (do
+    (doseq [w @all-watchers]
+      (w))
+    (reset! all-watchers ())
+    (let [watcher (file watched-dir false)]
+      (do
+        (swap! all-watchers conj watcher)
+        (watch! watcher "quad.json" (async/chan))
+        (loop []
+          (Thread/sleep 3000)
+          (println "slept")
+          (recur)
+          ))))
 
+  )
 
 
