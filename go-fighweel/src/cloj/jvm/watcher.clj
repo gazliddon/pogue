@@ -24,7 +24,6 @@
       (doseq [ch (get @watch-pool resource)]
         (async/put! ch new-val)))))
 
-
 (defn mk-dummy-watcher [watch-pool]
  (reify
     IResourceWatcher
@@ -49,7 +48,6 @@
                      :callback watch-fn
                      :options {:recursive recursive}}])
       watcher)))
-
 
 (defn test-it []
   (let [watcher (watch-dir! watched-dir false)]
