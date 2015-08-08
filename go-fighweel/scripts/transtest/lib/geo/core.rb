@@ -234,12 +234,15 @@ module Geo
     # }}}
     
     def run_script file_name, type = :json
+
         dbg_log "about run script file #{file_name}"
+
         txt = File.read file_name
-        m = Module.new
-        m.module_eval txt
-        m.module_eval "module_function :main"
-        val = m.main
+
+        val = tri_strips do
+            $: << File.expand_path(File.dirname(file_name))
+            eval txt
+        end
 
         final = to_transit(type, {:verts    => val[:verts].map(&:to_floats).flatten,
                                   :indicies => val[:indicies],

@@ -22,8 +22,8 @@ module RakeUtils
         replace_dir(src_dir, dst_dir, replace_ext(file, new_ext))
     end
 
-    def get_src_dst src_dir, src_ext, dst_dir, dst_ext
-        src_files = Rake::FileList.new("#{src_dir}/**/*.#{src_ext}")
+    def get_src_dst src_dir, src_ext, dst_dir, dst_ext, recurse = false
+        src_files = Rake::FileList.new("#{src_dir}/*.#{src_ext}")
         dst_files = src_files.pathmap("%{^#{src_dir}/,#{dst_dir}/}X." + dst_ext)
 
         [src_files, dst_files]
