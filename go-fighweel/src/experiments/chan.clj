@@ -26,7 +26,7 @@
 (defprotocol IUnrealize
   (unrealize! [_]))
 
-(defn- deferred-fn [func]
+(defn deferred-fn [func]
   (let [deffered-val (atom nil)]
     (reify
       IUnrealize

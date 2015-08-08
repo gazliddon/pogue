@@ -1,9 +1,10 @@
 (ns cloj.lwjgl.render2
   (:require 
     [game.appstate :refer [get-time]]
+    
+    [cloj.jvm.watcher :as watch]
 
-
-    [clojure-watch.core :refer [start-watch]]   
+    [cloj.asyncutils :as asyncu]
 
     [cloj.lwjgl.buffers :as buffers :refer [to-indicies-gl
                                             to-floats-gl]]
@@ -63,48 +64,6 @@
 (def clear-mask (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT)  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn load-model! [file-name]
-  (->>
-    (slurp file-name)
-    (read-transit-str)
-    (model/make-model file-name)))
-
-(def test-model-file-name "resources/public/generated/quad.json")
-
-(def the-model
-  (let [mod-loader (fn []
-                     (load-model! test-model-file-name))
-        model (mod-loader)]
-    (do
-      (start-watch [{:path "resources/public/generated"
-                     :event-types [:modify]
-                     :bootstrap (fn [path] (println "Starting to watch " path))
-                     :callback (fn [_ _] (do
-                                           (println "The file changed!")
-                                           (exp/unrealize! model)))
-                     :options {:recursive false}}])    
-      )
-    model))
-
-#_(defn depends-on-file
-  "make this resource depend on a file
-   How do I watch files in clj then?"
-  [korks file-name]
-  (let [thing-to-update (get-in @gl-resources korks)]
-    (when (not= nil thing-to-update)
-      (start-watch [{:path file-name
-                     :event-types [:modify]
-                     :bootstrap (fn [path] (println "Starting to watch " path))
-                     :callback (fn [_ _] (do
-                                           (println "The file changed!")
-                                           (unrealize! thing-to-update)))
-                     :options {:recursive false}}]))
-    )
-  )
-
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]

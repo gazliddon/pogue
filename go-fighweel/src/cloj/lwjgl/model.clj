@@ -34,40 +34,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; loading stuff
-(defn load-it [base-dir file-name]
-  (slurp (str base-dir file-name )))
-
-(def model-xform 
-  (comp
-    (map #(load-it "resources/public/generated/" %))
-    (map #(to-transit/read-transit-str %))))
-
-(def file-data-ch (async/chan 1 model-xform))
-
-(defn mk-file-bind-chan []
-  (async/chan 1 model-xform))
-
-
-(def the-model
-  (expch/make-stuff
-    (mk-file-bind-chan)
-    (fn [v]
-      (make-other-buffers v)
-      )
-    )
-  )
-
-(defn do-it
-  (let [j])
-  )
-
-;; make a responder
-;; load the file
-;; send it down the channel
-;; bind the channel to any file changes
-;; job done
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
