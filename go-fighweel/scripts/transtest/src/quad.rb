@@ -119,6 +119,8 @@ def main
         
         name "test"        
         identity
+        cube 
+        scale 2.0, 2.0
         cube
 
         # amount = 5

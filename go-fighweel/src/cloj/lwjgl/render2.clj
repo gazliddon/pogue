@@ -65,6 +65,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def the-model
+  (watch/mk-watched-model "quad.json" ))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn draw-quad [x y w h r g b a]
   (GL11/glBegin GL11/GL_QUADS)
@@ -89,7 +92,7 @@
     (GL11/glTranslatef u v 0) 
     (GL11/glScalef u-w v-h 1)
 
-    (model-p/draw! the-model)
+    (model/draw! @the-model)
 
     (GL11/glMatrixMode GL11/GL_MODELVIEW)
     (GL11/glPopMatrix)

@@ -18,7 +18,7 @@
                                               to-floats-gl]]
 
     [cloj.lwjgl.glverts   :as glverts :refer [defverts]]
-    [cloj.protocols.model :as model-p :refer [IModel draw!]]
+    [cloj.protocols.model :as model-p ]
 
     [clojure.pprint       :as pprint  :refer [pprint]]
     [clojure.reflect      :as reflect :refer [reflect]]
@@ -80,42 +80,10 @@
       (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER ibo-id) 
 
       ;; Bind back to a nothing VAO
-      (GL30/glBindVertexArray 0)
-      )
+      (GL30/glBindVertexArray 0))
     {:vao-id vao-id
      :num-of-indicies (count indicies)}))
 
-
-(defn make-model [id model]
-  (let [gl-model (gl-create-vao! id (make-other-buffers model)) ]
-    (reify
-      IUnrealize
-      (unrealize! [this]
-        (exp/unrealize! gl-model))
-   
-      IModel
-      (draw! [_]
-        (let [{:keys [vao-id num-of-indicies]} @gl-model] 
-          (do
-            (GL30/glBindVertexArray vao-id)
-            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
-            ))))))
-
-#_(defn make-model-2 [model]
-  (let [gl-model (gl-create-vao! id (make-other-buffers model)) ]
-    (reify
-      IUnrealize
-      (unrealize! [this]
-        (exp/unrealize! gl-model))
-   
-      IModel
-      (draw! [_]
-        (let [{:keys [vao-id num-of-indicies]} @gl-model] 
-          (do
-            (GL30/glBindVertexArray vao-id)
-            (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0)
-            ))))))
-
-
-
-
+(defn draw! [{:keys [vao-id num-of-indicies]} ]
+  (GL30/glBindVertexArray vao-id)
+  (GL11/glDrawElements GL11/GL_TRIANGLE_STRIP ^Integer num-of-indicies GL11/GL_UNSIGNED_INT 0))

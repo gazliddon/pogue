@@ -1,6 +1,7 @@
 (ns cloj.jvm.watcher
   (:require
-    [experiments.chan :as exp]
+    [experiments.chan :as exp :refer [deffered ]]
+    [cloj.lwjgl.model :as model :refer [make-other-buffers]]
     [cloj.totransit :refer [read-transit-str]]
     [clojure.core.async :as async]
 
@@ -71,67 +72,55 @@
     (reset! watcher ret)))
 
 
+(defprotocol IOgl
+  (make-model! [_ model]))
 
+(def gl-proxy
+  (reify
+    IOgl
+    (make-model! [_ model]
+      (make-other-buffers model))))
+
+(defn mk-model
+
+  "this can be genericised from making a model
+   and making a resource in general
+   the two vals are the dynamically changing data (file on disk)
+   and the resource maker (ogl context?)"
+
+  [ogl-chan resource-chan]
+  (let [res (atom  {:ogl nil :resource nil})
+        deffer (deffered
+                 (let [{:keys [ogl resource]} @res]
+                   (when (and ogl resource)
+                     (make-model! ogl resource))))]
+
+    (async/go-loop []
+      (let [[v port] (async/alts! [ogl-chan resource-chan]) ]
+        (do 
+          (condp = port
+            resource-chan (swap! res assoc :resource v)
+            ogl-chan (swap! res assoc :ogl v))
+          (exp/unrealize! deffer)
+          (recur))))
+
+    deffer))
 
 (def watch-dir "resources/public/generated")
+(def model-load-chan (async/chan 1 (map read-transit-str)))
+(def gl-context-chan (async/chan))
 
-(defn test-it []
-  (let [w (dir-watcher! watch-dir true)]
-    (async/go-loop [ch (rw-proto/watch! w "quad.json" (async/chan))]
-      (let [v (async/<! ch)]
-        (println "changed!")
-        (rw-proto/stop! w)))
-    ))
+(def dir-watcher (deffered  
+                   (dir-watcher! watch-dir true)))
 
-(comment
-  (do
-    (def watch-dir "resources/public/generated")
-    (def dir-watcher (dir-watcher! watch-dir true))
+(defn mk-watched-model [file-name]
+  (let [ret-val (mk-model gl-context-chan model-load-chan) ]
+    (do
+      (rw-proto/watch! @dir-watcher file-name model-load-chan)
+      (async/>!! gl-context-chan gl-proxy)
+      ret-val)))
 
-    (def model-load-chan (async/chan 1 (map read-transit-str)))
-    (def gl-context-chan (async/chan))
 
-    (defprotocol IOgl
-      (make-model! [_ model]))
-
-    (def gl-proxy
-      (reify
-        IOgl
-        (make-model! [_ model]
-          (println "I would be making a vao for ")
-          (println model)
-          #_(make-other-buffers model))))
-
-    (defn mk-model
-      [ogl-chan resource-chan]
-      (let [res {:ogl nil :resource nil}
-
-            deffer (deferred
-                     (let [{:keys [ogl res]}]
-                       (if (and ogl res)
-                         :we-have-everything
-                         nil))) ]
-
-        (async/go-loop []
-          (let [[v port] (async/alts! [ogl-chan resource-chan]) ]
-            (condp = port
-              resource-chan (swap! res assoc :resource v)
-              ogl-chan (swap! res assoc :ogl v))
-            (exp/unrealize! deffer)
-            (recur)))
-
-        deffer)
-      )
-
-    (def model-ref (mk-model gl-context-chan model-load-chan))
-
-    (rw-proto/watch! dir-watcher "quad.json" model-load-chan)
-
-    (println @model-ref)
-    (async/put! gl-context-chan :woo)
-    )
-  
-  )
 
 
 
